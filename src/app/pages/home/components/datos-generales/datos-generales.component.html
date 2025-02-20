@@ -1,0 +1,113 @@
+<div class="bg-gray-100 p-0">
+  <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
+
+    <h2 class="text-2xl">Datos Generales</h2>
+
+    <form class="my-6">
+
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-1/2 ">
+          <mat-label>CURP: </mat-label>
+          <input matInput>
+        </mat-form-field>
+        <mat-form-field class="basis-1/2 ">
+          <mat-label>Modalidad</mat-label>
+          <mat-select [(ngModel)]="selectedValue" name="food">
+            @for (food of foods; track food) {
+            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-row">
+        <mat-form-field class="basis-full">
+          <mat-label>Nombre Completo: </mat-label>
+          <input matInput>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-1/2">
+          <mat-label>Telefono</mat-label>
+          <span matTextPrefix>+52 &nbsp;</span>
+          <input type="tel" matInput placeholder="333-555-1234">
+          <mat-icon matSuffix>mode_edit</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field class="basis-1/2">
+          <mat-label>Correo Electronico</mat-label>
+          <input type="email" matInput [formControl]="emailFormControl" [errorStateMatcher]="matcher"
+            placeholder="Ej. usuario@ejemplo.com">
+          <!-- <mat-hint>Errors appear instantly!</mat-hint> -->
+          @if (emailFormControl.hasError('email') && !emailFormControl.hasError('required')) {
+          <mat-error>Por favor introduce un correo electronico valido</mat-error>
+          }
+          @if (emailFormControl.hasError('required')) {
+          <mat-error>Correo Electronico es <strong>requerido</strong></mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-1/3 ">
+          <mat-label>Estado</mat-label>
+          <mat-select [(ngModel)]="selectedValue" name="food">
+            @for (food of foods; track food) {
+            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="basis-1/3 ">
+          <mat-label>Municipio</mat-label>
+          <mat-select [(ngModel)]="selectedValue" name="food">
+            @for (food of foods; track food) {
+            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="basis-1/3 ">
+          <mat-label>Codigo Postal</mat-label>
+          <mat-select [(ngModel)]="selectedValue" name="food">
+            @for (food of foods; track food) {
+            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-row">
+        <mat-form-field class="basis-full ">
+          <mat-label>Colonia</mat-label>
+          <mat-select [(ngModel)]="selectedValue" name="food">
+            @for (food of foods; track food) {
+            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-1/2">
+          <mat-label>Tipo Zona</mat-label>
+          <input matInput>
+        </mat-form-field>
+        <mat-form-field class="basis-1/2">
+          <mat-label>Tipo Asentamiento</mat-label>
+          <input matInput>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-row">
+        <mat-form-field class="basis-full">
+          <mat-label>Domicilio: </mat-label>
+          <input matInput>
+        </mat-form-field>
+      </div>
+
+
+    </form>
+
+  </div>
+</div>
