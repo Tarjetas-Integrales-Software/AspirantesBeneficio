@@ -1,6 +1,8 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
+import { GITHUB_TOKEN } from './environments/environment';
+
 module.exports = {
   packagerConfig: {
     asar: true,
@@ -23,6 +25,22 @@ module.exports = {
       name: '@electron-forge/maker-rpm',
       config: {},
     },
+  ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'TISA',
+          name: 'AspirantesBeneficio',
+          authToken: GITHUB_TOKEN,
+          draft: true,
+          generateReleaseNotes: true,
+          repository: "https://github.com/Tarjetas-Integrales-Software/AspirantesBeneficio"
+        },
+        prerelease: true
+      }
+    }
   ],
   plugins: [
     {
