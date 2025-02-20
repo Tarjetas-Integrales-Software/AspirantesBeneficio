@@ -8,4 +8,11 @@ import { Component } from '@angular/core';
 })
 export class FotoComponent {
 
+  capturePhoto() {
+    console.log('Photo captured');
+  }
+
+  register() {
+    console.log('Registering');
+  }
 }
