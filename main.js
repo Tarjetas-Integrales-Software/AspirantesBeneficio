@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const { updateElectronApp } = require('update-electron-app');
 
 const path = require('path');
@@ -31,8 +31,7 @@ function createWindow() {
         })
     );
 
-    // Abrir las herramientas de desarrollo (opcional)
-    mainWindow.webContents.openDevTools();
+    Menu.setApplicationMenu(null);
 
     mainWindow.on('closed', function () {
         mainWindow = null;
