@@ -1,9 +1,14 @@
 {
   "name": "aspirantes-beneficio",
-  "version": "0.0.0",
-  "description": "Lorem",
-  "author": "Tisa",
+  "version": "0.0.1",
+  "productName": "Aspirantes Beneficio",
+  "description": "Aplicación para capturar la información y fotografia del aspirante a beneficiario",
+  "author": "TISA",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tarjetas-Integrales-Software/AspirantesBeneficio"
+  },
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",
@@ -12,13 +17,22 @@
     "test": "ng test",
     "electron": "electron main.js",
     "electron-build": "ng build --prod && electron main.js",
-    "electron-start": "electron-forge start",
-    "electron-package": "electron-forge package",
-    "electron-make": "electron-forge make",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
   "private": true,
+  "build": {
+    "appId": "com.tisa.aspirantesbeneficio",
+    "productName": "Aspirantes Beneficio",
+    "win": {
+      "target": "nsis",
+      "icon": "src/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "dependencies": {
     "@angular/animations": "^19.1.7",
     "@angular/cdk": "^19.1.5",
@@ -35,6 +49,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
+    "update-electron-app": "^3.1.1",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
@@ -48,6 +63,7 @@
     "@electron-forge/maker-zip": "^7.7.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.7.0",
     "@electron-forge/plugin-fuses": "^7.7.0",
+    "@electron-forge/publisher-github": "^7.7.0",
     "@electron/fuses": "^1.8.0",
     "@types/jasmine": "~5.1.0",
     "autoprefixer": "^10.4.20",

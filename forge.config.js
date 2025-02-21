@@ -24,6 +24,22 @@ module.exports = {
       config: {},
     },
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'TISA',
+          name: 'AspirantesBeneficio',
+          authToken: process.env.GITHUB_TOKEN,
+          draft: true,
+          generateReleaseNotes: true,
+          repository: "https://github.com/Tarjetas-Integrales-Software/AspirantesBeneficio"
+        },
+        prerelease: true
+      }
+    }
+  ],
   plugins: [
     {
       name: '@electron-forge/plugin-auto-unpack-natives',
