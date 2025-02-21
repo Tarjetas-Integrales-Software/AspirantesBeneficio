@@ -1,9 +1,14 @@
 {
   "name": "aspirantes-beneficio",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "productName": "Aspirantes Beneficio",
   "description": "Aplicación para capturar la información y fotografia del aspirante a beneficiario",
-  "author": "Tisa",
+  "author": "TISA",
   "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tarjetas-Integrales-Software/AspirantesBeneficio"
+  },
   "scripts": {
     "ng": "ng",
     "start": "electron-forge start",

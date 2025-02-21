@@ -10,6 +10,8 @@ updateElectronApp();
 
 if (require('electron-squirrel-startup')) app.quit();
 
+app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,

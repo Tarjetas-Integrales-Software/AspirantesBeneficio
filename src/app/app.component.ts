@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -7,15 +7,6 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'AspirantesBeneficio';
-
-  ngOnInit(): void {
-    fetch("https://backtransportistas.tarjetasintegrales.mx:806/api/v1/validatarjeta/listanegrarangofechas", {
-      headers: {
-        "Content-Type": "application/json",
-      }
-    }).then(response => response.json()).then(data => alert(data.data)).
-    catch(error => alert(error));
-  }
 }
