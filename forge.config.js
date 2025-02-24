@@ -32,7 +32,6 @@ module.exports = {
           owner: 'TISA',
           name: 'AspirantesBeneficio',
           authToken: process.env.GITHUB_TOKEN,
-          draft: true,
           generateReleaseNotes: true,
           repository: "https://github.com/Tarjetas-Integrales-Software/AspirantesBeneficio"
         },
