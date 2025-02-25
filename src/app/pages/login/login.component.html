@@ -35,7 +35,7 @@
         </div>
       </div>
       <!-- Login Button -->
-      <button type="submit" [disabled]="loginForm.invalid"
+      <button type="submit" [disabled]="loginForm.invalid || loading"
         class="bg-[#f2660c] hover:bg-[#143b8d] text-white font-semibold rounded-md py-2 px-4 w-full">Entrar</button>
     </form>
     <!-- Sign up  Link -->

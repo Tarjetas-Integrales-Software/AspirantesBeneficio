@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from './login.service';
-import Store from 'electron-store';
+import { StorageService } from '../../services/storage.service';
+
+declare const window: any;
 
 @Component({
   selector: 'app-login',
@@ -11,34 +13,46 @@ import Store from 'electron-store';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
-  store = new Store();
+export class LoginComponent implements OnInit {
+  token: string = '';
   loginForm: FormGroup;
   errorMessage: string = '';
 
-  constructor(private fb: FormBuilder, private router: Router, private loginService: LoginService) {
+  loading: boolean = false;
+
+  constructor(private fb: FormBuilder, private router: Router, private loginService: LoginService, private storageService: StorageService) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(5)]]
     });
   }
 
+  async ngOnInit(): Promise<void> {
+    if (this.storageService.exists("token"))
+      this.token = this.storageService.get("token");
+
+    if (this.token !== "") this.router.navigate(['/registro']);
+  }
+
   login(): void {
-    if (this.loginForm.invalid) {
+    if (this.loginForm.invalid || this.loading)
       return;
-    }
 
     const { email, password } = this.loginForm.value;
 
-    this.loginService.login({ username: email, password: password }).subscribe(
+    this.loading = true;
+    this.loginService.login({ email: email, password: password }).subscribe(
       (response) => {
         if (response.response) {
-          this.store.set('authToken', response.token);
-          this.router.navigate(['/']);
+          this.storageService.set("token", response.token);
+
+          this.router.navigate(['/registro']);
         }
+        this.loading = false;
       },
       (error) => {
         this.errorMessage = 'Credenciales incorrectas. Por favor, inténtelo de nuevo.';
+        this.loading = false;
       }
     );
   }

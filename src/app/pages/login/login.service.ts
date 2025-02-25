@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 export class LoginService {
   private http = inject(HttpClient);
   
-  login(credentials: { username: string, password: string}): Observable<any> {
+  login(credentials: { email: string, password: string}): Observable<any> {
     return this.http.post(environment.apiUrl + "/login", credentials);
   }
 
