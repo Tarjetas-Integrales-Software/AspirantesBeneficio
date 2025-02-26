@@ -3,6 +3,9 @@ const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const path = require('path');
 const url = require('url');
+const Store = require('electron-store');
+
+const store = new Store();
 
 let mainWindow;
 let db; // Declare db as a global variable
