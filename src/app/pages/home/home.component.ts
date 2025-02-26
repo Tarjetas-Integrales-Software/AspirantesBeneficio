@@ -12,6 +12,6 @@ export class HomeComponent {
   @ViewChild('datosForm') datosForm!: DatosGeneralesComponent;
 
   submitDatosForm() {
-    this.datosForm.onSave();
+    this.datosForm.onSafe();
   }
 }

@@ -97,7 +97,7 @@ export class FotoComponent implements OnInit {
 
   onSubmit() {
     if (this.datosGeneralesComponent.myForm.valid) {
-      this.datosGeneralesComponent.onSave();
+      this.datosGeneralesComponent.onSafe();
       console.log("Formulario enviado");
     } else {
       this.datosGeneralesComponent.myForm.markAllAsTouched();
