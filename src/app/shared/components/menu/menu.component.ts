@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, Router } from '@angular/router';
+import { StorageService } from '../../../services/storage.service';
+
 
 @Component({
   selector: 'menuComponent',
@@ -8,11 +10,18 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   styleUrl: './menu.component.scss'
 })
 export class MenuComponent {
-  menuShow = false;
+  menuShow: boolean = false;
+
+  constructor(private router: Router, private storageService: StorageService) {}
 
   toggleMenu() {
     this.menuShow = !this.menuShow;
-    console.log('toggleMenu');
   }
 
+  cerrarSesion(): void {
+    this.menuShow = false;
+
+    this.storageService.remove('token');
+    this.router.navigate(['/login']);
+  }
 }

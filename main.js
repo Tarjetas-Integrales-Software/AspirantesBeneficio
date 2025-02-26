@@ -50,7 +50,7 @@ function initializeDatabase() {
 
   try {
     db.exec(`
-      CREATE TABLE aspben.ct_aspirantes_beneficio (
+      CREATE TABLE IF NOT EXISTS ct_aspirantes_beneficio (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_modalidad INTEGER,
         curp TEXT NOT NULL,
@@ -76,7 +76,7 @@ function initializeDatabase() {
         deleted_at TEXT
     );
 
-    CREATE TABLE aspben.ct_fotos (
+    CREATE TABLE IF NOT EXISTS ct_fotos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_status INTEGER NOT NULL,
         fecha TEXT NOT NULL,
@@ -93,7 +93,7 @@ function initializeDatabase() {
         deleted_at TEXT
     );
 
-    CREATE TABLE aspben.sy_aspirantes_beneficio_fotos (
+    CREATE TABLE IF NOT EXISTS sy_aspirantes_beneficio_fotos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_aspirante_beneficio INTEGER,
         id_foto INTEGER,
@@ -106,7 +106,7 @@ function initializeDatabase() {
         deleted_at TEXT
     );
 
-    CREATE TABLE Common.CS_CodigosPostales_Colonias (
+    CREATE TABLE IF NOT EXISTS CS_CodigosPostales_Colonias (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         estado TEXT NOT NULL,
         municipio TEXT NOT NULL,
@@ -187,5 +187,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-if (!store.get("token")) store.set("token", "");
