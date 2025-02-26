@@ -1,6 +1,7 @@
-import { Component, type OnInit, ViewChild, type ElementRef } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
+import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
 
 @Component({
   selector: 'fotoComponent',
@@ -11,6 +12,8 @@ import { FormsModule } from "@angular/forms"
 export class FotoComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
+  @Output() submitForm = new EventEmitter<void>();
+  @Input() datosGeneralesComponent!: DatosGeneralesComponent;
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -92,5 +95,16 @@ export class FotoComponent implements OnInit {
     if (this.capturedImage) {
       this.capturePhoto() // Re-capture with new format
     }
+  }
+
+  onSubmit() {
+    if (this.datosGeneralesComponent.myForm.valid) {
+      this.datosGeneralesComponent.onSave();
+      console.log("Formulario enviado");
+    } else {
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      console.log("Formulario no válido");
+    }
+    this.submitForm.emit();
   }
 }
