@@ -12,14 +12,14 @@
     <form [formGroup]="loginForm" (ngSubmit)="login()">
       <!-- Username Input -->
       <div class="mb-4 bg-sky-100">
-        <label for="username" class="block text-gray-600">Correo Electronico</label>
+        <label for="username" class="block text-gray-600">Usuario</label>
         <input type="text" id="username" name="username" formControlName="email"
           class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
           autocomplete="off">
         <div *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
           class="text-red-500 text-sm mt-1">
-          <div *ngIf="loginForm.get('email')?.errors?.['required']">El correo electrónico es requerido.</div>
-          <div *ngIf="loginForm.get('email')?.errors?.['email']">El correo electrónico no es válido.</div>
+          <div *ngIf="loginForm.get('email')?.errors?.['required']">El usuario es requerido.</div>
+          <div *ngIf="loginForm.get('email')?.errors?.['email']">El usuario no es válido.</div>
         </div>
       </div>
       <!-- Password Input -->
