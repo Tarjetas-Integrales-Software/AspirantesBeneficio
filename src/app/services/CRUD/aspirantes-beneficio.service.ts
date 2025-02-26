@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DatabaseService } from './../database.service'; // Importa tu servicio DatabaseService
+import { DatabaseService } from './../database.service';
 
 @Injectable({
   providedIn: 'root',
