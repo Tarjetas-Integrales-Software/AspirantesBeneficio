@@ -83,8 +83,6 @@ export class FotoComponent implements OnInit {
   }
 
   register() {
-    console.log("Registering with captured photo")
-    // Implement your registration logic here
   }
 
   toggleImageFormat() {

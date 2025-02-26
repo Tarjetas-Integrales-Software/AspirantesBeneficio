@@ -31,16 +31,12 @@
         <div *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
           class="text-red-500 text-sm mt-1">
           <div *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es requerida.</div>
-          <div *ngIf="loginForm.get('password')?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</div>
+          <div *ngIf="loginForm.get('password')?.errors?.['minlength']">La contraseña debe tener al menos 5 caracteres.</div>
         </div>
       </div>
       <!-- Login Button -->
       <button type="submit" [disabled]="loginForm.invalid || loading"
         class="bg-[#f2660c] hover:bg-[#143b8d] text-white font-semibold rounded-md py-2 px-4 w-full">Entrar</button>
     </form>
-    <!-- Sign up  Link -->
-    <div class="mt-6 text-[#143b8d] text-center">
-      <a href="#" class="hover:underline">Registrate</a>
-    </div>
   </div>
 </div>

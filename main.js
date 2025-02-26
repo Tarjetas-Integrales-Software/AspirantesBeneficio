@@ -3,9 +3,6 @@ const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const path = require('path');
 const url = require('url');
-const Store = require('electron-store');
-
-const store = new Store();
 
 let mainWindow;
 let db; // Declare db as a global variable
@@ -18,8 +15,8 @@ app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1366,
+    height: 768,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -107,7 +104,7 @@ function initializeDatabase() {
     );
 
     CREATE TABLE IF NOT EXISTS CS_CodigosPostales_Colonias (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         estado TEXT NOT NULL,
         municipio TEXT NOT NULL,
         ciudad TEXT,

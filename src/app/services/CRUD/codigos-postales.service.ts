@@ -14,7 +14,7 @@ export class CodigosPostalesService {
 
   }
 
-  getGeneros(): Observable<any> {
+  getCodigosPostales(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/codposcol_all');
   }
 
@@ -22,12 +22,11 @@ export class CodigosPostalesService {
     for (const item of datos) {
       const sql = `
         INSERT INTO CS_CodigosPostales_Colonias (
-          id, estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, 
+          estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, 
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
-        item.id,
         item.estado,
         item.municipio,
         item.ciudad,
@@ -45,5 +44,23 @@ export class CodigosPostalesService {
 
       await this.databaseService.execute(sql, params);
     }
+  }
+
+  async consultarCodigosPostales(cp?: string, colonia?: string): Promise<any[]> {
+    let sql = 'SELECT * FROM CS_CodigosPostales_Colonias WHERE 1=1';
+    const params: any[] = [];
+
+    // Filtros opcionales
+    if (cp) {
+      sql += ' AND cp = ?';
+      params.push(cp);
+    }
+    if (colonia) {
+      sql += ' AND colonia LIKE ?';
+      params.push(`%${colonia}%`);
+    }
+
+    // Ejecutar la consulta
+    return await this.databaseService.query(sql, params);
   }
 }

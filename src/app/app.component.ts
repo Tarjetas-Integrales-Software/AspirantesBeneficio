@@ -14,6 +14,7 @@ import { CodigosPostalesService } from './services/CRUD/codigos-postales.service
 })
 export class AppComponent implements OnInit {
   title = 'Aspirantes';
+  codigos: any[] = []
 
   constructor(private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService) {
 
@@ -23,10 +24,12 @@ export class AppComponent implements OnInit {
     const online = this.networkStatusService.checkConnection();
 
     if (online) this.syncDataBase();
+
+    const codigos = this.codigosPostalesService.consultarCodigosPostales();
   }
 
   syncDataBase(): void {
-    this.codigosPostalesService.getGeneros().subscribe({
+    this.codigosPostalesService.getCodigosPostales().subscribe({
       next: ((response) => {
         this.codigosPostalesService.syncLocalDataBase(response.data)
       }),
