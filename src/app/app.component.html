@@ -2,14 +2,6 @@
   <router-outlet />
   <footerComponent />
 
-  @for (item of codigos; track item.cp) {
-  <li>{{ item.cp }}</li>
-  } @empty {
-  <li>No hay codigos en la base de datos.</li>
-  }
-
-  <span>{{ codigos }}</span>
-
   <app-network-status></app-network-status>
 </div>
 <menuComponent />

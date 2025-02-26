@@ -46,9 +46,10 @@ export class CodigosPostalesService {
     }
   }
 
-  async consultarCodigosPostales(cp?: string, colonia?: string): Promise<any[]> {
+  async consultarCodigosPostales(query: { cp?: string, colonia?: string, municipio?: string }): Promise<any[]> {
     let sql = 'SELECT * FROM CS_CodigosPostales_Colonias WHERE 1=1';
     const params: any[] = [];
+    const { cp, municipio, colonia } = query;
 
     // Filtros opcionales
     if (cp) {
@@ -59,8 +60,28 @@ export class CodigosPostalesService {
       sql += ' AND colonia LIKE ?';
       params.push(`%${colonia}%`);
     }
+    if (municipio) {
+      sql += ' AND municipio LIKE ?';
+      params.push(`%${municipio}%`);
+    }
 
     // Ejecutar la consulta
     return await this.databaseService.query(sql, params);
+  }
+
+  async consultarMunicipios(): Promise<{ id: number; municipio: string }[]> {
+    const sql = `
+      SELECT 
+        ROW_NUMBER() OVER (ORDER BY municipio) AS id, 
+        municipio 
+      FROM 
+        (SELECT DISTINCT municipio FROM CS_CodigosPostales_Colonias)
+      ORDER BY 
+        municipio;
+    `;
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql);
+    return resultados;
   }
 }
