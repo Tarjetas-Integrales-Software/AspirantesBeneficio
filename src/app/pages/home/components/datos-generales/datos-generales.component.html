@@ -70,34 +70,13 @@
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-1/3 ">
           <mat-label>Estado</mat-label>
-          <mat-select formControlName="estado" [(ngModel)]="selectedValue" name="estado">
-            <mat-option *ngFor="let estado of estados" [value]="estado.estado">{{ estado }}</mat-option>
-          </mat-select>
-          @if( isValidField('estado') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("estado") }}
-            </mat-error>
-          }
+          <input matInput disabled value="Jalisco">
         </mat-form-field>
-        <mat-form-field class="basis-1/3 ">
-          <mat-label>Municipio</mat-label>
-          <mat-select formControlName="municipio" [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
-          </mat-select>
-          @if( isValidField('municipio') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("municipio") }}
-            </mat-error>
-          }
-        </mat-form-field>
+
         <mat-form-field class="basis-1/3 ">
           <mat-label>Codigo Postal</mat-label>
-          <mat-select formControlName="codigoPostal" [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
+          <mat-select formControlName="codigoPostal" (selectionChange)="onCurpChange()" [(ngModel)]="selectedValue" name="codigoPostal">
+            <mat-option *ngFor="let codigoPostal of codigosPostales" [value]="codigoPostal">{{ codigoPostal }}</mat-option>
           </mat-select>
           @if( isValidField('codigoPostal') ) {
             <mat-error class="text-red-500">
@@ -105,15 +84,29 @@
             </mat-error>
           }
         </mat-form-field>
+
+        <mat-form-field class="basis-1/3 ">
+          <mat-label>Municipio</mat-label>
+          <mat-select formControlName="municipio" [(ngModel)]="selectedValue" name="municipio">
+            <mat-option *ngFor="let municipio of municipios" [value]="municipio">{{ municipio }}</mat-option>
+          </mat-select>
+          @if( isValidField('municipio') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("municipio") }}
+            </mat-error>
+          }
+        </mat-form-field>
+
       </div>
 
       <div class="flex flex-row">
         <mat-form-field class="basis-full ">
           <mat-label>Colonia</mat-label>
           <mat-select formControlName="Colonia" [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
+            <!-- @for (colonia of colonias; track food) {
             <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
+            } -->
+            <mat-option *ngFor="let colonia of colonias" [value]="colonia">{{ colonia }}</mat-option>
           </mat-select>
           @if( isValidField('Colonia') ) {
             <mat-error class="text-red-500">
@@ -125,23 +118,23 @@
 
       <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
       <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/2">
-          <mat-label>Tipo Zona</mat-label>
-          <input matInput formControlName="tipoZona">
-          @if( isValidField('tipoZona') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("tipoZona") }}
-            </mat-error>
-          }
+        <mat-form-field class="basis-1/3">
+          <mat-label>Ciudad</mat-label>
+          <mat-select formControlName="ciudad" [(ngModel)]="selectedValue" name="ciudad">
+            <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad">{{ ciudad }}</mat-option>
+          </mat-select>
         </mat-form-field>
-        <mat-form-field class="basis-1/2">
+        <mat-form-field class="basis-1/3">
           <mat-label>Tipo Asentamiento</mat-label>
-          <input matInput formControlName="tipoAsentamiento">
-          @if( isValidField('tipoAsentamiento') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("tipoAsentamiento") }}
-            </mat-error>
-          }
+          <mat-select formControlName="tipoAsentamiento" [(ngModel)]="selectedValue" name="tipoAsentamiento">
+            <mat-option *ngFor="let tipoAsentamiento of tiposAsentamiento" [value]="tipoAsentamiento">{{ tipoAsentamiento }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="basis-1/3">
+          <mat-label>Tipo Zona</mat-label>
+          <mat-select formControlName="tipoZona" [(ngModel)]="selectedValue" name="tipoZona">
+            <mat-option *ngFor="let tipoZona of tiposZona" [value]="tipoZona">{{ tipoZona }}</mat-option>
+          </mat-select>
         </mat-form-field>
       </div>
 

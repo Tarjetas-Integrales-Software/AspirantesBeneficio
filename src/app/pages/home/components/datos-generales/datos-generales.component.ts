@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatInputModule } from '@angular/material/input';
+import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
@@ -17,7 +17,8 @@ import {
 } from '@angular/forms';
 import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface';
 import { HomeService } from '../../home.service';
-import { HttpClientModule } from '@angular/common/http';
+import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
+import { NetworkStatusService } from '../../../../services/network-status.service';
 
 interface Food {
   value: string;
@@ -27,16 +28,22 @@ interface Food {
 
 @Component({
   selector: 'datosGeneralesComponent',
-  imports: [MatDividerModule, MatInputModule, MatFormFieldModule, MatSelectModule, CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, HttpClientModule],
+  imports: [MatDividerModule, MatInputModule, MatFormFieldModule, MatSelectModule, CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, MatInput],
   templateUrl: './datos-generales.component.html',
   styleUrl: './datos-generales.component.scss'
 })
 export class DatosGeneralesComponent implements OnInit {
 
   private fb = inject(FormBuilder);
-  estados: Jalisco['data'] = [];
+  estados: string[] = [];
+  municipios: string[] = [];
+  codigosPostales: string[] = [];
+  ciudades: string[] = [];
+  tiposAsentamiento: string[] = [];
+  tiposZona: string[] = [];
+  colonias: string[] = [];
 
-  constructor(private homeService: HomeService) { }
+  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService) { }
 
   myForm: FormGroup = this.fb.group({
     curp: ['', [Validators.required, Validators.minLength(18)],],
@@ -54,12 +61,47 @@ export class DatosGeneralesComponent implements OnInit {
   })
 
   ngOnInit(): void {
-    this.loadJaliscoData();
+
+    const online = this.networkStatusService.checkConnection();
+
+    if (online) this.syncDataBase();
+
+    this.codigosPostalesService.consultarCodigosPostales()
+      .then((resultados) => {
+        console.log('Todos los registros:', resultados);
+        this.codigosPostales = resultados;
+      })
+      .catch((error) => console.error('Error al consultar:', error));
+    // this.loadJaliscoData();
+
+  }
+
+  syncDataBase(): void {
+    this.codigosPostalesService.getCodigosPostales().subscribe({
+      next: ((response) => {
+        this.codigosPostalesService.syncLocalDataBase(response.data)
+      }),
+      error: ((error) => { })
+    });
   }
 
   loadJaliscoData(): void {
     this.homeService.getJaliscoData().subscribe((data: Jalisco) => {
-      this.estados = data.data;
+      this.estados = data.data.map(item => item.estado);
+      this.municipios = data.data.map(item => item.municipio);
+      this.ciudades = data.data.map(item => item.ciudad);
+      this.tiposAsentamiento = data.data.map(item => item.tipo_asentamiento);
+      this.tiposZona = data.data.map(item => item.tipo_zona);
+      this.colonias = data.data.map(item => item.colonia);
+    });
+  }
+
+  onCurpChange(): void {
+    console.log('Curp changed');
+    const curp = this.myForm.controls['curp'].value;
+
+    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => {
+      console.log(data);
     });
   }
 

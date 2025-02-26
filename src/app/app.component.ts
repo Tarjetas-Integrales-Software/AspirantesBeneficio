@@ -25,7 +25,6 @@ export class AppComponent implements OnInit {
 
     if (online) this.syncDataBase();
 
-    const codigos = this.codigosPostalesService.consultarCodigosPostales();
   }
 
   syncDataBase(): void {

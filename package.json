@@ -72,6 +72,7 @@
     "@types/node": "^22.13.5",
     "autoprefixer": "^10.4.20",
     "electron": "^34.2.0",
+    "electron-rebuild": "^3.2.9",
     "jasmine-core": "~5.5.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
