@@ -36,8 +36,6 @@ export class DatosGeneralesComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   estados: string[] = [];
-  municipios: string[] = [];
-  codigosPostales: string[] = [];
   ciudades: string[] = [];
   tiposAsentamiento: string[] = [];
   tiposZona: string[] = [];
@@ -60,30 +58,6 @@ export class DatosGeneralesComponent implements OnInit {
     domicilio: ['', [Validators.required, Validators.minLength(5)]],
   })
 
-  ngOnInit(): void {
-
-    const online = this.networkStatusService.checkConnection();
-
-    if (online) this.syncDataBase();
-
-    this.codigosPostalesService.consultarCodigosPostales()
-      .then((resultados) => {
-        console.log('Todos los registros:', resultados);
-        this.codigosPostales = resultados;
-      })
-      .catch((error) => console.error('Error al consultar:', error));
-    // this.loadJaliscoData();
-
-  }
-
-  syncDataBase(): void {
-    this.codigosPostalesService.getCodigosPostales().subscribe({
-      next: ((response) => {
-        this.codigosPostalesService.syncLocalDataBase(response.data)
-      }),
-      error: ((error) => { })
-    });
-  }
 
   loadJaliscoData(): void {
     this.homeService.getJaliscoData().subscribe((data: Jalisco) => {
@@ -130,6 +104,10 @@ export class DatosGeneralesComponent implements OnInit {
   selectedValue: string = '';
   selectedCar: string = '';
 
+  codigosPostales: any[] = [];
+  municipios: any[] = [];
+  municipio: string = '';
+
   foods: Food[] = [
     { value: 'steak-0', viewValue: 'Steak' },
     { value: 'pizza-1', viewValue: 'Pizza' },
@@ -137,10 +115,40 @@ export class DatosGeneralesComponent implements OnInit {
   ];
 
 
-  onSave() {
-    this.myForm.markAllAsTouched();
-    // Lógica para enviar el formulario
-    console.log("Formulario enviado");
+
+  ngOnInit(): void {
+    const online = this.networkStatusService.checkConnection();
+
+    if (online) this.syncDataBase();
+
+    this.getCodigosPostales({});
+    this.getMunicipios();
   }
 
+  getMunicipios(): void {
+    this.codigosPostalesService.consultarMunicipios()
+      .then((municipios) => {
+        this.municipios = municipios;
+      })
+      .catch((error) => console.error('Error al obtener municipios:', error));
+  }
+
+  getCodigosPostales(params: { cp?: string, colonia?: string, municipio?: string }): void {
+    const { cp, colonia, municipio } = params;
+
+    this.codigosPostalesService.consultarCodigosPostales({ cp: cp, colonia: colonia, municipio: municipio })
+      .then((resultados) => {
+        this.codigosPostales = resultados;
+      })
+      .catch((error) => console.error('Error al consultar códigos postales:', error));
+  }
+
+  syncDataBase(): void {
+    this.codigosPostalesService.getCodigosPostales().subscribe({
+      next: ((response) => {
+        this.codigosPostalesService.syncLocalDataBase(response.data)
+      }),
+      error: ((error) => { })
+    });
+  }
 }
