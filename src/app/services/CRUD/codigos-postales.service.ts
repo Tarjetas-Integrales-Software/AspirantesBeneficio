@@ -95,4 +95,22 @@ export class CodigosPostalesService {
     const resultados = await this.databaseService.query(sql);
     return resultados;
   }
+
+  async obtenerColonias(): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+    const sql = `
+      SELECT 
+        ROW_NUMBER() OVER (ORDER BY colonia) AS id, 
+        colonia, 
+        tipo_zona, 
+        tipo_asentamiento 
+      FROM 
+        (SELECT DISTINCT colonia, tipo_zona, tipo_asentamiento FROM CS_CodigosPostales_Colonias)
+      ORDER BY 
+        colonia;
+    `;
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql);
+    return resultados;
+  }
 }
