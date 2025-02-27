@@ -16,7 +16,7 @@ export class AspirantesBeneficioFotosService {
     created_at: string;
   }): Promise<any> {
     const sql = `
-      INSERT INTO sy_aspirantes_beneficio_fotos (
+      INSERT OR REPLACE INTO sy_aspirantes_beneficio_fotos (
         id_aspirante_beneficio, id_foto, id_status, created_id, created_at
       ) VALUES (?, ?, ?, ?, ?);
     `;

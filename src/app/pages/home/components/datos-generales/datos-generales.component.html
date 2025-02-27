@@ -18,7 +18,7 @@
         <mat-form-field class="basis-1/2 ">
           <mat-label>Modalidad</mat-label>
           <mat-select formControlName="modalidad" [(ngModel)]="selectedValue">
-            <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad">{{modalidad}}</mat-option>
+            <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
           </mat-select>
           @if( isValidField('modalidad') ) {
           <mat-error class="text-red-500">

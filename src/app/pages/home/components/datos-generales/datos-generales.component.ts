@@ -86,7 +86,6 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   onCurpChange(): void {
-    console.log('Curp changed');
     const curp = this.myForm.controls['curp'].value;
 
     this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => {
@@ -161,23 +160,20 @@ export class DatosGeneralesComponent implements OnInit {
 
   getColoniasByCP(): void {
     const cp = this.myForm.get('codigoPostal')?.value;
-    console.log('cp', cp);
 
     this.codigosPostalesService.consultarColonias(cp)
       .then((colonias) => {
         this.colonias = colonias;
-        console.log('colonias', this.colonias);
       })
       .catch((error) => console.error('Error al obtener colonias:', error));
   }
 
   getModalidades(): void {
     this.modalidadesService.consultarModalidades()
-    .then(modalidades => {
-      this.modalidades = modalidades;
-      console.log('modalidades', modalidades);
-    })
-    .catch(error => console.error('Error al obtener modalidades:', error));
+      .then(modalidades => {
+        this.modalidades = modalidades;
+      })
+      .catch(error => console.error('Error al obtener modalidades:', error));
   }
 
   onColoniaChange(colonia: string): void {
@@ -197,19 +193,16 @@ export class DatosGeneralesComponent implements OnInit {
     });
     this.modalidadesService.getModalidades().subscribe({
       next: ((response) => {
-        console.log('response', response);
         this.modalidadesService.syncLocalDataBase(response.data)
       }
-    ),
-    error: ((error) => {})
+      ),
+      error: ((error) => { })
     });
 
   }
 
   onSafe() {
-    console.log('safe');
     this.myForm.markAllAsTouched();
-    console.log(this.myForm.value);
   }
 
   toUpperCaseCurp(event: Event): void {

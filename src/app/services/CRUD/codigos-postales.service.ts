@@ -21,7 +21,7 @@ export class CodigosPostalesService {
   async syncLocalDataBase(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
-        INSERT INTO CS_CodigosPostales_Colonias (
+        INSERT OR REPLACE INTO CS_CodigosPostales_Colonias (
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

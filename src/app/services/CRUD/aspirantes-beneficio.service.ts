@@ -29,7 +29,7 @@ export class AspirantesBeneficioService {
     created_at: string;
   }): Promise<any> {
     const sql = `
-      INSERT INTO ct_aspirantes_beneficio (
+      INSERT OR REPLACE INTO ct_aspirantes_beneficio (
         id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento, estado,
         municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
         fecha_evento, created_id, created_at

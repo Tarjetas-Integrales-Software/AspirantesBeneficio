@@ -127,11 +127,10 @@ function initializeDatabase() {
     );
 
       CREATE TABLE IF NOT EXISTS cat_ct_modalidades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         id_tipo_beneficio INTEGER NULL,
         nombre TEXT NULL,
         descripcion TEXT NULL,
-        imagen TEXT NULL,
         created_id INTEGER NULL,
         updated_id INTEGER NULL,
         deleted_id INTEGER NULL,

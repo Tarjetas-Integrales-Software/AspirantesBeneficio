@@ -21,12 +21,13 @@ export class ModalidadesService {
   async syncLocalDataBase(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
-        INSERT INTO cat_ct_modalidades (
-          id_tipo_beneficio, nombre, descripcion,
+        INSERT OR REPLACE INTO cat_ct_modalidades (
+          id, id_tipo_beneficio, nombre, descripcion,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
+        item.id,
         item.id_tipo_beneficio,
         item.nombre,
         item.descripcion,
@@ -43,7 +44,12 @@ export class ModalidadesService {
   }
 
   async consultarModalidades(): Promise<{ id: number; modalidad: string }[]> {
-    const sql = 'SELECT id, nombre FROM cat_ct_modalidades ORDER BY nombre;';
+    const sql = `
+      SELECT id, nombre 
+      FROM cat_ct_modalidades 
+      WHERE id_tipo_beneficio = 2 
+      ORDER BY nombre;
+    `;
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql);

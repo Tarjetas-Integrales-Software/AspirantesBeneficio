@@ -19,7 +19,7 @@ export class UsersService {
     created_at: string;
   }): Promise<any> {
     const sql = `
-      INSERT INTO users (
+      INSERT OR REPLACE INTO users (
         name, p_surname, m_surname, electoralid, email, password, created_id, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     `;

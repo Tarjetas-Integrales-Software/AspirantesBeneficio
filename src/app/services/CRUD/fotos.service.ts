@@ -20,7 +20,7 @@ export class FotosService {
     created_at: string;
   }): Promise<any> {
     const sql = `
-      INSERT INTO ct_fotos (
+      INSERT OR REPLACE INTO ct_fotos (
         id_status, fecha, tipo, archivo, path, archivoOriginal, extension, created_id, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
