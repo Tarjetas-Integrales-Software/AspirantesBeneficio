@@ -46,6 +46,9 @@ function initializeDatabase() {
   // Ruta de la base de datos en la carpeta de datos del usuario
   const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
 
+  console.log('Database path:', dbPath);
+  
+
   db = new Database(dbPath);
 
   try {

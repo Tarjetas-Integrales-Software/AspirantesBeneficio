@@ -1,56 +1,21 @@
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {MatSort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatInputModule} from '@angular/material/input';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatIconModule} from '@angular/material/icon';
-import {MatButtonModule} from '@angular/material/button';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 
-export interface UserData {
+import { NetworkStatusService } from '../../services/network-status.service';
+import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
+
+export interface AspiranteBeneficio {
   id: string;
   name: string;
   progress: string;
   fruit: string;
 }
-
-/** Constants used to fill up our data base. */
-const FRUITS: string[] = [
-  'blueberry',
-  'lychee',
-  'kiwi',
-  'mango',
-  'peach',
-  'lime',
-  'pomegranate',
-  'pineapple',
-];
-const NAMES: string[] = [
-  'Juan Carlos Pérez Gómez',
-  'María Fernanda García López',
-  'José Antonio Hernández Martínez',
-  'Ana Isabel Martínez Rodríguez',
-  'Luis Alberto López Sánchez',
-  'Carmen Teresa González Ramírez',
-  'Miguel Ángel Rodríguez Flores',
-  'Laura Patricia Sánchez Torres',
-  'Carlos Eduardo Ramírez Rivera',
-  'Elena María Flores Morales',
-  'Jorge Luis Torres Ortiz',
-  'Patricia Elena Rivera Cruz',
-  'Ricardo Javier Morales Reyes',
-  'Sandra Beatriz Ortiz Mendoza',
-  'Fernando José Cruz Romero',
-  'Marta Alejandra Reyes Herrera',
-  'Alberto Daniel Mendoza Vargas',
-  'Lucía Gabriela Romero Pérez',
-  'Francisco Javier Herrera García',
-  'Gabriela Sofía Vargas López',
-];
-
-/**
- * @title Data table with sorting, pagination, and filtering.
- */
 
 @Component({
   selector: 'consultaPage',
@@ -58,19 +23,21 @@ const NAMES: string[] = [
   templateUrl: './consulta.component.html',
   styleUrl: './consulta.component.scss'
 })
-export class ConsultaComponent implements AfterViewInit {
-  displayedColumns: string[] = ['id', 'name', 'progress', 'fruit'];
-  dataSource: MatTableDataSource<UserData>;
+export class ConsultaComponent implements OnInit, AfterViewInit {
+  displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
+  dataSource: MatTableDataSource<AspiranteBeneficio>;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor() {
-    // Create 100 users
-    const users = Array.from({length: 100}, (_, k) => createNewUser(k + 1));
+  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService) {
+    this.dataSource = new MatTableDataSource();
+  }
 
-    // Assign the data to the data source for the table to render
-    this.dataSource = new MatTableDataSource(users);
+  ngOnInit(): void {
+    const online = this.networkStatusService.checkConnection();
+
+    this.getAspirantesBeneficio();
   }
 
   ngAfterViewInit() {
@@ -86,20 +53,12 @@ export class ConsultaComponent implements AfterViewInit {
       this.dataSource.paginator.firstPage();
     }
   }
-}
 
-/** Builds and returns a new User. */
-function createNewUser(id: number): UserData {
-  const name =
-    NAMES[Math.round(Math.random() * (NAMES.length - 1))] +
-    ' ' +
-    NAMES[Math.round(Math.random() * (NAMES.length - 1))].charAt(0) +
-    '.';
-
-  return {
-    id: id.toString(),
-    name: name,
-    progress: Math.round(Math.random() * 100).toString(),
-    fruit: FRUITS[Math.round(Math.random() * (FRUITS.length - 1))],
-  };
+  getAspirantesBeneficio(): void {
+    this.aspirantesBeneficioService.consultarAspirantes()
+      .then((aspirantesBeneficio) => {
+        this.dataSource.data = aspirantesBeneficio;
+      })
+      .catch((error) => console.error('Error al obtener aspirantes a beneficio:', error));
+  }
 }

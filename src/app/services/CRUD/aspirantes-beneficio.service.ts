@@ -61,7 +61,7 @@ export class AspirantesBeneficioService {
 
   // Leer todos los aspirantes
   async consultarAspirantes(): Promise<any[]> {
-    const sql = 'SELECT * FROM ct_aspirantes_beneficio ORDER BY created_at DESC;';
+    const sql = 'SELECT * FROM ct_aspirantes_beneficio ORDER BY fecha_evento DESC;';
     return await this.databaseService.query(sql);
   }
 

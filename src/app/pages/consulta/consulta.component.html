@@ -7,8 +7,6 @@
         <input matInput (keyup)="applyFilter($event)" placeholder="EJ. ABCD123456HDFRLL01" #input>
       </mat-form-field>
 
-      <!-- Register button -->
-      <!-- <button (click)="register()" [disabled]="!capturedImage" -->
       <button
         class="rounded-full w-[200px] h-[50px] flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-sm text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
         Buscar
@@ -28,46 +26,85 @@
 
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
-    <div class="mat-elevation-z8" style="background-color: white;">
+    <div class="table-container mat-elevation-z8" style="background-color: white;">
       <table mat-table [dataSource]="dataSource" matSort>
 
-        <!-- ID Column -->
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> ID </th>
-          <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+        <!-- CURP -->
+        <ng-container matColumnDef="curp">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CURP</th>
+          <td mat-cell *matCellDef="let row"> {{row.curp}} </td>
         </ng-container>
 
-        <!-- Progress Column -->
-        <ng-container matColumnDef="progress">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Modalidad </th>
-          <td mat-cell *matCellDef="let row"> {{row.progress}}% </td>
+        <!-- Nombre -->
+        <ng-container matColumnDef="nombre_completo">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+          <td mat-cell *matCellDef="let row"> {{row.nombre_completo}}</td>
         </ng-container>
 
-        <!-- Name Column -->
-        <ng-container matColumnDef="name">
-          <th  mat-header-cell *matHeaderCellDef mat-sort-header> Nombre Completo </th>
-          <td mat-cell *matCellDef="let row"> {{row.name}} </td>
+        <!-- Telefono -->
+        <ng-container matColumnDef="telefono">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Teléfono</th>
+          <td mat-cell *matCellDef="let row"> {{row.telefono}} </td>
         </ng-container>
 
-        <!-- Fruit Column -->
-        <ng-container matColumnDef="fruit">
-          <th class="text-right" mat-header-cell *matHeaderCellDef > Fruit </th>
+        <!-- Email -->
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+          <td mat-cell *matCellDef="let row"> {{row.email}} </td>
+        </ng-container>
+
+        <!-- Fecha de nacimiento -->
+        <ng-container matColumnDef="fecha_nacimiento">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha de nacimiento</th>
+          <td mat-cell *matCellDef="let row"> {{row.fecha_nacimiento}} </td>
+        </ng-container>
+
+        <!-- Estado -->
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+          <td mat-cell *matCellDef="let row"> {{row.estado}} </td>
+        </ng-container>
+
+        <!-- Municipio -->
+        <ng-container matColumnDef="municipio">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Municipio</th>
+          <td mat-cell *matCellDef="let row"> {{row.municipio}} </td>
+        </ng-container>
+
+        <!-- CP -->
+        <ng-container matColumnDef="cp">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CP</th>
+          <td mat-cell *matCellDef="let row"> {{row.cp}} </td>
+        </ng-container>
+
+        <!-- Colonia -->
+        <ng-container matColumnDef="colonia">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Colonia</th>
+          <td mat-cell *matCellDef="let row"> {{row.colonia}} </td>
+        </ng-container>
+
+        <!-- Domicilio -->
+        <ng-container matColumnDef="domicilio">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Domicilio</th>
+          <td mat-cell *matCellDef="let row"> {{row.domicilio}} </td>
+        </ng-container>
+
+        <!-- Fecha de registro -->
+        <ng-container matColumnDef="fecha_evento">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha de registro</th>
+          <td mat-cell *matCellDef="let row"> {{row.fecha_evento}} </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th class="text-right" mat-header-cell *matHeaderCellDef> Acciones </th>
           <td mat-cell *matCellDef="let row">
-            <div class="flex justify-end items-center gap-2 *:flex *:justify-center *:items-center *:rounded-full *:p-2">
-              <button type="button" class="text-blue-500 bg-blue-500/50">
-                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="oklch(0.623 0.214 259.815)"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-                <span>Consultar</span>
-              </button>
-              <button type="button" class="bg-yellow-500/50 text-yellow-500">
-                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="oklch(0.795 0.184 86.047)"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
-                <span>Editar</span>
-              </button>
-              <button type="button" class="bg-red-500/50 text-red-500">
-                <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="oklch(0.637 0.237 25.331)"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
-                <span>Eliminar</span>
-              </button>
+            <div
+              class="flex justify-end items-center gap-2 *:flex *:justify-center *:items-center *:rounded-full *:p-2">
+
+              <button mat-button color="danger">Eliminar</button>
+              <button mat-button color="warn">Editar</button>
             </div>
-            <!-- {{row.fruit}} -->
           </td>
         </ng-container>
 
@@ -76,7 +113,7 @@
 
         <!-- Row shown when there is no matching data. -->
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
+          <td class="mat-cell p-5" colspan="4">No hay coincidencias</td>
         </tr>
       </table>
 
