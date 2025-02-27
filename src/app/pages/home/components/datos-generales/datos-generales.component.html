@@ -1,7 +1,7 @@
 <div class="bg-gray-100 p-0">
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
-    <h2 class="text-2xl">Datos Generales</h2>
+    <h2 class="text-3xl">Datos Generales</h2>
 
     <form [formGroup]="myForm" class="my-6">
 
@@ -10,9 +10,9 @@
           <mat-label>CURP: </mat-label>
           <input formControlName="curp" matInput>
           @if( isValidField('curp') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("curp") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("curp") }}
+          </mat-error>
           }
         </mat-form-field>
         <mat-form-field class="basis-1/2 ">
@@ -23,22 +23,29 @@
             }
           </mat-select>
           @if( isValidField('modalidad') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("modalidad") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("modalidad") }}
+          </mat-error>
           }
         </mat-form-field>
       </div>
 
-      <div class="flex flex-row">
-        <mat-form-field class="basis-full">
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-2/3">
           <mat-label>Nombre Completo: </mat-label>
           <input matInput formControlName="nombreCompleto">
           @if( isValidField('nombreCompleto') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("nombreCompleto") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("nombreCompleto") }}
+          </mat-error>
           }
+        </mat-form-field>
+        <mat-form-field class="basis-1/3">
+          <mat-label>Fecha de nacimiento</mat-label>
+          <input matInput [matDatepicker]="picker">
+          <mat-hint>DD/MM/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker ></mat-datepicker>
         </mat-form-field>
       </div>
 
@@ -49,45 +56,43 @@
           <input type="tel" matInput formControlName="telefono" placeholder="333-555-1234">
           <mat-icon matSuffix>mode_edit</mat-icon>
           @if( isValidField('telefono') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("telefono") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("telefono") }}
+          </mat-error>
           }
         </mat-form-field>
 
         <mat-form-field class="basis-1/2">
           <mat-label>Correo Electronico</mat-label>
-          <input type="email" matInput formControlName="email"
-            placeholder="Ej. usuario@ejemplo.com">
-            @if( isValidField('email') ) {
-              <mat-error class="text-red-500">
-                {{ getFieldError("email") }}
-              </mat-error>
-            }
+          <input type="email" matInput formControlName="email" placeholder="Ej. usuario@ejemplo.com">
+          @if( isValidField('email') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("email") }}
+          </mat-error>
+          }
         </mat-form-field>
       </div>
 
       <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/3 ">
-          <mat-label>Estado</mat-label>
-          <mat-select [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
 
-        <mat-form-field class="basis-1/3">
+
+        <mat-form-field class="basis-2/3">
           <mat-label>Municipio</mat-label>
-          <mat-select [(ngModel)]="municipio" name="municipio" (selectionChange)="getCodigosPostales({municipio: $event.value})">
+          <mat-select [(ngModel)]="municipio" name="municipio"
+            (selectionChange)="getCodigosPostales({municipio: $event.value})">
             <mat-option *ngFor="let municipio of municipios" [value]="municipio.municipio">
               {{ municipio.municipio }}
             </mat-option>
           </mat-select>
+          @if( isValidField('municipio') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("municipio") }}
+          </mat-error>
+          }
         </mat-form-field>
 
 
-        <mat-form-field class="basis-1/3 ">
+        <mat-form-field class="basis-1/3">
           <mat-label>Código Postal</mat-label>
           <mat-select [(ngModel)]="selectedValue" name="cp">
             @for (cp of codigosPostales; track cp) {
@@ -95,21 +100,9 @@
             }
           </mat-select>
           @if( isValidField('codigoPostal') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("codigoPostal") }}
-            </mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field class="basis-1/3 ">
-          <mat-label>Municipio</mat-label>
-          <mat-select formControlName="municipio" [(ngModel)]="selectedValue" name="municipio">
-            <mat-option *ngFor="let municipio of municipios" [value]="municipio">{{ municipio }}</mat-option>
-          </mat-select>
-          @if( isValidField('municipio') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("municipio") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("codigoPostal") }}
+          </mat-error>
           }
         </mat-form-field>
 
@@ -125,32 +118,22 @@
             <mat-option *ngFor="let colonia of colonias" [value]="colonia">{{ colonia }}</mat-option>
           </mat-select>
           @if( isValidField('Colonia') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("Colonia") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("Colonia") }}
+          </mat-error>
           }
         </mat-form-field>
       </div>
 
       <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
       <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/3">
-          <mat-label>Ciudad</mat-label>
-          <mat-select formControlName="ciudad" [(ngModel)]="selectedValue" name="ciudad">
-            <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad">{{ ciudad }}</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field class="basis-1/3">
+        <mat-form-field class="basis-1/2">
           <mat-label>Tipo Asentamiento</mat-label>
-          <mat-select formControlName="tipoAsentamiento" [(ngModel)]="selectedValue" name="tipoAsentamiento">
-            <mat-option *ngFor="let tipoAsentamiento of tiposAsentamiento" [value]="tipoAsentamiento">{{ tipoAsentamiento }}</mat-option>
-          </mat-select>
+          <input matInput disabled value="" >
         </mat-form-field>
-        <mat-form-field class="basis-1/3">
+        <mat-form-field class="basis-1/2">
           <mat-label>Tipo Zona</mat-label>
-          <mat-select formControlName="tipoZona" [(ngModel)]="selectedValue" name="tipoZona">
-            <mat-option *ngFor="let tipoZona of tiposZona" [value]="tipoZona">{{ tipoZona }}</mat-option>
-          </mat-select>
+          <input matInput disabled value="" >
         </mat-form-field>
       </div>
 
@@ -159,9 +142,20 @@
           <mat-label>Domicilio: </mat-label>
           <input matInput formControlName="domicilio">
           @if( isValidField('domicilio') ) {
-            <mat-error class="text-red-500">
-              {{ getFieldError("domicilio") }}
-            </mat-error>
+          <mat-error class="text-red-500">
+            {{ getFieldError("domicilio") }}
+          </mat-error>
+          }
+        </mat-form-field>
+      </div>
+      <div class="flex flex-row">
+        <mat-form-field class="basis-full">
+          <mat-label>Comentarios y/o observaciones: </mat-label>
+          <input matInput formControlName="domicilio">
+          @if( isValidField('domicilio') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("domicilio") }}
+          </mat-error>
           }
         </mat-form-field>
       </div>

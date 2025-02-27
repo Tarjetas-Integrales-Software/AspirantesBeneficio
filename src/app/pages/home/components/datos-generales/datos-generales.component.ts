@@ -19,6 +19,8 @@ import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface'
 import { HomeService } from '../../home.service';
 import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
 import { NetworkStatusService } from '../../../../services/network-status.service';
+import {DateAdapter, MAT_DATE_FORMATS, provideNativeDateAdapter} from '@angular/material/core';
+import {MatCalendar, MatDatepickerModule} from '@angular/material/datepicker';
 
 interface Food {
   value: string;
@@ -28,11 +30,13 @@ interface Food {
 
 @Component({
   selector: 'datosGeneralesComponent',
-  imports: [MatDividerModule, MatInputModule, MatFormFieldModule, MatSelectModule, CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, MatInput],
+  providers: [provideNativeDateAdapter()],
+  imports: [MatDividerModule, MatInputModule, MatFormFieldModule, MatSelectModule, CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, MatInput, MatDatepickerModule, ],
   templateUrl: './datos-generales.component.html',
   styleUrl: './datos-generales.component.scss'
 })
 export class DatosGeneralesComponent implements OnInit {
+
 
   private fb = inject(FormBuilder);
   estados: string[] = [];
@@ -152,7 +156,7 @@ export class DatosGeneralesComponent implements OnInit {
     });
   }
 
-  onSafe(){
+  onSafe() {
     console.log('safe');
   }
 }
