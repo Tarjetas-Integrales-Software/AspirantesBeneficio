@@ -198,7 +198,6 @@ export class DatosGeneralesComponent implements OnInit {
       ),
       error: ((error) => { })
     });
-
   }
 
   onSafe() {

@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -19,7 +20,7 @@ export interface AspiranteBeneficio {
 
 @Component({
   selector: 'consultaPage',
-  imports: [MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
+  imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
   templateUrl: './consulta.component.html',
   styleUrl: './consulta.component.scss'
 })
@@ -36,6 +37,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
+
+    if (online) this.syncDataBase();
 
     this.getAspirantesBeneficio();
   }
@@ -60,5 +63,15 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
         this.dataSource.data = aspirantesBeneficio;
       })
       .catch((error) => console.error('Error al obtener aspirantes a beneficio:', error));
+  }
+
+  syncDataBase(): void {
+    this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe({
+      next: ((response) => {
+        this.aspirantesBeneficioService.syncLocalDataBase(response.data);
+        this.dataSource.data = response.data;
+      }),
+      error: ((error) => { })
+    });
   }
 }
