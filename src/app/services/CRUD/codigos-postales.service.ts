@@ -96,21 +96,26 @@ export class CodigosPostalesService {
     return resultados;
   }
 
-  async obtenerColonias(): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
-    const sql = `
+  async consultarColonias(cp?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+    let sql = `
       SELECT 
         ROW_NUMBER() OVER (ORDER BY colonia) AS id, 
         colonia, 
         tipo_zona, 
         tipo_asentamiento 
       FROM 
-        (SELECT DISTINCT colonia, tipo_zona, tipo_asentamiento FROM CS_CodigosPostales_Colonias)
-      ORDER BY 
-        colonia;
+        (SELECT DISTINCT colonia, tipo_zona, tipo_asentamiento FROM CS_CodigosPostales_Colonias
     `;
 
+    // Agregar filtro por CP si se proporciona
+    if (cp) {
+      sql += ' WHERE cp = ?';
+    }
+
+    sql += ') ORDER BY colonia;';
+
     // Ejecutar la consulta
-    const resultados = await this.databaseService.query(sql);
+    const resultados = await this.databaseService.query(sql, cp ? [cp] : []);
     return resultados;
-  }
+}
 }
