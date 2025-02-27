@@ -57,20 +57,20 @@ export class DatosGeneralesComponent implements OnInit {
   constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService, private modalidadesService: ModalidadesService) { }
 
   myForm: FormGroup = this.fb.group({
-    curp: ['', [Validators.required, Validators.minLength(18)],],
-    modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    nombreCompleto: ['', [Validators.required, Validators.minLength(1)]],
-    telefono: ['', [Validators.minLength(10)]],
+    id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
+    curp: ['BADN980406HJCSVS00', [Validators.required, Validators.minLength(18)],],
+    nombre_Completo: ['Nestor Daniel Basave Davalos', [Validators.required, Validators.minLength(1)]],
+    telefono: ['3323724897', [Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['', [Validators.required, Validators.email]],
+    email: ['danessseguro@gmail.com', [Validators.required, Validators.email]],
     estado: ['Jalisco', [Validators.required, Validators.minLength(5)]],
     municipio: ['', [Validators.required, Validators.minLength(5)]],
-    codigoPostal: ['', [Validators.required, Validators.minLength(5)]],
-    Colonia: ['', [Validators.required, Validators.minLength(5)]],
-    tipoZona: ['', [Validators.required, Validators.minLength(5)]],
-    tipoAsentamiento: ['', [Validators.required, Validators.minLength(5)]],
-    domicilio: ['', [Validators.required, Validators.minLength(5)]],
-    cometarios: [''],
+    cp: ['', [Validators.required, Validators.minLength(5)]],
+    colonia: ['', [Validators.required, Validators.minLength(5)]],
+    tipo_zona: ['', [Validators.required, Validators.minLength(5)]],
+    tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
+    domicilio: ['Malinche 117', [Validators.required, Validators.minLength(5)]],
+    com_obs: ['Ninguno'],
   })
 
 
@@ -136,8 +136,8 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   disableInputs(): void {
-    this.myForm.get('tipoZona')?.disable();
-    this.myForm.get('tipoAsentamiento')?.disable();
+    this.myForm.get('tipo_zona')?.disable();
+    this.myForm.get('tipo_asentamiento')?.disable();
   }
 
   getMunicipios(): void {
@@ -159,7 +159,7 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   getColoniasByCP(): void {
-    const cp = this.myForm.get('codigoPostal')?.value;
+    const cp = this.myForm.get('cp')?.value;
 
     this.codigosPostalesService.consultarColonias(cp)
       .then((colonias) => {
@@ -198,11 +198,30 @@ export class DatosGeneralesComponent implements OnInit {
       ),
       error: ((error) => { })
     });
+  }
 
+  formatDate(date: string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    const day = ('0' + d.getDate()).slice(-2);
+    const month = ('0' + (d.getMonth() + 1)).slice(-2);
+    const year = d.getFullYear();
+    return `${year}-${month}-${day}` || '';
+  }
+
+  getMyForm(): any {
+    return {
+      ...this.myForm.value,
+      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      tiposAsentamiento: this.tipoAsentamiento,
+      tiposZona: this.tipoZona,
+      ciudad: this.myForm.get('municipio')?.value,
+    };
   }
 
   onSafe() {
     this.myForm.markAllAsTouched();
+
   }
 
   toUpperCaseCurp(event: Event): void {

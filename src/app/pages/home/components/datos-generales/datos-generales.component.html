@@ -17,12 +17,12 @@
 
         <mat-form-field class="basis-1/2 ">
           <mat-label>Modalidad</mat-label>
-          <mat-select formControlName="modalidad" [(ngModel)]="selectedValue">
+          <mat-select formControlName="id_modalidad" [(ngModel)]="selectedValue">
             <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
           </mat-select>
-          @if( isValidField('modalidad') ) {
+          @if( isValidField('id_modalidad') ) {
           <mat-error class="text-red-500">
-            {{ getFieldError("modalidad") }}
+            {{ getFieldError("id_modalidad") }}
           </mat-error>
           }
         </mat-form-field>
@@ -31,9 +31,9 @@
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-2/3">
           <mat-label>Nombre Completo: </mat-label>
-          <input matInput formControlName="nombreCompleto" maxlength="200" (input)="toUpperCaseName($event)">
-          <mat-error *ngIf="isValidField('nombreCompleto')" class="text-red-500">
-            {{ getFieldError("nombreCompleto") }}
+          <input matInput formControlName="nombre_Completo" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('nombre_Completo')" class="text-red-500">
+            {{ getFieldError("nombre_Completo") }}
           </mat-error>
         </mat-form-field>
         <mat-form-field class="basis-1/3">
@@ -90,11 +90,11 @@
 
         <mat-form-field class="basis-1/3">
           <mat-label>Código Postal</mat-label>
-          <mat-select formControlName="codigoPostal" (selectionChange)="getColoniasByCP()">
+          <mat-select formControlName="cp" (selectionChange)="getColoniasByCP()">
             <mat-option *ngFor="let cp of codigosPostales" [value]="cp.cp">{{cp.cp}}</mat-option>
           </mat-select>
-          <mat-error *ngIf="isValidField('codigoPostal')" class="text-red-500">
-            {{ getFieldError("codigoPostal") }}
+          <mat-error *ngIf="isValidField('cp')" class="text-red-500">
+            {{ getFieldError("cp") }}
           </mat-error>
         </mat-form-field>
 
@@ -103,11 +103,11 @@
       <div class="flex flex-row">
         <mat-form-field class="basis-full ">
           <mat-label>Colonia</mat-label>
-          <mat-select formControlName="Colonia" (selectionChange)="onColoniaChange($event.value)">
+          <mat-select formControlName="colonia" (selectionChange)="onColoniaChange($event.value)">
             <mat-option *ngFor="let colonia of colonias" [value]="colonia.colonia">{{ colonia.colonia }}</mat-option>
           </mat-select>
-          <mat-error *ngIf="isValidField('Colonia')" class="text-red-500">
-            {{ getFieldError("Colonia") }}
+          <mat-error *ngIf="isValidField('colonia')" class="text-red-500">
+            {{ getFieldError("colonia") }}
           </mat-error>
         </mat-form-field>
       </div>
@@ -116,11 +116,11 @@
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-1/2">
           <mat-label>Tipo Asentamiento</mat-label>
-          <input matInput [value]="tipoAsentamiento" formControlName="tipoAsentamiento">
+          <input matInput [value]="tipoAsentamiento" formControlName="tipo_asentamiento">
         </mat-form-field>
         <mat-form-field class="basis-1/2">
           <mat-label>Tipo Zona</mat-label>
-          <input matInput [value]="tipoZona" formControlName="tipoZona">
+          <input matInput [value]="tipoZona" formControlName="tipo_zona">
         </mat-form-field>
       </div>
 
@@ -138,7 +138,7 @@
       <div class="flex flex-row">
         <mat-form-field class="basis-full">
           <mat-label>Comentarios y/o observaciones: </mat-label>
-          <input matInput formControlName="cometarios">
+          <input matInput formControlName="com_obs">
           @if( isValidField('domicilio') ) {
           <mat-error class="text-red-500">
             {{ getFieldError("domicilio") }}
