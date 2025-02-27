@@ -5,6 +5,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
+import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface';
+import { HomeService } from '../../home.service';
+import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
+import { NetworkStatusService } from '../../../../services/network-status.service';
+import { provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { ModalidadesService } from '../../../../services/CRUD/modalidades.service';
 import {
   FormControl,
   FormGroupDirective,
@@ -15,51 +22,55 @@ import {
   FormGroup,
   FormBuilder,
 } from '@angular/forms';
-import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface';
-import { HomeService } from '../../home.service';
-import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
-import { NetworkStatusService } from '../../../../services/network-status.service';
-import {DateAdapter, MAT_DATE_FORMATS, provideNativeDateAdapter} from '@angular/material/core';
-import {MatCalendar, MatDatepickerModule} from '@angular/material/datepicker';
-
-interface Food {
-  value: string;
-  viewValue: string;
-}
-
 
 @Component({
   selector: 'datosGeneralesComponent',
   providers: [provideNativeDateAdapter()],
-  imports: [MatDividerModule, MatInputModule, MatFormFieldModule, MatSelectModule, CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, MatInput, MatDatepickerModule, ],
+  imports: [
+    MatDividerModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatIconModule,
+    MatInput,
+    MatDatepickerModule,
+  ],
   templateUrl: './datos-generales.component.html',
   styleUrl: './datos-generales.component.scss'
 })
 export class DatosGeneralesComponent implements OnInit {
-
 
   private fb = inject(FormBuilder);
   estados: string[] = [];
   ciudades: string[] = [];
   tiposAsentamiento: string[] = [];
   tiposZona: string[] = [];
-  colonias: string[] = [];
+  colonias: any[] = [];
+  modalidades: any[] = [];
 
-  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService) { }
+  tipoAsentamiento: string = '';
+  tipoZona: string = '';
+
+  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService, private modalidadesService: ModalidadesService) { }
 
   myForm: FormGroup = this.fb.group({
     curp: ['', [Validators.required, Validators.minLength(18)],],
     modalidad: ['', [Validators.required, Validators.minLength(5)]],
     nombreCompleto: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.minLength(10)]],
+    fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['', [Validators.required, Validators.email]],
     estado: ['Jalisco', [Validators.required, Validators.minLength(5)]],
     municipio: ['', [Validators.required, Validators.minLength(5)]],
-    codigoPostal: [0, [Validators.required, Validators.minLength(5)]],
+    codigoPostal: ['', [Validators.required, Validators.minLength(5)]],
     Colonia: ['', [Validators.required, Validators.minLength(5)]],
     tipoZona: ['', [Validators.required, Validators.minLength(5)]],
     tipoAsentamiento: ['', [Validators.required, Validators.minLength(5)]],
     domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    cometarios: [''],
   })
 
 
@@ -112,14 +123,6 @@ export class DatosGeneralesComponent implements OnInit {
   municipios: any[] = [];
   municipio: string = '';
 
-  foods: Food[] = [
-    { value: 'steak-0', viewValue: 'Steak' },
-    { value: 'pizza-1', viewValue: 'Pizza' },
-    { value: 'tacos-2', viewValue: 'Tacos' },
-  ];
-
-
-
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
 
@@ -127,6 +130,15 @@ export class DatosGeneralesComponent implements OnInit {
 
     this.getCodigosPostales({});
     this.getMunicipios();
+    this.getModalidades();
+
+    // Llama al método para inhabilitar los inputs
+    this.disableInputs();
+  }
+
+  disableInputs(): void {
+    this.myForm.get('tipoZona')?.disable();
+    this.myForm.get('tipoAsentamiento')?.disable();
   }
 
   getMunicipios(): void {
@@ -147,6 +159,35 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al consultar códigos postales:', error));
   }
 
+  getColoniasByCP(): void {
+    const cp = this.myForm.get('codigoPostal')?.value;
+    console.log('cp', cp);
+
+    this.codigosPostalesService.consultarColonias(cp)
+      .then((colonias) => {
+        this.colonias = colonias;
+        console.log('colonias', this.colonias);
+      })
+      .catch((error) => console.error('Error al obtener colonias:', error));
+  }
+
+  getModalidades(): void {
+    this.modalidadesService.consultarModalidades()
+    .then(modalidades => {
+      this.modalidades = modalidades;
+      console.log('modalidades', modalidades);
+    })
+    .catch(error => console.error('Error al obtener modalidades:', error));
+  }
+
+  onColoniaChange(colonia: string): void {
+    const selectedColonia = this.colonias.find(item => item.colonia === colonia);
+    if (selectedColonia) {
+      this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
+      this.tipoZona = selectedColonia.tipo_zona;
+    }
+  }
+
   syncDataBase(): void {
     this.codigosPostalesService.getCodigosPostales().subscribe({
       next: ((response) => {
@@ -154,9 +195,41 @@ export class DatosGeneralesComponent implements OnInit {
       }),
       error: ((error) => { })
     });
+    this.modalidadesService.getModalidades().subscribe({
+      next: ((response) => {
+        console.log('response', response);
+        this.modalidadesService.syncLocalDataBase(response.data)
+      }
+    ),
+    error: ((error) => {})
+    });
+
   }
 
   onSafe() {
     console.log('safe');
+    this.myForm.markAllAsTouched();
+    console.log(this.myForm.value);
+  }
+
+  toUpperCaseCurp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.myForm.get('curp')?.setValue(input.value);
+  }
+  toUpperCaseName(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.myForm.get('nombreCompleto')?.setValue(input.value);
+  }
+
+  capitalizeWords(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = this.toTitleCase(input.value);
+    this.myForm.get('nombreCompleto')?.setValue(input.value);
+  }
+
+  toTitleCase(str: string): string {
+    return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   }
 }
