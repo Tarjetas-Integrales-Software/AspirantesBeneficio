@@ -12,6 +12,6 @@ import { NetworkStatusComponent } from './components/network-status/network-stat
 })
 export class AppComponent {
   title = 'Aspirantes';
-  
+
   constructor() { }
 }

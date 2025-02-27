@@ -22,7 +22,7 @@ export class CodigosPostalesService {
     for (const item of datos) {
       const sql = `
         INSERT INTO CS_CodigosPostales_Colonias (
-          estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, 
+          estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
@@ -82,12 +82,12 @@ export class CodigosPostalesService {
 
   async consultarMunicipios(): Promise<{ id: number; municipio: string }[]> {
     const sql = `
-      SELECT 
-        ROW_NUMBER() OVER (ORDER BY municipio) AS id, 
-        municipio 
-      FROM 
+      SELECT
+        ROW_NUMBER() OVER (ORDER BY municipio) AS id,
+        municipio
+      FROM
         (SELECT DISTINCT municipio FROM CS_CodigosPostales_Colonias)
-      ORDER BY 
+      ORDER BY
         municipio;
     `;
 
@@ -98,12 +98,12 @@ export class CodigosPostalesService {
 
   async consultarColonias(cp?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
     let sql = `
-      SELECT 
-        ROW_NUMBER() OVER (ORDER BY colonia) AS id, 
-        colonia, 
-        tipo_zona, 
-        tipo_asentamiento 
-      FROM 
+      SELECT
+        ROW_NUMBER() OVER (ORDER BY colonia) AS id,
+        colonia,
+        tipo_zona,
+        tipo_asentamiento
+      FROM
         (SELECT DISTINCT colonia, tipo_zona, tipo_asentamiento FROM CS_CodigosPostales_Colonias
     `;
 
@@ -116,6 +116,7 @@ export class CodigosPostalesService {
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql, cp ? [cp] : []);
+    console.log('resultados', resultados);
     return resultados;
-}
+  }
 }

@@ -22,15 +22,14 @@ export class ModalidadesService {
     for (const item of datos) {
       const sql = `
         INSERT INTO cat_ct_modalidades (
-          id_tipo_beneficio, nombre, descripcion, imagen,
+          id_tipo_beneficio, nombre, descripcion,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
         item.id_tipo_beneficio,
         item.nombre,
         item.descripcion,
-        item.imagen,
         item.created_id,
         item.updated_id,
         item.deleted_id,
@@ -44,7 +43,7 @@ export class ModalidadesService {
   }
 
   async consultarModalidades(): Promise<{ id: number; modalidad: string }[]> {
-    const sql = 'SELECT id, modalidad FROM cat_ct_modalidades ORDER BY modalidad;';
+    const sql = 'SELECT id, nombre FROM cat_ct_modalidades ORDER BY nombre;';
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql);

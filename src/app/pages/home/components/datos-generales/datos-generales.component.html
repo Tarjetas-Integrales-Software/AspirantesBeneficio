@@ -1,29 +1,47 @@
 <div class="bg-gray-100 p-0">
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
-    <h2 class="text-2xl">Datos Generales</h2>
+    <h2 class="text-3xl">Datos Generales</h2>
 
-    <form class="my-6">
+    <form [formGroup]="myForm" class="my-6">
 
       <div class="flex flex-row gap-2">
+
         <mat-form-field class="basis-1/2 ">
           <mat-label>CURP: </mat-label>
-          <input matInput>
+          <input formControlName="curp" matInput maxlength="18" (input)="toUpperCaseCurp($event)">
+          <mat-error *ngIf="isValidField('curp')" class="text-red-500">
+            {{ getFieldError("curp") }}
+          </mat-error>
         </mat-form-field>
+
         <mat-form-field class="basis-1/2 ">
           <mat-label>Modalidad</mat-label>
-          <mat-select [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
+          <mat-select formControlName="modalidad" [(ngModel)]="selectedValue">
+            <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad">{{modalidad}}</mat-option>
           </mat-select>
+          @if( isValidField('modalidad') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("modalidad") }}
+          </mat-error>
+          }
         </mat-form-field>
       </div>
 
-      <div class="flex flex-row">
-        <mat-form-field class="basis-full">
+      <div class="flex flex-row gap-2">
+        <mat-form-field class="basis-2/3">
           <mat-label>Nombre Completo: </mat-label>
-          <input matInput>
+          <input matInput formControlName="nombreCompleto" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('nombreCompleto')" class="text-red-500">
+            {{ getFieldError("nombreCompleto") }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="basis-1/3">
+          <mat-label>Fecha de nacimiento</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="fecha_nacimiento">
+          <mat-hint>DD/MM/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker ></mat-datepicker>
         </mat-form-field>
       </div>
 
@@ -31,84 +49,103 @@
         <mat-form-field class="basis-1/2">
           <mat-label>Telefono</mat-label>
           <span matTextPrefix>+52 &nbsp;</span>
-          <input type="tel" matInput placeholder="333-555-1234">
+          <input type="tel" matInput formControlName="telefono" placeholder="333-555-1234" maxlength="10">
           <mat-icon matSuffix>mode_edit</mat-icon>
+          @if( isValidField('telefono') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("telefono") }}
+          </mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field class="basis-1/2">
           <mat-label>Correo Electronico</mat-label>
-          <input type="email" matInput [formControl]="emailFormControl" [errorStateMatcher]="matcher"
-            placeholder="Ej. usuario@ejemplo.com">
-          <!-- <mat-hint>Errors appear instantly!</mat-hint> -->
-          @if (emailFormControl.hasError('email') && !emailFormControl.hasError('required')) {
-          <mat-error>Por favor introduce un correo electronico valido</mat-error>
-          }
-          @if (emailFormControl.hasError('required')) {
-          <mat-error>Correo Electronico es <strong>requerido</strong></mat-error>
+          <input type="email" matInput formControlName="email" placeholder="Ej. usuario@ejemplo.com">
+          @if( isValidField('email') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("email") }}
+          </mat-error>
           }
         </mat-form-field>
       </div>
 
       <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/3 ">
-          <mat-label>Estado</mat-label>
-          <mat-select [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
 
-        <mat-form-field class="basis-1/3">
+
+        <mat-form-field class="basis-2/3">
           <mat-label>Municipio</mat-label>
-          <mat-select [(ngModel)]="municipio" name="municipio" (selectionChange)="getCodigosPostales({municipio: $event.value})">
+          <mat-select [(ngModel)]="municipio" name="municipio"
+            (selectionChange)="getCodigosPostales({municipio: $event.value})">
             <mat-option *ngFor="let municipio of municipios" [value]="municipio.municipio">
               {{ municipio.municipio }}
             </mat-option>
           </mat-select>
+          @if( isValidField('municipio') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("municipio") }}
+          </mat-error>
+          }
         </mat-form-field>
 
 
-        <mat-form-field class="basis-1/3 ">
+        <mat-form-field class="basis-1/3">
           <mat-label>Código Postal</mat-label>
-          <mat-select [(ngModel)]="selectedValue" name="cp">
-            @for (cp of codigosPostales; track cp) {
-            <mat-option [value]="cp.cp">{{cp.cp}}</mat-option>
-            }
+          <mat-select formControlName="codigoPostal" (selectionChange)="getColoniasByCP()">
+            <mat-option *ngFor="let cp of codigosPostales" [value]="cp.cp">{{cp.cp}}</mat-option>
           </mat-select>
+          <mat-error *ngIf="isValidField('codigoPostal')" class="text-red-500">
+            {{ getFieldError("codigoPostal") }}
+          </mat-error>
         </mat-form-field>
+
       </div>
 
       <div class="flex flex-row">
         <mat-form-field class="basis-full ">
           <mat-label>Colonia</mat-label>
-          <mat-select [(ngModel)]="selectedValue" name="food">
-            @for (food of foods; track food) {
-            <mat-option [value]="food.value">{{food.viewValue}}</mat-option>
-            }
+          <mat-select formControlName="Colonia" (selectionChange)="onColoniaChange($event.value)">
+            <mat-option *ngFor="let colonia of colonias" [value]="colonia.colonia">{{ colonia.colonia }}</mat-option>
           </mat-select>
+          <mat-error *ngIf="isValidField('Colonia')" class="text-red-500">
+            {{ getFieldError("Colonia") }}
+          </mat-error>
         </mat-form-field>
       </div>
 
       <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-1/2">
-          <mat-label>Tipo Zona</mat-label>
-          <input matInput>
+          <mat-label>Tipo Asentamiento</mat-label>
+          <input matInput [value]="tipoAsentamiento" formControlName="tipoAsentamiento">
         </mat-form-field>
         <mat-form-field class="basis-1/2">
-          <mat-label>Tipo Asentamiento</mat-label>
-          <input matInput>
+          <mat-label>Tipo Zona</mat-label>
+          <input matInput [value]="tipoZona" formControlName="tipoZona">
         </mat-form-field>
       </div>
 
       <div class="flex flex-row">
         <mat-form-field class="basis-full">
           <mat-label>Domicilio: </mat-label>
-          <input matInput>
+          <input matInput formControlName="domicilio">
+          @if( isValidField('domicilio') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("domicilio") }}
+          </mat-error>
+          }
         </mat-form-field>
       </div>
-
+      <div class="flex flex-row">
+        <mat-form-field class="basis-full">
+          <mat-label>Comentarios y/o observaciones: </mat-label>
+          <input matInput formControlName="cometarios">
+          @if( isValidField('domicilio') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("domicilio") }}
+          </mat-error>
+          }
+        </mat-form-field>
+      </div>
 
     </form>
 
