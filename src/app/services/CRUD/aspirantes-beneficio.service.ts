@@ -20,11 +20,19 @@ export class AspirantesBeneficioService {
     for (const item of datos) {
       const sql = `
         INSERT OR REPLACE INTO ct_aspirantes_beneficio (
+          id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
-          created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          domicilio, com_obs, fecha_evento, created_id, updated_id, deleted_id,
+          created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
+        item.id_modalidad,
+        item.curp,
+        item.nombre_completo,
+        item.telefono,
+        item.email,
+        item.fecha_nacimiento,
         item.estado,
         item.municipio,
         item.ciudad,
@@ -32,6 +40,9 @@ export class AspirantesBeneficioService {
         item.colonia,
         item.tipo_asentamiento,
         item.tipo_zona,
+        item.domicilio,
+        item.com_obs,
+        item.fecha_evento,
         item.created_id,
         item.updated_id,
         item.deleted_id,
