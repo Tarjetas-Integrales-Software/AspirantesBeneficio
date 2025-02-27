@@ -22,6 +22,7 @@ import {
   FormGroup,
   FormBuilder,
 } from '@angular/forms';
+import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -54,12 +55,12 @@ export class DatosGeneralesComponent implements OnInit {
   tipoAsentamiento: string = '';
   tipoZona: string = '';
 
-  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService, private modalidadesService: ModalidadesService) { }
+  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService, private modalidadesService: ModalidadesService, private aspirantesBeneficioService: AspirantesBeneficioService) { }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
     curp: ['BADN980406HJCSVS00', [Validators.required, Validators.minLength(18)],],
-    nombre_Completo: ['Nestor Daniel Basave Davalos', [Validators.required, Validators.minLength(1)]],
+    nombre_completo: ['Nestor Daniel Basave Davalos', [Validators.required, Validators.minLength(1)]],
     telefono: ['3323724897', [Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['danessseguro@gmail.com', [Validators.required, Validators.email]],
@@ -209,9 +210,11 @@ export class DatosGeneralesComponent implements OnInit {
     return `${year}-${month}-${day}` || '';
   }
 
-  getMyForm(): any {
+  async getMyForm(): Promise<any> {
+    const lastId = await this.aspirantesBeneficioService.getLastId();
     return {
       ...this.myForm.value,
+      id: lastId + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       tiposAsentamiento: this.tipoAsentamiento,
       tiposZona: this.tipoZona,

@@ -1,11 +1,59 @@
-import { Injectable } from '@angular/core';
-import { DatabaseService } from './../database.service';
+import { Injectable, inject } from '@angular/core';
+import { environment } from './../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { DatabaseService } from '../../services/database.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AspirantesBeneficioService {
-  constructor(private databaseService: DatabaseService) {}
+  private http = inject(HttpClient);
+
+  constructor(private databaseService: DatabaseService) { }
+
+  getAspirantesBeneficio(): Observable<any> {
+    return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
+  }
+
+  async syncLocalDataBase(datos: any[]): Promise<void> {
+    for (const item of datos) {
+      const sql = `
+        INSERT OR REPLACE INTO ct_aspirantes_beneficio (
+          id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+          estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
+          domicilio, com_obs, fecha_evento, created_id, updated_id, deleted_id,
+          created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const params = [
+        item.id_modalidad,
+        item.curp,
+        item.nombre_completo,
+        item.telefono,
+        item.email,
+        item.fecha_nacimiento,
+        item.estado,
+        item.municipio,
+        item.ciudad,
+        item.cp,
+        item.colonia,
+        item.tipo_asentamiento,
+        item.tipo_zona,
+        item.domicilio,
+        item.com_obs,
+        item.fecha_evento,
+        item.created_id,
+        item.updated_id,
+        item.deleted_id,
+        item.created_at,
+        item.updated_at,
+        item.deleted_at,
+      ];
+
+      await this.databaseService.execute(sql, params);
+    }
+  }
 
   // Crear un nuevo aspirante
   async crearAspirante(aspirante: {
@@ -77,6 +125,7 @@ export class AspirantesBeneficioService {
   async actualizarAspirante(
     id: number,
     aspirante: {
+      id: number;
       id_modalidad?: number;
       curp?: string;
       nombre_completo?: string;
@@ -186,11 +235,34 @@ export class AspirantesBeneficioService {
   // Eliminar un aspirante por ID (soft delete)
   async eliminarAspirante(id: number, deleted_id: number, deleted_at: string): Promise<any> {
     const sql = `
-      UPDATE ct_aspirantes_beneficio 
-      SET deleted_id = ?, deleted_at = ? 
+      UPDATE ct_aspirantes_beneficio
+      SET deleted_id = ?, deleted_at = ?
       WHERE id = ?;
     `;
     const params = [deleted_id, deleted_at, id];
     return await this.databaseService.execute(sql, params);
+  }
+
+  async getLastId(): Promise<number> {
+    try {
+      // Consulta SQL para obtener el último id
+      const sql = `SELECT id FROM ct_aspirantes_beneficio ORDER BY id DESC LIMIT 1`;
+
+      // Ejecutar la consulta
+      const result = await this.databaseService.execute(sql);
+
+      // Verificar si se obtuvieron resultados
+      if (result.rows.length > 0) {
+        // Obtener el id de la primera fila
+        const lastId = result.rows[0].id;
+        return parseInt(lastId, 10); // Convertir a número entero
+      } else {
+        // Si no hay registros, devolver 0 o un valor por defecto
+        return 0;
+      }
+    } catch (error) {
+      console.error('Error al obtener el último id:', error);
+      throw error; // Relanzar el error para manejarlo en el llamador
+    }
   }
 }

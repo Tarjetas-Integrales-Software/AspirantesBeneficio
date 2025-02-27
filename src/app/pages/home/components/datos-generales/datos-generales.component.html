@@ -31,9 +31,9 @@
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-2/3">
           <mat-label>Nombre Completo: </mat-label>
-          <input matInput formControlName="nombre_Completo" maxlength="200" (input)="toUpperCaseName($event)">
-          <mat-error *ngIf="isValidField('nombre_Completo')" class="text-red-500">
-            {{ getFieldError("nombre_Completo") }}
+          <input matInput formControlName="nombre_completo" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('nombre_completo')" class="text-red-500">
+            {{ getFieldError("nombre_completo") }}
           </mat-error>
         </mat-form-field>
         <mat-form-field class="basis-1/3">

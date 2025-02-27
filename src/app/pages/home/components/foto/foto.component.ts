@@ -117,13 +117,15 @@ export class FotoComponent implements OnInit {
       const form = this.datosGeneralesComponent.getMyForm();
       console.log(form);
 
-      this.aspirantesBeneficioService.crearAspirante(form).then(() => {
-        console.log("Aspirante creado");
-      }
-      ).catch((error) => {
-        console.error("Error al crear aspirante:", error);
-      }
-      );
+      this.datosGeneralesComponent.getMyForm().then((form) => {
+        this.aspirantesBeneficioService.crearAspirante(form).then(() => {
+          console.log("Aspirante creado");
+        }).catch((error) => {
+          console.error("Error al crear aspirante:", error);
+        });
+      }).catch((error) => {
+        console.error("Error al obtener el formulario:", error);
+      });
 
     } else {
       this.datosGeneralesComponent.myForm.markAllAsTouched();
