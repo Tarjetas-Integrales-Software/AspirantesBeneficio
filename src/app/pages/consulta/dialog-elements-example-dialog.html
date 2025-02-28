@@ -1,0 +1,101 @@
+<h2 mat-dialog-title>Aspirante de beneficio</h2>
+<mat-dialog-content>
+    <table>
+        <tr>
+            <td><strong>ID</strong></td>
+            <td>{{ aspiranteBeneficio?.id }}</td>
+        </tr>
+        <tr>
+            <td><strong>Modalidad</strong></td>
+            <td>{{ aspiranteBeneficio?.id_modalidad }}</td>
+        </tr>
+        <tr>
+            <td><strong>CURP</strong></td>
+            <td>{{ aspiranteBeneficio?.curp }}</td>
+        </tr>
+        <tr>
+            <td><strong>Nombre Completo</strong></td>
+            <td>{{ aspiranteBeneficio?.nombre_completo }}</td>
+        </tr>
+        <tr>
+            <td><strong>Teléfono</strong></td>
+            <td>{{ aspiranteBeneficio?.telefono }}</td>
+        </tr>
+        <tr>
+            <td><strong>Email</strong></td>
+            <td>{{ aspiranteBeneficio?.email }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha de Nacimiento</strong></td>
+            <td>{{ aspiranteBeneficio?.fecha_nacimiento }}</td>
+        </tr>
+        <tr>
+            <td><strong>Estado</strong></td>
+            <td>{{ aspiranteBeneficio?.estado }}</td>
+        </tr>
+        <tr>
+            <td><strong>Municipio</strong></td>
+            <td>{{ aspiranteBeneficio?.municipio }}</td>
+        </tr>
+        <tr>
+            <td><strong>Ciudad</strong></td>
+            <td>{{ aspiranteBeneficio?.ciudad }}</td>
+        </tr>
+        <tr>
+            <td><strong>Código Postal</strong></td>
+            <td>{{ aspiranteBeneficio?.cp }}</td>
+        </tr>
+        <tr>
+            <td><strong>Colonia</strong></td>
+            <td>{{ aspiranteBeneficio?.colonia }}</td>
+        </tr>
+        <tr>
+            <td><strong>Tipo de Asentamiento</strong></td>
+            <td>{{ aspiranteBeneficio?.tipo_asentamiento }}</td>
+        </tr>
+        <tr>
+            <td><strong>Tipo de Zona</strong></td>
+            <td>{{ aspiranteBeneficio?.tipo_zona }}</td>
+        </tr>
+        <tr>
+            <td><strong>Domicilio</strong></td>
+            <td>{{ aspiranteBeneficio?.domicilio }}</td>
+        </tr>
+        <tr>
+            <td><strong>Observaciones</strong></td>
+            <td>{{ aspiranteBeneficio?.com_obs || 'Sin observaciones' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha del Evento</strong></td>
+            <td>{{ aspiranteBeneficio?.fecha_evento }}</td>
+        </tr>
+        <tr>
+            <td><strong>Creado por ID</strong></td>
+            <td>{{ aspiranteBeneficio?.created_id }}</td>
+        </tr>
+        <tr>
+            <td><strong>Actualizado por ID</strong></td>
+            <td>{{ aspiranteBeneficio?.updated_id_id || 'No actualizado' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Eliminado por ID</strong></td>
+            <td>{{ aspiranteBeneficio?.deleted_id || 'No eliminado' }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha de Creación</strong></td>
+            <td>{{ aspiranteBeneficio?.created_at }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha de Actualización</strong></td>
+            <td>{{ aspiranteBeneficio?.updated_at }}</td>
+        </tr>
+        <tr>
+            <td><strong>Fecha de Eliminación</strong></td>
+            <td>{{ aspiranteBeneficio?.deleted_at || 'No eliminado' }}</td>
+        </tr>
+    </table>
+
+</mat-dialog-content>
+<mat-dialog-actions>
+    <button mat-button mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>
