@@ -211,7 +211,8 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   async getMyForm(): Promise<any> {
-    const lastId = await this.aspirantesBeneficioService.getLastId();
+    const lastId = await this.aspirantesBeneficioService.getLastId() || 0;
+
     return {
       ...this.myForm.value,
       id: lastId + 1,

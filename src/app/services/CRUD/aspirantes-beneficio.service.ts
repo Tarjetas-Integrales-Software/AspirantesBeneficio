@@ -20,13 +20,14 @@ export class AspirantesBeneficioService {
     for (const item of datos) {
       const sql = `
         INSERT OR REPLACE INTO ct_aspirantes_beneficio (
-          id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+          id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           domicilio, com_obs, fecha_evento, created_id, updated_id, deleted_id,
           created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
+        item.id,
         item.id_modalidad,
         item.curp,
         item.nombre_completo,
@@ -57,6 +58,7 @@ export class AspirantesBeneficioService {
 
   // Crear un nuevo aspirante
   async crearAspirante(aspirante: {
+    id: number;
     id_modalidad: number;
     curp: string;
     nombre_completo: string;
@@ -78,12 +80,13 @@ export class AspirantesBeneficioService {
   }): Promise<any> {
     const sql = `
       INSERT OR REPLACE INTO ct_aspirantes_beneficio (
-        id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento, estado,
+        id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento, estado,
         municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
         fecha_evento, created_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const params = [
+      aspirante.id,
       aspirante.id_modalidad,
       aspirante.curp,
       aspirante.nombre_completo,
@@ -243,26 +246,20 @@ export class AspirantesBeneficioService {
     return await this.databaseService.execute(sql, params);
   }
 
-  async getLastId(): Promise<number> {
+  async getLastId(): Promise<number | null> {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM ct_aspirantes_beneficio ORDER BY id DESC LIMIT 1`;
-
-      // Ejecutar la consulta
-      const result = await this.databaseService.execute(sql);
-
-      // Verificar si se obtuvieron resultados
-      if (result.rows.length > 0) {
-        // Obtener el id de la primera fila
-        const lastId = result.rows[0].id;
-        return parseInt(lastId, 10); // Convertir a número entero
-      } else {
-        // Si no hay registros, devolver 0 o un valor por defecto
-        return 0;
-      }
+  
+      // Usar query en lugar de execute
+      const result = await this.databaseService.query(sql);
+  
+      // Extraer el id si existe, si no, devolver null
+      return result.length > 0 ? result[0].id : null;
     } catch (error) {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador
     }
   }
+  
 }
