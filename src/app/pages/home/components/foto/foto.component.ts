@@ -1,6 +1,10 @@
-import { Component, type OnInit, ViewChild, type ElementRef } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter } from "@angular/core"
 import { CommonModule } from "@angular/common"
-import { FormsModule } from "@angular/forms"
+import { FormGroup, FormsModule } from "@angular/forms"
+import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
+import { Aspirantes } from "../../interfaces/aspirantes.interface";
+import { get } from "http";
+import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
 
 @Component({
   selector: 'fotoComponent',
@@ -11,6 +15,10 @@ import { FormsModule } from "@angular/forms"
 export class FotoComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
+  @Output() submitForm = new EventEmitter<void>();
+  @Input() datosGeneralesComponent!: DatosGeneralesComponent;
+
+  constructor(private aspirantesBeneficioService: AspirantesBeneficioService) { }
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -82,15 +90,48 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  register() {
-    console.log("Registering with captured photo")
-    // Implement your registration logic here
-  }
 
   toggleImageFormat() {
     this.imageFormat = this.imageFormat === "webp" ? "jpeg" : "webp"
     if (this.capturedImage) {
       this.capturePhoto() // Re-capture with new format
     }
+  }
+
+  mostrarErrores(form: FormGroup) {
+    Object.keys(form.controls).forEach(key => {
+      const control = form.get(key);
+      const controlErrors = control ? control.errors : null;
+      if (controlErrors != null) {
+        Object.keys(controlErrors).forEach(keyError => {
+          console.log('Error en el control ' + key + ': ' + keyError + ', valor: ', controlErrors[keyError]);
+        });
+      }
+    });
+  }
+
+  onSubmit(): void {
+    if (this.datosGeneralesComponent.myForm.valid) {
+      this.datosGeneralesComponent.onSafe();
+
+      const form = this.datosGeneralesComponent.getMyForm();
+      console.log(form);
+
+      this.datosGeneralesComponent.getMyForm().then((form) => {
+        this.aspirantesBeneficioService.crearAspirante(form).then(() => {
+          console.log("Aspirante creado");
+        }).catch((error) => {
+          console.error("Error al crear aspirante:", error);
+        });
+      }).catch((error) => {
+        console.error("Error al obtener el formulario:", error);
+      });
+
+    } else {
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      console.log("Formulario no válido");
+      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+    }
+    this.submitForm.emit();
   }
 }

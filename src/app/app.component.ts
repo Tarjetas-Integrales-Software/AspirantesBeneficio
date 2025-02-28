@@ -3,8 +3,6 @@ import { RouterOutlet } from '@angular/router';
 import { MenuComponent } from './shared/components/menu/menu.component';
 import { FooterComponent } from './shared/components/footer/footer.component';
 import { NetworkStatusComponent } from './components/network-status/network-status.component';
-import { NetworkStatusService } from './services/network-status.service';
-import { CodigosPostalesService } from './services/CRUD/codigos-postales.service';
 
 @Component({
   selector: 'app-root',
@@ -12,25 +10,8 @@ import { CodigosPostalesService } from './services/CRUD/codigos-postales.service
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'Aspirantes';
 
-  constructor(private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService) {
-
-  }
-
-  ngOnInit(): void {
-    const online = this.networkStatusService.checkConnection();
-
-    if (online) this.syncDataBase();
-  }
-
-  syncDataBase(): void {
-    this.codigosPostalesService.getGeneros().subscribe({
-      next: ((response) => {
-        this.codigosPostalesService.syncLocalDataBase(response.data)
-      }),
-      error: ((error) => { })
-    });
-  }
+  constructor() { }
 }

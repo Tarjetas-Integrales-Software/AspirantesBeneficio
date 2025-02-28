@@ -51,6 +51,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^10.0.1",
     "rxjs": "~7.8.0",
+    "sweetalert2": "^11.17.2",
     "tslib": "^2.3.0",
     "update-electron-app": "^3.1.1",
     "zone.js": "~0.15.0"
@@ -72,6 +73,7 @@
     "@types/node": "^22.13.5",
     "autoprefixer": "^10.4.20",
     "electron": "^34.2.0",
+    "electron-rebuild": "^3.2.9",
     "jasmine-core": "~5.5.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

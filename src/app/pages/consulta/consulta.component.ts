@@ -1,76 +1,59 @@
-import {AfterViewInit, Component, ViewChild} from '@angular/core';
-import {MatPaginator, MatPaginatorModule} from '@angular/material/paginator';
-import {MatSort, MatSortModule} from '@angular/material/sort';
-import {MatTableDataSource, MatTableModule} from '@angular/material/table';
-import {MatInputModule} from '@angular/material/input';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatIconModule} from '@angular/material/icon';
-import {MatButtonModule} from '@angular/material/button';
+import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core';
+import { DatePipe, JsonPipe } from '@angular/common';
 
-export interface UserData {
+import Swal from 'sweetalert2'
+
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogTitle,
+} from '@angular/material/dialog';
+
+import { NetworkStatusService } from '../../services/network-status.service';
+import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
+
+export interface AspiranteBeneficio {
   id: string;
   name: string;
   progress: string;
   fruit: string;
 }
 
-/** Constants used to fill up our data base. */
-const FRUITS: string[] = [
-  'blueberry',
-  'lychee',
-  'kiwi',
-  'mango',
-  'peach',
-  'lime',
-  'pomegranate',
-  'pineapple',
-];
-const NAMES: string[] = [
-  'Juan Carlos Pérez Gómez',
-  'María Fernanda García López',
-  'José Antonio Hernández Martínez',
-  'Ana Isabel Martínez Rodríguez',
-  'Luis Alberto López Sánchez',
-  'Carmen Teresa González Ramírez',
-  'Miguel Ángel Rodríguez Flores',
-  'Laura Patricia Sánchez Torres',
-  'Carlos Eduardo Ramírez Rivera',
-  'Elena María Flores Morales',
-  'Jorge Luis Torres Ortiz',
-  'Patricia Elena Rivera Cruz',
-  'Ricardo Javier Morales Reyes',
-  'Sandra Beatriz Ortiz Mendoza',
-  'Fernando José Cruz Romero',
-  'Marta Alejandra Reyes Herrera',
-  'Alberto Daniel Mendoza Vargas',
-  'Lucía Gabriela Romero Pérez',
-  'Francisco Javier Herrera García',
-  'Gabriela Sofía Vargas López',
-];
-
-/**
- * @title Data table with sorting, pagination, and filtering.
- */
-
 @Component({
   selector: 'consultaPage',
-  imports: [MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
+  imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
   templateUrl: './consulta.component.html',
-  styleUrl: './consulta.component.scss'
+  styleUrl: './consulta.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConsultaComponent implements AfterViewInit {
-  displayedColumns: string[] = ['id', 'name', 'progress', 'fruit'];
-  dataSource: MatTableDataSource<UserData>;
+export class ConsultaComponent implements OnInit, AfterViewInit {
+  displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
+  dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor() {
-    // Create 100 users
-    const users = Array.from({length: 100}, (_, k) => createNewUser(k + 1));
+  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService) {
+    this.dataSource = new MatTableDataSource();
+  }
 
-    // Assign the data to the data source for the table to render
-    this.dataSource = new MatTableDataSource(users);
+  ngOnInit(): void {
+    const online = this.networkStatusService.checkConnection();
+
+    if (online) { }
+
+    this.getAspirantesBeneficio();
   }
 
   ngAfterViewInit() {
@@ -86,20 +69,80 @@ export class ConsultaComponent implements AfterViewInit {
       this.dataSource.paginator.firstPage();
     }
   }
+
+  getAspirantesBeneficio(): void {
+    this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe({
+      next: ((response) => {
+        this.dataSource.data = response.data;
+      }),
+      error: ((error) => { })
+    });
+  }
+
+  deleteAspiranteBeneficio(id: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Estas seguro de eliminar el registro?',
+      showConfirmButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed)
+        this.aspirantesBeneficioService.deleteAspiranteBeneficio(id).subscribe({
+          next: ((response) => {
+            Swal.fire('Eliminado con éxito!', '', 'success')
+            this.getAspirantesBeneficio();
+          }),
+          error: ((error) => { })
+        });
+    })
+
+  }
+
+  openDialog(id: number) {
+    this.dialog.open(DialogElementsExampleDialog, {
+      data: { id: id }
+    });
+  }
 }
 
-/** Builds and returns a new User. */
-function createNewUser(id: number): UserData {
-  const name =
-    NAMES[Math.round(Math.random() * (NAMES.length - 1))] +
-    ' ' +
-    NAMES[Math.round(Math.random() * (NAMES.length - 1))].charAt(0) +
-    '.';
+@Component({
+  selector: 'dialog-elements-example-dialog',
+  templateUrl: 'dialog-elements-example-dialog.html',
+  imports: [
+    MatTableModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatDialogClose,
+    JsonPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class DialogElementsExampleDialog implements OnInit {
+  readonly data = inject<{ id: number }>(MAT_DIALOG_DATA);
+  readonly id = Number(this.data.id);
 
-  return {
-    id: id.toString(),
-    name: name,
-    progress: Math.round(Math.random() * 100).toString(),
-    fruit: FRUITS[Math.round(Math.random() * (FRUITS.length - 1))],
-  };
+  aspiranteBeneficio: any = {};
+
+  constructor(private aspirantesBeneficioService: AspirantesBeneficioService) { }
+
+  ngOnInit() {
+    this.getAspirantesBeneficioId();
+  }
+
+  getAspirantesBeneficioId(): void {
+    this.aspirantesBeneficioService.getAspirantesBeneficioId(this.id).subscribe({
+      next: ((response) => {
+        this.aspiranteBeneficio = response.data[0];
+
+        console.log(this.aspiranteBeneficio);
+
+      }),
+      error: ((error) => { })
+    });
+  }
 }

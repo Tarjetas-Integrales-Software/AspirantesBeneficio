@@ -14,20 +14,19 @@ export class CodigosPostalesService {
 
   }
 
-  getGeneros(): Observable<any> {
+  getCodigosPostales(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/codposcol_all');
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
-        INSERT INTO CS_CodigosPostales_Colonias (
-          id, estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, 
+        INSERT OR REPLACE INTO CS_CodigosPostales_Colonias (
+          estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
-        item.id,
         item.estado,
         item.municipio,
         item.ciudad,
@@ -45,5 +44,79 @@ export class CodigosPostalesService {
 
       await this.databaseService.execute(sql, params);
     }
+  }
+
+  async consultarCodigosPostales(query: { cp?: string, colonia?: string, municipio?: string }): Promise<any[]> {
+    const { cp, municipio, colonia } = query;
+
+    // Si se filtra por municipio, seleccionar CP únicos
+    if (municipio) {
+      let sql = 'SELECT DISTINCT cp FROM CS_CodigosPostales_Colonias WHERE 1=1';
+      const params: any[] = [];
+
+      // Filtro por municipio
+      sql += ' AND municipio LIKE ?';
+      params.push(`%${municipio}%`);
+
+      // Ejecutar la consulta
+      return await this.databaseService.query(sql, params);
+    }
+
+    // Si no se filtra por municipio, mantener la lógica original
+    let sql = 'SELECT * FROM CS_CodigosPostales_Colonias WHERE 1=1';
+    const params: any[] = [];
+
+    // Filtros opcionales
+    if (cp) {
+      sql += ' AND cp = ?';
+      params.push(cp);
+    }
+    if (colonia) {
+      sql += ' AND colonia LIKE ?';
+      params.push(`%${colonia}%`);
+    }
+
+    // Ejecutar la consulta
+    return await this.databaseService.query(sql, params);
+  }
+
+  async consultarMunicipios(): Promise<{ id: number; municipio: string }[]> {
+    const sql = `
+      SELECT
+        ROW_NUMBER() OVER (ORDER BY municipio) AS id,
+        municipio
+      FROM
+        (SELECT DISTINCT municipio FROM CS_CodigosPostales_Colonias)
+      ORDER BY
+        municipio;
+    `;
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql);
+    return resultados;
+  }
+
+  async consultarColonias(cp?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+    let sql = `
+      SELECT
+        ROW_NUMBER() OVER (ORDER BY colonia) AS id,
+        colonia,
+        tipo_zona,
+        tipo_asentamiento
+      FROM
+        (SELECT DISTINCT colonia, tipo_zona, tipo_asentamiento FROM CS_CodigosPostales_Colonias
+    `;
+
+    // Agregar filtro por CP si se proporciona
+    if (cp) {
+      sql += ' WHERE cp = ?';
+    }
+
+    sql += ') ORDER BY colonia;';
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql, cp ? [cp] : []);
+    console.log('resultados', resultados);
+    return resultados;
   }
 }
