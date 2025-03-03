@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core';
-import { DatePipe, JsonPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 
 import Swal from 'sweetalert2'
 
@@ -118,8 +118,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDialogClose,
-    JsonPipe],
+    MatDialogClose],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogElementsExampleDialog implements OnInit {
