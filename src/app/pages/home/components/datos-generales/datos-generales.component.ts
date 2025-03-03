@@ -213,13 +213,24 @@ export class DatosGeneralesComponent implements OnInit {
   async getMyForm(): Promise<any> {
     const lastId = await this.aspirantesBeneficioService.getLastId() || 0;
 
+    console.log(this.myForm.value);
+    console.log(this.myForm.get('fecha_nacimiento')?.value);
+    console.log(this.tipoAsentamiento);
+    console.log(this.tipoZona);
+
+    const now = new Date();
+
+    const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
       id: lastId + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
-      tiposAsentamiento: this.tipoAsentamiento,
-      tiposZona: this.tipoZona,
+      tipos_asentamiento: this.tipoAsentamiento,
+      tipo_zona: this.tipoZona,
       ciudad: this.myForm.get('municipio')?.value,
+      fecha_evento: formattedDate,
+      created_id: 1,
+      created_at: formattedDate,
     };
   }
 

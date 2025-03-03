@@ -250,10 +250,11 @@ export class AspirantesBeneficioService {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM ct_aspirantes_beneficio ORDER BY id DESC LIMIT 1`;
-  
+
       // Usar query en lugar de execute
       const result = await this.databaseService.query(sql);
-  
+      console.log('Último id:', result);
+
       // Extraer el id si existe, si no, devolver null
       return result.length > 0 ? result[0].id : null;
     } catch (error) {
@@ -261,5 +262,5 @@ export class AspirantesBeneficioService {
       throw error; // Relanzar el error para manejarlo en el llamador
     }
   }
-  
+
 }

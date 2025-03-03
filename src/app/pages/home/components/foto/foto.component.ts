@@ -3,8 +3,9 @@ import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
 import { Aspirantes } from "../../interfaces/aspirantes.interface";
-import { get } from "http";
 import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'fotoComponent',
@@ -18,7 +19,7 @@ export class FotoComponent implements OnInit {
   @Output() submitForm = new EventEmitter<void>();
   @Input() datosGeneralesComponent!: DatosGeneralesComponent;
 
-  constructor(private aspirantesBeneficioService: AspirantesBeneficioService) { }
+  constructor(private aspirantesBeneficioService: AspirantesBeneficioService, private http: HttpClient) { }
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -90,7 +91,6 @@ export class FotoComponent implements OnInit {
     }
   }
 
-
   toggleImageFormat() {
     this.imageFormat = this.imageFormat === "webp" ? "jpeg" : "webp"
     if (this.capturedImage) {
@@ -110,22 +110,81 @@ export class FotoComponent implements OnInit {
     });
   }
 
+  async uploadPhoto(imageData: string): Promise<void> {
+    const formData = new FormData();
+    formData.append('file', imageData);
+    formData.append('fecha', new Date().toISOString());
+    formData.append('tipo', 'foto_aspben');
+    formData.append('id_aspirante_beneficio', '123456'); // Reemplazar con el ID real
+    formData.append('curp', this.datosGeneralesComponent.myForm.get('curp')?.value);
+
+
+    try {
+      const response = await this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData).toPromise();
+      console.log('Foto subida exitosamente:', response);
+    } catch (error) {
+      console.error('Error al subir la foto:', error);
+    }
+  }
+
+  public postWithFiles(data: any): Observable<any> {
+    const formData = new FormData();
+    formData.append('fecha', data.fecha);
+    formData.append('tipo', data.tipo);
+    formData.append('file', data.file);
+    formData.append('id_aspirante_beneficio', data.id_aspirante_beneficio.toString());
+    formData.append('curp', data.curp);
+
+    return this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData);
+  }
+
+  uploadFile(idAspiranteBeneficio: number): void {
+    const formattedFecha = new Date().toISOString();
+
+    const postData = {
+      fecha: formattedFecha,
+      tipo: 'foto_aspben',
+      file: this.capturedImage,
+      id_aspirante_beneficio: idAspiranteBeneficio,
+      curp: this.datosGeneralesComponent.myForm.get('curp')?.value
+    };
+
+    this.postWithFiles(postData).subscribe(
+      response => {
+        console.log('Foto subida exitosamente:', response);
+      },
+      error => {
+        console.error('Error al subir la foto:', error);
+      }
+    );
+  }
+
   onSubmit(): void {
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
 
-      const form = this.datosGeneralesComponent.getMyForm();
-      console.log(form);
-
-      this.datosGeneralesComponent.getMyForm().then((form) => {
-        this.aspirantesBeneficioService.crearAspirante(form).then(() => {
-          console.log("Aspirante creado");
+      if (this.capturedImage) {
+        this.uploadPhoto(this.capturedImage).then(() => {
+          console.log("Foto subida");
         }).catch((error) => {
-          console.error("Error al crear aspirante:", error);
+          console.error("Error al subir la foto:", error);
         });
-      }).catch((error) => {
-        console.error("Error al obtener el formulario:", error);
-      });
+      }
+
+      if (this.capturedImage) {
+        this.datosGeneralesComponent.getMyForm().then((form) => {
+          this.aspirantesBeneficioService.crearAspirante(form).then((response) => {
+            console.log("Aspirante creado");
+            this.uploadFile(response.id); // Subir la foto después de crear el aspirante
+          }).catch((error) => {
+            console.error("Error al crear aspirante:", error);
+          });
+        }).catch((error) => {
+          console.error("Error al obtener el formulario:", error);
+        });
+      } else {
+        console.log("No hay imagen capturada para subir");
+      }
 
     } else {
       this.datosGeneralesComponent.myForm.markAllAsTouched();
