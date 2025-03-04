@@ -16,7 +16,7 @@ export class AspirantesBeneficioService {
     return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
   }
 
-  getAspirantesBeneficioId(id: number): Observable<any> {
+  getAspiranteBeneficioId(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_por_id', { id: id });
   }
 

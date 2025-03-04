@@ -1,10 +1,15 @@
-import { Injectable } from '@angular/core';
-import { DatabaseService } from './../database.service';
+import { Injectable, inject } from '@angular/core';
+import { environment } from './../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { DatabaseService } from '../../services/database.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FotosService {
+  private http = inject(HttpClient);
+
   constructor(private databaseService: DatabaseService) { }
 
   // Crear una nueva foto
@@ -133,15 +138,19 @@ export class FotosService {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM ct_fotos ORDER BY id DESC LIMIT 1`;
-  
+
       // Usar query en lugar de execute
       const result = await this.databaseService.query(sql);
-  
+
       // Extraer el id si existe, si no, devolver null
       return result.length > 0 ? result[0].id : null;
     } catch (error) {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador
     }
+  }
+
+  getAspiranteFotoId(id: number): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
   }
 }
