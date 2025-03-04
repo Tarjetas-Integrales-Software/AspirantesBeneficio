@@ -101,15 +101,15 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   }
 
   openDialog(id: number) {
-    this.dialog.open(DialogElementsExampleDialog, {
+    this.dialog.open(DialogAspiranteBeneficio, {
       data: { id: id }
     });
   }
 }
 
 @Component({
-  selector: 'dialog-elements-example-dialog',
-  templateUrl: 'dialog-elements-example-dialog.html',
+  selector: 'dialog-aspirante-beneficio',
+  templateUrl: 'dialog-aspirante-beneficio.html',
   imports: [
     MatTableModule,
     MatFormFieldModule,
@@ -121,7 +121,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogClose],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DialogElementsExampleDialog implements OnInit {
+export class DialogAspiranteBeneficio implements OnInit {
   readonly data = inject<{ id: number }>(MAT_DIALOG_DATA);
   readonly id = Number(this.data.id);
 
