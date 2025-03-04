@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
 
+const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'fotoComponent',
   imports: [CommonModule, FormsModule],
@@ -33,6 +34,7 @@ export class FotoComponent implements OnInit {
   capturedImage: string | null = null
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
+  downloadPath = "C:/Users/DELL 540/AppData/Roaming/Aspirantes Beneficio/imagenesBeneficiarios"
 
   ngOnInit() {
     this.getAvailableCameras()
@@ -70,7 +72,7 @@ export class FotoComponent implements OnInit {
     this.videoElement.nativeElement.srcObject = null
   }
 
-  capturePhoto() {
+  async capturePhoto() {
     const video = this.videoElement.nativeElement
     const canvas = this.canvas.nativeElement
     canvas.width = video.videoWidth
@@ -89,12 +91,9 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  downloadPhoto() {
+  savePhoto(name: string) {
     if (this.capturedImage) {
-      const link = document.createElement("a")
-      link.href = this.capturedImage
-      link.download = `captured_photo.${this.imageFormat}`
-      link.click()
+      ipcRenderer.send("save-image", this.capturedImage, name);
     }
   }
 
@@ -189,14 +188,13 @@ export class FotoComponent implements OnInit {
           const form = await this.datosGeneralesComponent.getMyForm();
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
-          console.log("Aspirante creado");
           // Subimos la foto del aspirante
           await this.uploadFile(); // Subir la foto después de crear el aspirante
 
+          this.savePhoto(form.curp);
           // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
           const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
           const lastIdFoto = await this.fotosService.getLastId() || 0;
-          console.log('lastIdApirante', lastIdApirante, 'lastIdFoto', lastIdFoto);
 
           // Creamos la relación entre el aspirante y la foto
           await this.aspirantesBeneficioFotosService.crearRelacion({

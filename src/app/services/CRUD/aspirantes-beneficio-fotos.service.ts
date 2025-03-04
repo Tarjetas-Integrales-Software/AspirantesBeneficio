@@ -93,31 +93,24 @@ export class AspirantesBeneficioFotosService {
   // Eliminar una relación (soft delete)
   async eliminarRelacion(id: number, deleted_id: number, deleted_at: string): Promise<any> {
     const sql = `
-      UPDATE sy_aspirantes_beneficio_fotos 
-      SET deleted_id = ?, deleted_at = ? 
+      UPDATE sy_aspirantes_beneficio_fotos
+      SET deleted_id = ?, deleted_at = ?
       WHERE id = ?;
     `;
     const params = [deleted_id, deleted_at, id];
     return await this.databaseService.execute(sql, params);
   }
 
-  async getLastId(): Promise<number> {
+  async getLastId(): Promise<number | null> {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM sy_aspirantes_beneficio_fotos ORDER BY id DESC LIMIT 1`;
 
-      // Ejecutar la consulta
-      const result = await this.databaseService.execute(sql);
+      // Usar query en lugar de execute
+      const result = await this.databaseService.query(sql);
 
-      // Verificar si se obtuvieron resultados
-      if (result.rows.length > 0) {
-        // Obtener el id de la primera fila
-        const lastId = result.rows[0].id;
-        return parseInt(lastId, 10); // Convertir a número entero
-      } else {
-        // Si no hay registros, devolver 0 o un valor por defecto
-        return 0;
-      }
+      // Extraer el id si existe, si no, devolver null
+      return result.length > 0 ? result[0].id : null;
     } catch (error) {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador

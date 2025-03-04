@@ -1,5 +1,8 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
+
+import Swal from 'sweetalert2'
+
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -7,6 +10,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogActions,
+  MatDialogClose,
+  MatDialogContent,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
@@ -22,12 +33,14 @@ export interface AspiranteBeneficio {
   selector: 'consultaPage',
   imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
   templateUrl: './consulta.component.html',
-  styleUrl: './consulta.component.scss'
+  styleUrl: './consulta.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsultaComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -38,7 +51,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
 
-    if (online) this.syncDataBase();
+    if (online) { }
 
     this.getAspirantesBeneficio();
   }
@@ -58,18 +71,75 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   }
 
   getAspirantesBeneficio(): void {
-    this.aspirantesBeneficioService.consultarAspirantes()
-      .then((aspirantesBeneficio) => {
-        this.dataSource.data = aspirantesBeneficio;
-      })
-      .catch((error) => console.error('Error al obtener aspirantes a beneficio:', error));
-  }
-
-  syncDataBase(): void {
     this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe({
       next: ((response) => {
-        this.aspirantesBeneficioService.syncLocalDataBase(response.data);
         this.dataSource.data = response.data;
+      }),
+      error: ((error) => { })
+    });
+  }
+
+  deleteAspiranteBeneficio(id: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Estas seguro de eliminar el registro?',
+      showConfirmButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed)
+        this.aspirantesBeneficioService.deleteAspiranteBeneficio(id).subscribe({
+          next: ((response) => {
+            Swal.fire('Eliminado con éxito!', '', 'success')
+            this.getAspirantesBeneficio();
+          }),
+          error: ((error) => { })
+        });
+    })
+
+  }
+
+  openDialog(id: number) {
+    this.dialog.open(DialogAspiranteBeneficio, {
+      data: { id: id }
+    });
+  }
+}
+
+@Component({
+  selector: 'dialog-aspirante-beneficio',
+  templateUrl: 'dialog-aspirante-beneficio.html',
+  imports: [
+    MatTableModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatDialogClose],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class DialogAspiranteBeneficio implements OnInit {
+  readonly data = inject<{ id: number }>(MAT_DIALOG_DATA);
+  readonly id = Number(this.data.id);
+
+  aspiranteBeneficio: any = {};
+
+  constructor(private aspirantesBeneficioService: AspirantesBeneficioService) { }
+
+  ngOnInit() {
+    this.getAspirantesBeneficioId();
+  }
+
+  getAspirantesBeneficioId(): void {
+    this.aspirantesBeneficioService.getAspirantesBeneficioId(this.id).subscribe({
+      next: ((response) => {
+        this.aspiranteBeneficio = response.data[0];
+
+        console.log(this.aspiranteBeneficio);
+
       }),
       error: ((error) => { })
     });

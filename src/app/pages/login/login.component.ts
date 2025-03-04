@@ -45,6 +45,7 @@ export class LoginComponent implements OnInit {
       (response) => {
         if (response.response) {
           this.storageService.set("token", response.token);
+          this.storageService.set("user", response.user);
 
           this.router.navigate(['/registro']);
         }

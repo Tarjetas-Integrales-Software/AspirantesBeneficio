@@ -3,6 +3,7 @@ const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const path = require('path');
 const url = require('url');
+const fs = require("fs");
 
 let mainWindow;
 let db; // Declare db as a global variable
@@ -47,7 +48,6 @@ function initializeDatabase() {
   const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
 
   console.log('Database path:', dbPath);
-  
 
   db = new Database(dbPath);
 
@@ -154,6 +154,20 @@ function initializeDatabase() {
         updated_at TEXT NULL,
         deleted_at TEXT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY,
+        id_equipo INTEGER NOT NULL,
+        clave TEXT,
+        valor TEXT,
+        descripcion TEXT,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+      );
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -188,4 +202,26 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+ipcMain.on("save-image", (event, imageData, name) => {
+  const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Data, "base64");
+
+  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+  const savePath = path.join(dirPath, name + ".webp");
+
+  // Crear la carpeta si no existe
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  // Guardar la imagen
+  fs.writeFile(savePath, buffer, (err) => {
+    if (err) {
+      console.error("Error al guardar la imagen:", err);
+      return;
+    }
+    console.log("Imagen guardada en:", savePath);
+  });
 });
