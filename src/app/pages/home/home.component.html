@@ -1,11 +1,11 @@
-<div class="container mx-auto sm:pt-5">
-
+<div class="pt-5 mb-4 container mx-auto">
   <div class="flex flex-row gap-4">
-    <div class="basis-5/8 ">
-      <datosGeneralesComponent/>
+    <div class="basis-6/8 ">
+      <datosGeneralesComponent #datosForm />
     </div>
-    <div class="basis-3/8  ">
-      <fotoComponent />
+    <div class="basis-2/8">
+      <fotoComponent [datosGeneralesComponent]="datosForm" (submitForm)="submitDatosForm()" />
     </div>
   </div>
 </div>
+
