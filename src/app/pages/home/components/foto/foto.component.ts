@@ -2,9 +2,9 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
-import { Aspirantes } from "../../interfaces/aspirantes.interface";
-import { get } from "http";
 import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
+
+const { ipcRenderer } = (window as any).require("electron");
 
 @Component({
   selector: 'fotoComponent',
@@ -25,6 +25,7 @@ export class FotoComponent implements OnInit {
   capturedImage: string | null = null
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
+  downloadPath = "C:/Users/DELL 540/AppData/Roaming/Aspirantes Beneficio/imagenesBeneficiarios"
 
   ngOnInit() {
     this.getAvailableCameras()
@@ -62,7 +63,7 @@ export class FotoComponent implements OnInit {
     this.videoElement.nativeElement.srcObject = null
   }
 
-  capturePhoto() {
+  async capturePhoto() {
     const video = this.videoElement.nativeElement
     const canvas = this.canvas.nativeElement
     canvas.width = video.videoWidth
@@ -81,15 +82,11 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  downloadPhoto() {
+  savePhoto(name: string) {
     if (this.capturedImage) {
-      const link = document.createElement("a")
-      link.href = this.capturedImage
-      link.download = `captured_photo.${this.imageFormat}`
-      link.click()
+      ipcRenderer.send("save-image", this.capturedImage, name);
     }
   }
-
 
   toggleImageFormat() {
     this.imageFormat = this.imageFormat === "webp" ? "jpeg" : "webp"
@@ -114,11 +111,9 @@ export class FotoComponent implements OnInit {
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
 
-      const form = this.datosGeneralesComponent.getMyForm();
-      console.log(form);
-
       this.datosGeneralesComponent.getMyForm().then((form) => {
         this.aspirantesBeneficioService.crearAspirante(form).then(() => {
+          this.savePhoto(form.curp);
           console.log("Aspirante creado");
         }).catch((error) => {
           console.error("Error al crear aspirante:", error);
