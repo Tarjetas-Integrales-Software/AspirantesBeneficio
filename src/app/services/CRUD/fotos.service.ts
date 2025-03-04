@@ -121,8 +121,8 @@ export class FotosService {
   // Eliminar una foto (soft delete)
   async eliminarFoto(id: number, deleted_id: number, deleted_at: string): Promise<any> {
     const sql = `
-      UPDATE ct_fotos 
-      SET deleted_id = ?, deleted_at = ? 
+      UPDATE ct_fotos
+      SET deleted_id = ?, deleted_at = ?
       WHERE id = ?;
     `;
     const params = [deleted_id, deleted_at, id];
@@ -133,10 +133,10 @@ export class FotosService {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM ct_fotos ORDER BY id DESC LIMIT 1`;
-  
+
       // Usar query en lugar de execute
       const result = await this.databaseService.query(sql);
-  
+
       // Extraer el id si existe, si no, devolver null
       return result.length > 0 ? result[0].id : null;
     } catch (error) {

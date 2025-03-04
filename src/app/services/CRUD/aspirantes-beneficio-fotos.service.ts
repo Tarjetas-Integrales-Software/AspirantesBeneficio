@@ -93,8 +93,8 @@ export class AspirantesBeneficioFotosService {
   // Eliminar una relación (soft delete)
   async eliminarRelacion(id: number, deleted_id: number, deleted_at: string): Promise<any> {
     const sql = `
-      UPDATE sy_aspirantes_beneficio_fotos 
-      SET deleted_id = ?, deleted_at = ? 
+      UPDATE sy_aspirantes_beneficio_fotos
+      SET deleted_id = ?, deleted_at = ?
       WHERE id = ?;
     `;
     const params = [deleted_id, deleted_at, id];
@@ -105,10 +105,10 @@ export class AspirantesBeneficioFotosService {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM sy_aspirantes_beneficio_fotos ORDER BY id DESC LIMIT 1`;
-  
+
       // Usar query en lugar de execute
       const result = await this.databaseService.query(sql);
-  
+
       // Extraer el id si existe, si no, devolver null
       return result.length > 0 ? result[0].id : null;
     } catch (error) {

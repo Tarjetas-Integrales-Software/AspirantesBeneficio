@@ -12,7 +12,7 @@
         </select>
 
         <!-- Camera video stream -->
-        <div class="relative w-full h-[244px] aspect-video bg-gray-200 rounded-lg overflow-hidden mb-4">
+        <div class="relative w-full h-[210px] aspect-video bg-gray-200 rounded-lg overflow-hidden mb-4">
           <video #videoElement autoplay playsinline class="w-full h-full object-cover"></video>
           @if (stream) {
           <div class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Captured image -->
-        <div class="w-2xs aspect-square bg-gray-100 rounded-lg overflow-hidden ">
+        <div class="w-[255px] aspect-square bg-gray-100 rounded-lg overflow-hidden ">
           @if (capturedImage) {
           <img [src]="capturedImage" alt="Captured photo" class="w-full h-full object-cover">
           } @else {
