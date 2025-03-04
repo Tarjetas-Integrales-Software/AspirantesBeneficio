@@ -6,6 +6,8 @@ import { Aspirantes } from "../../interfaces/aspirantes.interface";
 import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { FotosService } from "../../../../services/CRUD/fotos.service";
+import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
 
 @Component({
   selector: 'fotoComponent',
@@ -19,7 +21,12 @@ export class FotoComponent implements OnInit {
   @Output() submitForm = new EventEmitter<void>();
   @Input() datosGeneralesComponent!: DatosGeneralesComponent;
 
-  constructor(private aspirantesBeneficioService: AspirantesBeneficioService, private http: HttpClient) { }
+  constructor(
+    private aspirantesBeneficioService: AspirantesBeneficioService,
+    private http: HttpClient,
+    private fotosService: FotosService,
+    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
+  ) { }
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -110,85 +117,115 @@ export class FotoComponent implements OnInit {
     });
   }
 
-  async uploadPhoto(imageData: string): Promise<void> {
-    const formData = new FormData();
-    formData.append('file', imageData);
-    formData.append('fecha', new Date().toISOString());
-    formData.append('tipo', 'foto_aspben');
-    formData.append('id_aspirante_beneficio', '123456'); // Reemplazar con el ID real
-    formData.append('curp', this.datosGeneralesComponent.myForm.get('curp')?.value);
+  // async uploadPhoto(imageData: string): Promise<void> {
+  //   const formData = new FormData();
+  //   formData.append('file', imageData);
+  //   formData.append('fecha', new Date().toISOString());
+  //   formData.append('tipo', 'foto_aspben');
+  //   formData.append('id_aspirante_beneficio', '123456'); // Reemplazar con el ID real
+  //   formData.append('curp', this.datosGeneralesComponent.myForm.get('curp')?.value);
 
+
+  //   try {
+  //     const response = await this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData).toPromise();
+  //     console.log('Foto subida exitosamente:', response);
+  //   } catch (error) {
+  //     console.error('Error al subir la foto:', error);
+  //   }
+  // }
+
+  // async postWithFiles(data: any, id: number): Promise<Observable<any>> {
+
+  //   let lastId = await this.fotosService.getLastId() || 0;
+  //   console.log('LAST ID BEFORE:', lastId);
+  //   lastId += 1;
+  //   console.log('LAST ID AFTER:', lastId);
+
+  //   console.log('Data:', data);
+  //   const formData = new FormData();
+  //   formData.append('fecha', data.fecha);
+  //   formData.append('tipo', data.tipo);
+  //   formData.append('file', data.file);
+  //   formData.append('id_aspirante_beneficio', lastId.toString());
+  //   if (data.id_aspirante_beneficio !== undefined) {
+  //   }
+  //   formData.append('curp', data.curp);
+
+  //   return this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData);
+  // }
+
+  async uploadFile(): Promise<void> {
+    const formattedFecha = new Date().toISOString();
+    const path = 'docsbeneficiarios/' + this.datosGeneralesComponent.myForm.get('curp')?.value;
 
     try {
-      const response = await this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData).toPromise();
-      console.log('Foto subida exitosamente:', response);
+      // Crear foto en la base de datos local
+      await this.fotosService.crearFoto({
+        id_status: 1, // Asignar el estado adecuado
+        fecha: formattedFecha,
+        tipo: 'foto_aspben',
+        archivo: this.capturedImage!,
+        path: path, // Asignar el path adecuado si es necesario
+        archivoOriginal: `captured_photo.${this.imageFormat}`,
+        extension: this.imageFormat,
+        created_id: 0, // Asignar el ID adecuado si es necesario
+        created_at: formattedFecha
+      });
+      console.log('Foto guardada en la base de datos local');
     } catch (error) {
-      console.error('Error al subir la foto:', error);
+      console.error('Error al guardar la foto en la base de datos local:', error);
     }
   }
 
-  public postWithFiles(data: any): Observable<any> {
-    const formData = new FormData();
-    formData.append('fecha', data.fecha);
-    formData.append('tipo', data.tipo);
-    formData.append('file', data.file);
-    formData.append('id_aspirante_beneficio', data.id_aspirante_beneficio.toString());
-    formData.append('curp', data.curp);
-
-    return this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData);
-  }
-
-  uploadFile(idAspiranteBeneficio: number): void {
-    const formattedFecha = new Date().toISOString();
-
-    const postData = {
-      fecha: formattedFecha,
-      tipo: 'foto_aspben',
-      file: this.capturedImage,
-      id_aspirante_beneficio: idAspiranteBeneficio,
-      curp: this.datosGeneralesComponent.myForm.get('curp')?.value
-    };
-
-    this.postWithFiles(postData).subscribe(
-      response => {
-        console.log('Foto subida exitosamente:', response);
-      },
-      error => {
-        console.error('Error al subir la foto:', error);
-      }
-    );
-  }
-
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
+    // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
 
-      if (this.capturedImage) {
-        this.uploadPhoto(this.capturedImage).then(() => {
-          console.log("Foto subida");
-        }).catch((error) => {
-          console.error("Error al subir la foto:", error);
-        });
-      }
+      try {
 
-      if (this.capturedImage) {
-        this.datosGeneralesComponent.getMyForm().then((form) => {
-          this.aspirantesBeneficioService.crearAspirante(form).then((response) => {
-            console.log("Aspirante creado");
-            this.uploadFile(response.id); // Subir la foto después de crear el aspirante
-          }).catch((error) => {
-            console.error("Error al crear aspirante:", error);
+        if (this.capturedImage) {
+          // Obtenemos los datos del formulario
+          const form = await this.datosGeneralesComponent.getMyForm();
+          // Creamos el aspirante con los datos obtenidos del formulario
+          await this.aspirantesBeneficioService.crearAspirante(form);
+          console.log("Aspirante creado");
+          // Subimos la foto del aspirante
+          await this.uploadFile(); // Subir la foto después de crear el aspirante
+
+          // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
+          const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
+          const lastIdFoto = await this.fotosService.getLastId() || 0;
+          console.log('lastIdApirante', lastIdApirante, 'lastIdFoto', lastIdFoto);
+
+          // Creamos la relación entre el aspirante y la foto
+          await this.aspirantesBeneficioFotosService.crearRelacion({
+            id_aspirante_beneficio: lastIdApirante,
+            id_foto: lastIdFoto,
+            id_status: 1,
+            created_id: 0,
+            created_at: ""
           });
-        }).catch((error) => {
-          console.error("Error al obtener el formulario:", error);
-        });
-      } else {
-        console.log("No hay imagen capturada para subir");
-      }
+          console.log("Relación guardada");
 
+          //borramos la foto y datos del formulario
+          this.capturedImage = null;
+          this.datosGeneralesComponent.myForm.reset();
+          this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
+          this.datosGeneralesComponent.myForm.markAsPristine();
+
+
+        } else {
+          console.log("No hay imagen capturada para subir");
+        }
+      } catch (error) {
+        console.error("Error en el proceso:", error);
+      }
     } else {
+      // Marcar todos los campos como tocados para mostrar los errores
       this.datosGeneralesComponent.myForm.markAllAsTouched();
       console.log("Formulario no válido");
+      // Mostrar los errores en la consola del formulario
       this.mostrarErrores(this.datosGeneralesComponent.myForm);
     }
     this.submitForm.emit();

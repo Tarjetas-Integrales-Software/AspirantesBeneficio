@@ -64,10 +64,10 @@ export class DatosGeneralesComponent implements OnInit {
     telefono: ['3323724897', [Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['danessseguro@gmail.com', [Validators.required, Validators.email]],
-    estado: ['Jalisco', [Validators.required, Validators.minLength(5)]],
-    municipio: ['', [Validators.required, Validators.minLength(5)]],
+    estado: ['Jalisco', [Validators.required, Validators.minLength(2)]],
+    municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
-    colonia: ['', [Validators.required, Validators.minLength(5)]],
+    colonia: ['', [Validators.required, Validators.minLength(2)]],
     tipo_zona: ['', [Validators.required, Validators.minLength(5)]],
     tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
     domicilio: ['Malinche 117', [Validators.required, Validators.minLength(5)]],
@@ -211,19 +211,17 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   async getMyForm(): Promise<any> {
-    const lastId = await this.aspirantesBeneficioService.getLastId() || 0;
+
+    const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
 
     console.log(this.myForm.value);
-    console.log(this.myForm.get('fecha_nacimiento')?.value);
-    console.log(this.tipoAsentamiento);
-    console.log(this.tipoZona);
 
     const now = new Date();
 
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
-      id: lastId + 1,
+      id: lastIdApirante + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       tipos_asentamiento: this.tipoAsentamiento,
       tipo_zona: this.tipoZona,
