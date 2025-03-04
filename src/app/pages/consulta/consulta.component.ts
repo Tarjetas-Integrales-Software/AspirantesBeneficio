@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core';
-import { DatePipe, JsonPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 
 import Swal from 'sweetalert2'
 
@@ -101,15 +101,15 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   }
 
   openDialog(id: number) {
-    this.dialog.open(DialogElementsExampleDialog, {
+    this.dialog.open(DialogAspiranteBeneficio, {
       data: { id: id }
     });
   }
 }
 
 @Component({
-  selector: 'dialog-elements-example-dialog',
-  templateUrl: 'dialog-elements-example-dialog.html',
+  selector: 'dialog-aspirante-beneficio',
+  templateUrl: 'dialog-aspirante-beneficio.html',
   imports: [
     MatTableModule,
     MatFormFieldModule,
@@ -118,11 +118,10 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDialogClose,
-    JsonPipe],
+    MatDialogClose],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DialogElementsExampleDialog implements OnInit {
+export class DialogAspiranteBeneficio implements OnInit {
   readonly data = inject<{ id: number }>(MAT_DIALOG_DATA);
   readonly id = Number(this.data.id);
 
