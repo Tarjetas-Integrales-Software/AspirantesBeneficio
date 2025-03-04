@@ -119,7 +119,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogContent,
     MatDialogActions,
     MatDialogClose,
-    JsonPipe],
+    //JsonPipe
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogElementsExampleDialog implements OnInit {

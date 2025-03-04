@@ -47,7 +47,7 @@ function initializeDatabase() {
   const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
 
   console.log('Database path:', dbPath);
-  
+
 
   db = new Database(dbPath);
 
@@ -154,6 +154,21 @@ function initializeDatabase() {
         updated_at TEXT NULL,
         deleted_at TEXT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS cat_ct_configuraciones (
+        id INTEGER PRIMARY KEY,
+        id_equipo INTEGER NOT NULL,
+        clave TEXT NULL,
+        valor TEXT NULL,
+        descripcion TEXT NULL,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
