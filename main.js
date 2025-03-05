@@ -49,7 +49,6 @@ function initializeDatabase() {
 
   console.log('Database path:', dbPath);
 
-
   db = new Database(dbPath);
 
   try {
@@ -70,7 +69,7 @@ function initializeDatabase() {
         tipo_asentamiento TEXT,
         tipo_zona TEXT NOT NULL,
         domicilio TEXT NOT NULL,
-        com_obs TEXT,
+        com_obs TEXT NOT NULL,
         fecha_evento TEXT NOT NULL,
         created_id INTEGER NOT NULL,
         updated_id INTEGER,
@@ -188,8 +187,6 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_curps_registradas (
           curp TEXT PRIMARY KEY NULL
       );
-
-
     `);
   } catch (error) {
     console.error('Error creating table:', error);

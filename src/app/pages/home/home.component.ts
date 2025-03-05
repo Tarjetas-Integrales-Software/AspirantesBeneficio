@@ -25,8 +25,7 @@ constructor(private curpsRegistradasService: CurpsRegistradasService
     this.curpsRegistradasService.getCurpsRegistradas().subscribe({
       next: ((response) => {
         this.curpsRegistradasService.syncLocalDataBase(response.data)
-      }
-      ),
+      }),
       error: ((error) => { })
     });
     this.opcionesGeneralesService.getOpcionesGenerales().subscribe({

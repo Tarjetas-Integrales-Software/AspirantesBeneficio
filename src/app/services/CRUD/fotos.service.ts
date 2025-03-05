@@ -1,10 +1,15 @@
-import { Injectable } from '@angular/core';
-import { DatabaseService } from './../database.service';
+import { Injectable, inject } from '@angular/core';
+import { environment } from './../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { DatabaseService } from '../../services/database.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FotosService {
+  private http = inject(HttpClient);
+
   constructor(private databaseService: DatabaseService) { }
 
   // Crear una nueva foto
@@ -39,8 +44,12 @@ export class FotosService {
     return await this.databaseService.execute(sql, params);
   }
 
+  createFoto(foto: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/fotos/register', { ...foto });
+  }
+
   // Leer todas las fotos
-  async obtenerFotos(): Promise<any[]> {
+  async consultarFotos(): Promise<any[]> {
     const sql = 'SELECT * FROM ct_fotos ORDER BY created_at DESC;';
     return await this.databaseService.query(sql);
   }
@@ -119,13 +128,9 @@ export class FotosService {
   }
 
   // Eliminar una foto (soft delete)
-  async eliminarFoto(id: number, deleted_id: number, deleted_at: string): Promise<any> {
-    const sql = `
-      UPDATE ct_fotos
-      SET deleted_id = ?, deleted_at = ?
-      WHERE id = ?;
-    `;
-    const params = [deleted_id, deleted_at, id];
+  async eliminarFoto(id: number): Promise<any> {
+    const sql = `DELETE FROM ct_fotos WHERE id = ?;`;
+    const params = [id];
     return await this.databaseService.execute(sql, params);
   }
 
@@ -143,5 +148,9 @@ export class FotosService {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador
     }
+  }
+
+  getAspiranteFotoId(id: number): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
   }
 }

@@ -3,6 +3,7 @@ import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatabaseService } from '../../services/database.service';
+import { CurpsRegistradasService } from './curps-registradas.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,13 +11,26 @@ import { DatabaseService } from '../../services/database.service';
 export class AspirantesBeneficioService {
   private http = inject(HttpClient);
 
-  constructor(private databaseService: DatabaseService) { }
+  constructor(private databaseService: DatabaseService, private curpsRegistradasService: CurpsRegistradasService) { }
+
+  createAspirante(aspirante: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
+  }
+
+  async deleteAspirante(id: number): Promise<any> {
+    console.log(id);
+    
+    const sql = 'DELETE FROM ct_aspirantes_beneficio WHERE id = ?;';
+    console.log(sql);
+    const params = [id];
+    return await this.databaseService.execute(sql, params);
+  }
 
   getAspirantesBeneficio(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
   }
 
-  getAspirantesBeneficioId(id: number): Observable<any> {
+  getAspiranteBeneficioId(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_por_id', { id: id });
   }
 
@@ -86,6 +100,10 @@ export class AspirantesBeneficioService {
     created_id: number;
     created_at: string;
   }): Promise<any> {
+    const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
+
+    if(curpRegistrada) return;
+
     const sql = `
       INSERT OR REPLACE INTO ct_aspirantes_beneficio (
         id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento, estado,

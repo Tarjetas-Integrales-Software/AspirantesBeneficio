@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject, ChangeDetectorRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 import Swal from 'sweetalert2'
 
@@ -21,6 +22,7 @@ import {
 
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
+import { FotosService } from '../../services/CRUD/fotos.service';
 
 export interface AspiranteBeneficio {
   id: string;
@@ -102,6 +104,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
 
   openDialog(id: number) {
     this.dialog.open(DialogAspiranteBeneficio, {
+      height: '600px',
+      width: '800px',
       data: { id: id }
     });
   }
@@ -111,6 +115,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   selector: 'dialog-aspirante-beneficio',
   templateUrl: 'dialog-aspirante-beneficio.html',
   imports: [
+    DatePipe,
     MatTableModule,
     MatFormFieldModule,
     MatInputModule,
@@ -126,22 +131,40 @@ export class DialogAspiranteBeneficio implements OnInit {
   readonly id = Number(this.data.id);
 
   aspiranteBeneficio: any = {};
+  aspiranteBeneficioFoto: string = "";
 
-  constructor(private aspirantesBeneficioService: AspirantesBeneficioService) { }
+  constructor(
+    private aspirantesBeneficioService: AspirantesBeneficioService,
+    private fotosService: FotosService,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit() {
-    this.getAspirantesBeneficioId();
+    this.getAspiranteBeneficioId();
+    this.getAspiranteFotoId();
   }
 
-  getAspirantesBeneficioId(): void {
-    this.aspirantesBeneficioService.getAspirantesBeneficioId(this.id).subscribe({
-      next: ((response) => {
+  getAspiranteBeneficioId(): void {
+    this.aspirantesBeneficioService.getAspiranteBeneficioId(this.id).subscribe({
+      next: (response) => {
         this.aspiranteBeneficio = response.data[0];
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al obtener los datos del aspirante:', error);
+      }
+    });
+  }
 
-        console.log(this.aspiranteBeneficio);
-
-      }),
-      error: ((error) => { })
+  getAspiranteFotoId(): void {
+    this.fotosService.getAspiranteFotoId(this.id).subscribe({
+      next: (response) => {
+        if (response.response)
+          this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
+      },
+      error: (error) => {
+        console.error('Error al obtener los datos del aspirante:', error);
+      }
     });
   }
 }
