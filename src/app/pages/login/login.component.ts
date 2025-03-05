@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { LoginService } from './login.service';
 import { StorageService } from '../../services/storage.service';
 import { UsersService } from '../../services/CRUD/users.service';
+import { NetworkStatusService } from '../../services/network-status.service';
+import Swal from 'sweetalert2';
 
 declare const window: any;
 
@@ -25,7 +27,9 @@ export class LoginComponent implements OnInit {
     , private router: Router
     , private loginService: LoginService
     , private storageService: StorageService
-    , private usersService: UsersService) {
+    , private usersService: UsersService
+    , private networkStatusService: NetworkStatusService
+  ) {
 
       this.loginForm = this.fb.group({
       email: ['', [Validators.required]],
@@ -46,27 +50,46 @@ export class LoginComponent implements OnInit {
   }
 
   login(): void {
-    if (this.loginForm.invalid || this.loading)
-      return;
 
-    const { email, password } = this.loginForm.value;
+    if(this.networkStatusService.checkConnection()){
 
-    this.loading = true;
-    this.loginService.login({ email: email, password: password }).subscribe(
-      (response) => {
-        if (response.response) {
-          this.storageService.set("token", response.token);
-          this.storageService.set("user", response.user);
+      if (this.loginForm.invalid || this.loading)
+        return;
 
-          this.router.navigate(['/registro']);
+      const { email, password } = this.loginForm.value;
+
+      this.loading = true;
+      this.loginService.login({ email: email, password: password }).subscribe(
+        (response) => {
+          if (response.response) {
+            this.storageService.set("token", response.token);
+            this.storageService.set("user", response.user);
+
+            this.router.navigate(['/registro']);
+          }
+          this.loading = false;
+        },
+        (error) => {
+          this.errorMessage = 'Credenciales incorrectas. Por favor, inténtelo de nuevo.';
+          this.loading = false;
         }
-        this.loading = false;
-      },
-      (error) => {
-        this.errorMessage = 'Credenciales incorrectas. Por favor, inténtelo de nuevo.';
-        this.loading = false;
-      }
-    );
+      );
+    }else{
+      // aqui entra en caso de no haber conexion para validar el user y password en la db local
+      const { email, password } = this.loginForm.value;
+      this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email,password)
+      .then(existe => {
+        if( existe == true){
+          this.router.navigate(['/registro']);
+        }else{
+           Swal.fire('Usuario y/o password incorrectos!','','warning');
+        }
+      })
+
+    }
+
+
+
   }
 
   syncDataBase(): void {

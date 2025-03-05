@@ -146,7 +146,7 @@ function initializeDatabase() {
         p_surname TEXT NULL,
         m_surname TEXT NULL,
         electoralid TEXT NULL,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         created_id INTEGER NULL,
         updated_id INTEGER NULL,

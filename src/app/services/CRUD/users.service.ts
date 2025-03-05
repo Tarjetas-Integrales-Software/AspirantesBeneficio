@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { environment } from './../../../environments/environment';
+import { environment } from './../../../environments/environment.development';
 import { DatabaseService } from './../database.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -152,5 +152,20 @@ export class UsersService {
     `;
     const params = [deleted_id, deleted_at, id];
     return await this.databaseService.execute(sql, params);
+  }
+
+  // Leer un usuario por ID
+  async ValidaUsuarioPorEmailyPassEnLocal(email: string, password: string): Promise<any> {
+    let usuario_valido: boolean = false;
+    const sql = 'SELECT * FROM users WHERE email = ?;';
+    const params = [email];
+    const resultados = await this.databaseService.query(sql, params);
+    if(resultados.length > 0){
+      let pass = resultados[0]['password'];
+      if(CryptoService.decrypt(pass) == password){
+        usuario_valido = true;
+      }
+    }
+    return usuario_valido;
   }
 }
