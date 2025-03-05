@@ -9,6 +9,7 @@ import { NetworkStatusService } from './services/network-status.service';
 import { AspirantesBeneficioService } from './services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from './services/CRUD/fotos.service';
 import { AspirantesBeneficioFotosService } from './services/CRUD/aspirantes-beneficio-fotos.service';
+import { CurpsRegistradasService } from './services/CRUD/curps-registradas.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
@@ -33,7 +34,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private networkStatusService: NetworkStatusService,
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
-    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
+    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
+    private curpsRegistradasService: CurpsRegistradasService
   ) { }
 
   ngOnInit(): void {
@@ -69,12 +71,13 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private sincronizarBase(): void {
-    this.consultarAspirantesBeneficio();
-    this.consultarFotos();
-    this.consultarAspirantesBeneficioFotos();
+    this.syncAspirantesBeneficio();
+    this.syncFotos();
+    this.syncAspirantesBeneficioFotos();
+    this.actualizarCurps();
   }
 
-  consultarAspirantesBeneficio(): void {
+  syncAspirantesBeneficio(): void {
     this.aspirantesBeneficioService.consultarAspirantes().then((items) => {
       this.aspirantesBeneficio = items;
 
@@ -90,7 +93,7 @@ export class AppComponent implements OnInit, OnDestroy {
       });
     });
   }
-  consultarFotos(): void {
+  syncFotos(): void {
     this.fotosService.consultarFotos().then((items) => {
       this.fotos = items;
 
@@ -106,7 +109,15 @@ export class AppComponent implements OnInit, OnDestroy {
       });
     });
   }
-  consultarAspirantesBeneficioFotos(): void {
+  actualizarCurps(): void {
+    this.curpsRegistradasService.getCurpsRegistradas().subscribe({
+      next: ((response) => {
+        this.curpsRegistradasService.syncLocalDataBase(response.data)
+      }),
+      error: ((error) => { })
+    });
+  }
+  syncAspirantesBeneficioFotos(): void {
     this.aspirantesBeneficioFotosService.consultarRelaciones().then((items) => {
       this.aspirantesBeneficioFotos = items;
 

@@ -39,9 +39,9 @@ export class CurpsRegistradasService {
 
   async existeCurp(curp: string): Promise<boolean> {
     const sql = 'SELECT * FROM cat_curps_registradas WHERE curp = ?;';
-    
+
     const resultados = await this.databaseService.query(sql, [curp]);
 
     return resultados.length > 0;
-}
+  }
 }
