@@ -49,6 +49,7 @@ function initializeDatabase() {
 
   console.log('Database path:', dbPath);
 
+
   db = new Database(dbPath);
 
   try {
@@ -145,7 +146,7 @@ function initializeDatabase() {
         p_surname TEXT NULL,
         m_surname TEXT NULL,
         electoralid TEXT NULL,
-        email TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         created_id INTEGER NULL,
         updated_id INTEGER NULL,
@@ -155,19 +156,40 @@ function initializeDatabase() {
         deleted_at TEXT NULL
       );
 
-      CREATE TABLE IF NOT EXISTS settings (
+      CREATE TABLE IF NOT EXISTS cat_ct_configuraciones (
         id INTEGER PRIMARY KEY,
         id_equipo INTEGER NOT NULL,
-        clave TEXT,
-        valor TEXT,
-        descripcion TEXT,
-        created_id INTEGER,
-        updated_id INTEGER,
-        deleted_id INTEGER,
-        created_at TEXT,
-        updated_at TEXT,
-        deleted_at TEXT
+        clave TEXT NULL,
+        valor TEXT NULL,
+        descripcion TEXT NULL,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS cs_opciones_generales (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          opcion_general TEXT NULL,
+          orden INTEGER NULL,
+          valor INTEGER NULL,
+          agrupador TEXT NULL,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cat_curps_registradas (
+          curp TEXT PRIMARY KEY NULL
+      );
+
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
