@@ -18,14 +18,14 @@ export class CurpsRegistradasService {
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
-    for (const item of datos) {
+    for (const curp of datos) {
       const sql = `
         INSERT OR IGNORE INTO cat_curps_registradas (
         curp
         ) VALUES (?)
       `;
       const params = [
-        item.curp,
+        curp,
       ];
 
       await this.databaseService.execute(sql, params);

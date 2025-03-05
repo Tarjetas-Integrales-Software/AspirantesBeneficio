@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
 import { Router } from '@angular/router';
 import { LoginService } from './login.service';
 import { StorageService } from '../../services/storage.service';
+import { UsersService } from '../../services/CRUD/users.service';
 
 declare const window: any;
 
@@ -20,14 +21,24 @@ export class LoginComponent implements OnInit {
 
   loading: boolean = false;
 
-  constructor(private fb: FormBuilder, private router: Router, private loginService: LoginService, private storageService: StorageService) {
-    this.loginForm = this.fb.group({
+  constructor(private fb: FormBuilder
+    , private router: Router
+    , private loginService: LoginService
+    , private storageService: StorageService
+    , private usersService: UsersService) {
+
+      this.loginForm = this.fb.group({
       email: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(5)]]
     });
   }
 
   async ngOnInit(): Promise<void> {
+
+    //Sincronizar Usuarios de TISA hacia la DB Local
+    this.syncDataBase();
+
+
     if (this.storageService.exists("token"))
       this.token = this.storageService.get("token");
 
@@ -56,5 +67,16 @@ export class LoginComponent implements OnInit {
         this.loading = false;
       }
     );
+  }
+
+  syncDataBase(): void {
+    this.usersService.getUsers().subscribe({
+      next: ((response) => {
+        console.log(response.data.usuarios_aspben);
+        this.usersService.syncLocalDataBase(response.data.usuarios_aspben)
+      }
+      ),
+      error: ((error) => { })
+    });
   }
 }

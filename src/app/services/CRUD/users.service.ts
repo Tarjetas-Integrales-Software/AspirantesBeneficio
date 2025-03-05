@@ -1,11 +1,43 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { environment } from './../../../environments/environment';
 import { DatabaseService } from './../database.service';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { CryptoService } from '../crypto.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UsersService {
+  private http = inject(HttpClient);
+
   constructor(private databaseService: DatabaseService) {}
+
+   getUsers(): Observable<any> {
+      return this.http.get(environment.apiUrl + '/aspben/usuarios');
+    }
+
+    async syncLocalDataBase(datos: any[]): Promise<void> {
+      for (const item of datos) {
+        const sql = `
+          INSERT OR REPLACE INTO users (
+            name, p_surname, m_surname, electoralid, email, password, created_id, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        `;
+        const params = [
+          item.name,
+          item.p_surname,
+          item.m_surname,
+          item.electoralid,
+          item.email,
+          CryptoService.encrypt(item.electoralid),
+          item.created_id,
+          item.created_at,
+        ];
+
+        await this.databaseService.execute(sql, params);
+      }
+    }
 
   // Crear un nuevo usuario
   async crearUsuario(usuario: {
@@ -14,7 +46,7 @@ export class UsersService {
     m_surname: string;
     electoralid: string;
     email: string;
-    password: string;
+    //password: string;
     created_id: number;
     created_at: string;
   }): Promise<any> {
@@ -29,7 +61,7 @@ export class UsersService {
       usuario.m_surname,
       usuario.electoralid,
       usuario.email,
-      usuario.password,
+      CryptoService.encrypt(usuario.electoralid),
       usuario.created_id,
       usuario.created_at,
     ];
@@ -114,8 +146,8 @@ export class UsersService {
   // Eliminar un usuario (soft delete)
   async eliminarUsuario(id: number, deleted_id: number, deleted_at: string): Promise<any> {
     const sql = `
-      UPDATE users 
-      SET deleted_id = ?, deleted_at = ? 
+      UPDATE users
+      SET deleted_id = ?, deleted_at = ?
       WHERE id = ?;
     `;
     const params = [deleted_id, deleted_at, id];

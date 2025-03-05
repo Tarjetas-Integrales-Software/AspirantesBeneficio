@@ -168,7 +168,27 @@ function initializeDatabase() {
         created_at TEXT NULL,
         updated_at TEXT NULL,
         deleted_at TEXT NULL
-    );
+      );
+
+      CREATE TABLE IF NOT EXISTS cs_opciones_generales (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          opcion_general TEXT NULL,
+          orden INTEGER NULL,
+          valor INTEGER NULL,
+          agrupador TEXT NULL,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cat_curps_registradas (
+          curp TEXT PRIMARY KEY NULL
+      );
+
 
     `);
   } catch (error) {
