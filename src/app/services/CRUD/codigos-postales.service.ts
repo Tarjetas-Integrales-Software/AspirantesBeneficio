@@ -116,7 +116,6 @@ export class CodigosPostalesService {
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql, cp ? [cp] : []);
-    console.log('resultados', resultados);
     return resultados;
   }
 }

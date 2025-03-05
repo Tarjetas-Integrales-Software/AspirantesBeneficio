@@ -170,7 +170,6 @@ export class FotoComponent implements OnInit {
         created_id: 0, // Asignar el ID adecuado si es necesario
         created_at: formattedFecha
       });
-      console.log('Foto guardada en la base de datos local');
     } catch (error) {
       console.error('Error al guardar la foto en la base de datos local:', error);
     }
@@ -204,7 +203,6 @@ export class FotoComponent implements OnInit {
             created_id: 0,
             created_at: ""
           });
-          console.log("Relación guardada");
 
           //borramos la foto y datos del formulario
           this.capturedImage = null;

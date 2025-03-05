@@ -1,101 +1,90 @@
-<h2 mat-dialog-title>Aspirante de beneficio</h2>
-<mat-dialog-content>
-    <table>
-        <tr>
-            <td><strong>ID</strong></td>
-            <td>{{ aspiranteBeneficio?.id }}</td>
-        </tr>
-        <tr>
-            <td><strong>Modalidad</strong></td>
-            <td>{{ aspiranteBeneficio?.id_modalidad }}</td>
-        </tr>
-        <tr>
-            <td><strong>CURP</strong></td>
-            <td>{{ aspiranteBeneficio?.curp }}</td>
-        </tr>
-        <tr>
-            <td><strong>Nombre Completo</strong></td>
-            <td>{{ aspiranteBeneficio?.nombre_completo }}</td>
-        </tr>
-        <tr>
-            <td><strong>Teléfono</strong></td>
-            <td>{{ aspiranteBeneficio?.telefono }}</td>
-        </tr>
-        <tr>
-            <td><strong>Email</strong></td>
-            <td>{{ aspiranteBeneficio?.email }}</td>
-        </tr>
-        <tr>
-            <td><strong>Fecha de Nacimiento</strong></td>
-            <td>{{ aspiranteBeneficio?.fecha_nacimiento }}</td>
-        </tr>
-        <tr>
-            <td><strong>Estado</strong></td>
-            <td>{{ aspiranteBeneficio?.estado }}</td>
-        </tr>
-        <tr>
-            <td><strong>Municipio</strong></td>
-            <td>{{ aspiranteBeneficio?.municipio }}</td>
-        </tr>
-        <tr>
-            <td><strong>Ciudad</strong></td>
-            <td>{{ aspiranteBeneficio?.ciudad }}</td>
-        </tr>
-        <tr>
-            <td><strong>Código Postal</strong></td>
-            <td>{{ aspiranteBeneficio?.cp }}</td>
-        </tr>
-        <tr>
-            <td><strong>Colonia</strong></td>
-            <td>{{ aspiranteBeneficio?.colonia }}</td>
-        </tr>
-        <tr>
-            <td><strong>Tipo de Asentamiento</strong></td>
-            <td>{{ aspiranteBeneficio?.tipo_asentamiento }}</td>
-        </tr>
-        <tr>
-            <td><strong>Tipo de Zona</strong></td>
-            <td>{{ aspiranteBeneficio?.tipo_zona }}</td>
-        </tr>
-        <tr>
-            <td><strong>Domicilio</strong></td>
-            <td>{{ aspiranteBeneficio?.domicilio }}</td>
-        </tr>
-        <tr>
-            <td><strong>Observaciones</strong></td>
-            <td>{{ aspiranteBeneficio?.com_obs || 'Sin observaciones' }}</td>
-        </tr>
-        <tr>
-            <td><strong>Fecha del Evento</strong></td>
-            <td>{{ aspiranteBeneficio?.fecha_evento }}</td>
-        </tr>
-        <tr>
-            <td><strong>Creado por ID</strong></td>
-            <td>{{ aspiranteBeneficio?.created_id }}</td>
-        </tr>
-        <tr>
-            <td><strong>Actualizado por ID</strong></td>
-            <td>{{ aspiranteBeneficio?.updated_id_id || 'No actualizado' }}</td>
-        </tr>
-        <tr>
-            <td><strong>Eliminado por ID</strong></td>
-            <td>{{ aspiranteBeneficio?.deleted_id || 'No eliminado' }}</td>
-        </tr>
-        <tr>
-            <td><strong>Fecha de Creación</strong></td>
-            <td>{{ aspiranteBeneficio?.created_at }}</td>
-        </tr>
-        <tr>
-            <td><strong>Fecha de Actualización</strong></td>
-            <td>{{ aspiranteBeneficio?.updated_at }}</td>
-        </tr>
-        <tr>
-            <td><strong>Fecha de Eliminación</strong></td>
-            <td>{{ aspiranteBeneficio?.deleted_at || 'No eliminado' }}</td>
-        </tr>
-    </table>
+<h2 mat-dialog-title class="text-xl font-bold text-center mb-4">Detalles del Aspirante</h2>
+<mat-dialog-content class="flex flex-col md:flex-row gap-6">
+  <!-- Sección de la imagen -->
+  <div class="flex justify-center md:justify-start md:w-1/3">
+    <img
+      [src]="aspiranteBeneficio?.aspiranteBeneficioFoto || 'assets/default-profile.png'"
+      alt="Foto del aspirante"
+      class="w-48 h-48 rounded-lg shadow-lg object-cover border-2 border-gray-200 mx-auto"
+    />
+  </div>
 
+  <!-- Sección de la tabla -->
+  <div class="flex-1 overflow-x-auto">
+    <table class="min-w-full bg-white rounded-lg shadow-md">
+      <tbody>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">ID</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.id }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Modalidad</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.id_modalidad }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">CURP</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.curp }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Nombre Completo</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.nombre_completo }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Teléfono</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.telefono }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Email</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.email }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Fecha de Nacimiento</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.fecha_nacimiento | date:'dd/MM/yyyy' }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Estado</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.estado }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Municipio</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.municipio }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Ciudad</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.ciudad }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Código Postal</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.cp }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Colonia</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.colonia }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Tipo de Asentamiento</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.tipo_asentamiento }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Tipo de Zona</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.tipo_zona }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Domicilio</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.domicilio }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Observaciones</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.com_obs || 'Sin observaciones' }}</td>
+        </tr>
+        <tr class="border-b">
+          <td class="py-2 px-4 font-semibold">Fecha del Evento</td>
+          <td class="py-2 px-4">{{ aspiranteBeneficio?.fecha_evento | date:'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </mat-dialog-content>
-<mat-dialog-actions>
-    <button mat-button mat-dialog-close>Cerrar</button>
+<mat-dialog-actions class="flex justify-end mt-4">
+  <button mat-button mat-dialog-close class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cerrar</button>
 </mat-dialog-actions>
