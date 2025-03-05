@@ -2,12 +2,11 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
-import { Aspirantes } from "../../interfaces/aspirantes.interface";
 import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
+import Swal from 'sweetalert2';
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
@@ -50,6 +49,11 @@ export class FotoComponent implements OnInit {
   }
 
   async startStream() {
+    // if (this.datosGeneralesComponent.myForm.invalid) {
+    //   console.log("Formulario no válido, no se puede iniciar el video.");
+    //   return;
+    // }
+
     if (this.stream) {
       this.stopStream()
     }
@@ -105,57 +109,32 @@ export class FotoComponent implements OnInit {
   }
 
   mostrarErrores(form: FormGroup) {
+    let errorMessages = '';
     Object.keys(form.controls).forEach(key => {
       const control = form.get(key);
       const controlErrors = control ? control.errors : null;
       if (controlErrors != null) {
         Object.keys(controlErrors).forEach(keyError => {
-          console.log('Error en el control ' + key + ': ' + keyError + ', valor: ', controlErrors[keyError]);
+          const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
+          console.log(errorMessage);
+          errorMessages += `${errorMessage}\n`;
         });
       }
     });
+
+    if (errorMessages) {
+      Swal.fire({
+        title: 'Errores en el formulario',
+        text: errorMessages,
+        icon: 'error',
+        confirmButtonText: 'Aceptar'
+      });
+    }
   }
-
-  // async uploadPhoto(imageData: string): Promise<void> {
-  //   const formData = new FormData();
-  //   formData.append('file', imageData);
-  //   formData.append('fecha', new Date().toISOString());
-  //   formData.append('tipo', 'foto_aspben');
-  //   formData.append('id_aspirante_beneficio', '123456'); // Reemplazar con el ID real
-  //   formData.append('curp', this.datosGeneralesComponent.myForm.get('curp')?.value);
-
-
-  //   try {
-  //     const response = await this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData).toPromise();
-  //     console.log('Foto subida exitosamente:', response);
-  //   } catch (error) {
-  //     console.error('Error al subir la foto:', error);
-  //   }
-  // }
-
-  // async postWithFiles(data: any, id: number): Promise<Observable<any>> {
-
-  //   let lastId = await this.fotosService.getLastId() || 0;
-  //   console.log('LAST ID BEFORE:', lastId);
-  //   lastId += 1;
-  //   console.log('LAST ID AFTER:', lastId);
-
-  //   console.log('Data:', data);
-  //   const formData = new FormData();
-  //   formData.append('fecha', data.fecha);
-  //   formData.append('tipo', data.tipo);
-  //   formData.append('file', data.file);
-  //   formData.append('id_aspirante_beneficio', lastId.toString());
-  //   if (data.id_aspirante_beneficio !== undefined) {
-  //   }
-  //   formData.append('curp', data.curp);
-
-  //   return this.http.post('https://backmibeneficio.tisaweb.mx/api/v1/lic/aspben/registrar-foto', formData);
-  // }
 
   async uploadFile(): Promise<void> {
     const formattedFecha = new Date().toISOString();
-    const path = 'docsbeneficiarios/' + this.datosGeneralesComponent.myForm.get('curp')?.value;
+    const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
     try {
       // Crear foto en la base de datos local
@@ -163,8 +142,9 @@ export class FotoComponent implements OnInit {
         id_status: 1, // Asignar el estado adecuado
         fecha: formattedFecha,
         tipo: 'foto_aspben',
-        archivo: this.capturedImage!,
-        path: path, // Asignar el path adecuado si es necesario
+        // archivo: this.capturedImage!,
+        archivo: curp + '.webp',
+        path: 'docsaspirantesbeneficio/' + curp + '.webp' , // Asignar el path adecuado si es necesario
         archivoOriginal: `captured_photo.${this.imageFormat}`,
         extension: this.imageFormat,
         created_id: 0, // Asignar el ID adecuado si es necesario
@@ -177,6 +157,9 @@ export class FotoComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    // Detener el video de la cámara
+    this.stopStream();
+
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
@@ -184,8 +167,8 @@ export class FotoComponent implements OnInit {
       try {
 
         if (this.capturedImage) {
-          // Obtenemos los datos del formulario
           const form = await this.datosGeneralesComponent.getMyForm();
+          // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
           // Subimos la foto del aspirante
@@ -204,14 +187,18 @@ export class FotoComponent implements OnInit {
             created_id: 0,
             created_at: ""
           });
-          console.log("Relación guardada");
+          Swal.fire({
+            title: 'Registro exitoso!',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
 
           //borramos la foto y datos del formulario
           this.capturedImage = null;
           this.datosGeneralesComponent.myForm.reset();
           this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
           this.datosGeneralesComponent.myForm.markAsPristine();
-
 
         } else {
           console.log("No hay imagen capturada para subir");

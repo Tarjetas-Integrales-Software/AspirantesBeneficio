@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from './login.service';
-import { StorageService } from '../../services/storage.service';
+import { StorageService } from '../services/storage.service';
 
 declare const window: any;
 
@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit {
           this.storageService.set("token", response.token);
           this.storageService.set("user", response.user);
 
-          this.router.navigate(['/registro']);
+          this.router.navigate(['/inicio/registro']);
         }
         this.loading = false;
       },
