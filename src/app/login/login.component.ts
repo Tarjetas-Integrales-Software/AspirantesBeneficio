@@ -4,6 +4,9 @@ import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } 
 import { Router } from '@angular/router';
 import { LoginService } from './login.service';
 import { StorageService } from '../services/storage.service';
+import { UsersService } from '../services/CRUD/users.service';
+import { NetworkStatusService } from '../services/network-status.service';
+import Swal from 'sweetalert2';
 
 declare const window: any;
 
@@ -20,7 +23,14 @@ export class LoginComponent implements OnInit {
 
   loading: boolean = false;
 
-  constructor(private fb: FormBuilder, private router: Router, private loginService: LoginService, private storageService: StorageService) {
+  constructor(private fb: FormBuilder
+    , private router: Router
+    , private loginService: LoginService
+    , private storageService: StorageService
+    , private usersService: UsersService
+    , private networkStatusService: NetworkStatusService
+  ) {
+
     this.loginForm = this.fb.group({
       email: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(5)]]
@@ -28,6 +38,11 @@ export class LoginComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+
+    //Sincronizar Usuarios de TISA hacia la DB Local
+    this.syncDataBase();
+
+
     if (this.storageService.exists("token"))
       this.token = this.storageService.get("token");
 
@@ -35,26 +50,56 @@ export class LoginComponent implements OnInit {
   }
 
   login(): void {
-    if (this.loginForm.invalid || this.loading)
-      return;
 
-    const { email, password } = this.loginForm.value;
+    if (this.networkStatusService.checkConnection()) {
 
-    this.loading = true;
-    this.loginService.login({ email: email, password: password }).subscribe(
-      (response) => {
-        if (response.response) {
-          this.storageService.set("token", response.token);
-          this.storageService.set("user", response.user);
+      if (this.loginForm.invalid || this.loading)
+        return;
 
-          this.router.navigate(['/inicio/registro']);
+      const { email, password } = this.loginForm.value;
+
+      this.loading = true;
+      this.loginService.login({ email: email, password: password }).subscribe(
+        (response) => {
+          if (response.response) {
+            this.storageService.set("token", response.token);
+            this.storageService.set("user", response.user);
+
+            this.router.navigate(['/inicio/registro']);
+          }
+          this.loading = false;
+        },
+        (error) => {
+          this.errorMessage = 'Credenciales incorrectas. Por favor, inténtelo de nuevo.';
+          this.loading = false;
         }
-        this.loading = false;
-      },
-      (error) => {
-        this.errorMessage = 'Credenciales incorrectas. Por favor, inténtelo de nuevo.';
-        this.loading = false;
+      );
+    } else {
+      // aqui entra en caso de no haber conexion para validar el user y password en la db local
+      const { email, password } = this.loginForm.value;
+      this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
+        .then(existe => {
+          if (existe == true) {
+            this.router.navigate(['/registro']);
+          } else {
+            Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
+          }
+        })
+
+    }
+
+
+
+  }
+
+  syncDataBase(): void {
+    this.usersService.getUsers().subscribe({
+      next: ((response) => {
+        console.log(response.data.usuarios_aspben);
+        this.usersService.syncLocalDataBase(response.data.usuarios_aspben)
       }
-    );
+      ),
+      error: ((error) => { })
+    });
   }
 }
