@@ -69,7 +69,7 @@ function initializeDatabase() {
         tipo_asentamiento TEXT,
         tipo_zona TEXT NOT NULL,
         domicilio TEXT NOT NULL,
-        com_obs TEXT,
+        com_obs TEXT NOT NULL,
         fecha_evento TEXT NOT NULL,
         created_id INTEGER NOT NULL,
         updated_id INTEGER,
