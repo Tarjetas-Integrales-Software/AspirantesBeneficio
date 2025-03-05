@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from './login.service';
-import { StorageService } from '../../services/storage.service';
-import { UsersService } from '../../services/CRUD/users.service';
-import { NetworkStatusService } from '../../services/network-status.service';
+import { StorageService } from '../services/storage.service';
+import { UsersService } from '../services/CRUD/users.service';
+import { NetworkStatusService } from '../services/network-status.service';
 import Swal from 'sweetalert2';
 
 declare const window: any;
@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
     , private networkStatusService: NetworkStatusService
   ) {
 
-      this.loginForm = this.fb.group({
+    this.loginForm = this.fb.group({
       email: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(5)]]
     });
@@ -51,7 +51,7 @@ export class LoginComponent implements OnInit {
 
   login(): void {
 
-    if(this.networkStatusService.checkConnection()){
+    if (this.networkStatusService.checkConnection()) {
 
       if (this.loginForm.invalid || this.loading)
         return;
@@ -65,7 +65,7 @@ export class LoginComponent implements OnInit {
             this.storageService.set("token", response.token);
             this.storageService.set("user", response.user);
 
-            this.router.navigate(['/registro']);
+            this.router.navigate(['/inicio/registro']);
           }
           this.loading = false;
         },
@@ -74,17 +74,17 @@ export class LoginComponent implements OnInit {
           this.loading = false;
         }
       );
-    }else{
+    } else {
       // aqui entra en caso de no haber conexion para validar el user y password en la db local
       const { email, password } = this.loginForm.value;
-      this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email,password)
-      .then(existe => {
-        if( existe == true){
-          this.router.navigate(['/registro']);
-        }else{
-           Swal.fire('Usuario y/o password incorrectos!','','warning');
-        }
-      })
+      this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
+        .then(existe => {
+          if (existe == true) {
+            this.router.navigate(['/registro']);
+          } else {
+            Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
+          }
+        })
 
     }
 

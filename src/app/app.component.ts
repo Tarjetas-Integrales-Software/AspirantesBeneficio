@@ -1,8 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { MenuComponent } from './shared/components/menu/menu.component';
-import { FooterComponent } from './shared/components/footer/footer.component';
-import { NetworkStatusComponent } from './components/network-status/network-status.component';
 
 import { StorageService } from './services/storage.service';
 import { NetworkStatusService } from './services/network-status.service';
@@ -16,7 +13,7 @@ import { switchMap, filter, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MenuComponent, FooterComponent, NetworkStatusComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
