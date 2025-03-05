@@ -171,10 +171,10 @@ function initializeDatabase() {
       );
 
       CREATE TABLE IF NOT EXISTS cs_opciones_generales (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          opcion_general TEXT NULL,
+          id INTEGER PRIMARY KEY,
+          opcion_general TEXT NULL UNIQUE,
           orden INTEGER NULL,
-          valor INTEGER NULL,
+          valor TEXT NULL,
           agrupador TEXT NULL,
           descripcion TEXT NULL,
           created_at DATETIME NULL,
