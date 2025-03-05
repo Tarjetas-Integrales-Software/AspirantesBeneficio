@@ -12,7 +12,7 @@ import { CurpsRegistradasService } from '../../services/CRUD/curps-registradas.s
 export class HomeComponent implements OnInit {
   @ViewChild('datosForm') datosForm!: DatosGeneralesComponent;
 
-constructor(private curpsRegistradasService: CurpsRegistradasService) { }
+  constructor(private curpsRegistradasService: CurpsRegistradasService) { }
 
   ngOnInit(): void {
     this.syncDataBase();
@@ -22,8 +22,7 @@ constructor(private curpsRegistradasService: CurpsRegistradasService) { }
     this.curpsRegistradasService.getCurpsRegistradas().subscribe({
       next: ((response) => {
         this.curpsRegistradasService.syncLocalDataBase(response.data)
-      }
-      ),
+      }),
       error: ((error) => { })
     });
   }

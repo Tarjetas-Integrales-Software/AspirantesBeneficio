@@ -95,7 +95,6 @@ export class LoginComponent implements OnInit {
   syncDataBase(): void {
     this.usersService.getUsers().subscribe({
       next: ((response) => {
-        console.log(response.data.usuarios_aspben);
         this.usersService.syncLocalDataBase(response.data.usuarios_aspben)
       }
       ),
