@@ -12,6 +12,16 @@ export class AspirantesBeneficioService {
 
   constructor(private databaseService: DatabaseService) { }
 
+  createAspirante(aspirante: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
+  }
+
+  async deleteAspirante(id: number): Promise<any> {
+    const sql = 'DELETE FROM ct_aspirantes_beneficio WHERE id = ?;';
+    const params = [id];
+    return await this.databaseService.execute(sql, params);
+  }
+
   getAspirantesBeneficio(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
   }

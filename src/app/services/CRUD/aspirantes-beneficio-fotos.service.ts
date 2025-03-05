@@ -1,10 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { environment } from './../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { DatabaseService } from './../database.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AspirantesBeneficioFotosService {
+  private http = inject(HttpClient);
+
   constructor(private databaseService: DatabaseService) { }
 
   // Crear una nueva relación aspirante-beneficio-foto
@@ -32,7 +37,7 @@ export class AspirantesBeneficioFotosService {
   }
 
   // Leer todas las relaciones
-  async obtenerRelaciones(): Promise<any[]> {
+  async consultarRelaciones(): Promise<any[]> {
     const sql = 'SELECT * FROM sy_aspirantes_beneficio_fotos ORDER BY created_at DESC;';
     return await this.databaseService.query(sql);
   }
@@ -91,13 +96,9 @@ export class AspirantesBeneficioFotosService {
   }
 
   // Eliminar una relación (soft delete)
-  async eliminarRelacion(id: number, deleted_id: number, deleted_at: string): Promise<any> {
-    const sql = `
-      UPDATE sy_aspirantes_beneficio_fotos 
-      SET deleted_id = ?, deleted_at = ? 
-      WHERE id = ?;
-    `;
-    const params = [deleted_id, deleted_at, id];
+  async eliminarRelacion(id: number): Promise<any> {
+    const sql = `DELETE FROM sy_aspirantes_beneficio_fotos WHERE id = ?;`;
+    const params = [id];
     return await this.databaseService.execute(sql, params);
   }
 
@@ -105,15 +106,19 @@ export class AspirantesBeneficioFotosService {
     try {
       // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM sy_aspirantes_beneficio_fotos ORDER BY id DESC LIMIT 1`;
-  
+
       // Usar query en lugar de execute
       const result = await this.databaseService.query(sql);
-  
+
       // Extraer el id si existe, si no, devolver null
       return result.length > 0 ? result[0].id : null;
     } catch (error) {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador
     }
+  }
+
+  createRelacion(relacion: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/register', { ...relacion });
   }
 }
