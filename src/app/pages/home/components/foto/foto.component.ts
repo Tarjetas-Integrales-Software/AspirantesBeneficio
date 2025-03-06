@@ -4,7 +4,8 @@ import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
 import { Aspirantes } from "../../interfaces/aspirantes.interface";
 import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
 import Swal from 'sweetalert2';
@@ -50,11 +51,6 @@ export class FotoComponent implements OnInit {
   }
 
   async startStream() {
-    // if (this.datosGeneralesComponent.myForm.invalid) {
-    //   console.log("Formulario no válido, no se puede iniciar el video.");
-    //   return;
-    // }
-
     if (this.stream) {
       this.stopStream()
     }
@@ -110,27 +106,15 @@ export class FotoComponent implements OnInit {
   }
 
   mostrarErrores(form: FormGroup) {
-    let errorMessages = '';
     Object.keys(form.controls).forEach(key => {
       const control = form.get(key);
       const controlErrors = control ? control.errors : null;
       if (controlErrors != null) {
         Object.keys(controlErrors).forEach(keyError => {
-          const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
-          console.log(errorMessage);
-          errorMessages += `${errorMessage}\n`;
+          console.log('Error en el control ' + key + ': ' + keyError + ', valor: ', controlErrors[keyError]);
         });
       }
     });
-
-    if (errorMessages) {
-      Swal.fire({
-        title: 'Errores en el formulario',
-        text: errorMessages,
-        icon: 'error',
-        confirmButtonText: 'Aceptar'
-      });
-    }
   }
 
   async uploadFile(): Promise<void> {
@@ -151,15 +135,15 @@ export class FotoComponent implements OnInit {
         created_id: 0, // Asignar el ID adecuado si es necesario
         created_at: formattedFecha
       });
+      console.log('Foto guardada en la base de datos local');
     } catch (error) {
       console.error('Error al guardar la foto en la base de datos local:', error);
     }
   }
 
   async onSubmit(): Promise<void> {
-    // Detener el video de la cámara
-    this.stopStream();
 
+    console.log("Formulario válido:", this.datosGeneralesComponent.myForm.value);
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
@@ -198,6 +182,8 @@ export class FotoComponent implements OnInit {
           this.capturedImage = null;
           this.datosGeneralesComponent.myForm.reset();
           this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
+          this.datosGeneralesComponent.myForm.markAsPristine();
+
 
         } else {
           console.log("No hay imagen capturada para subir");

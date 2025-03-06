@@ -18,11 +18,16 @@ import {
   ReactiveFormsModule,
   FormGroup,
   FormBuilder,
+  AbstractControl,
+  ValidationErrors,
 } from '@angular/forms';
 import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
+import { Observable } from 'rxjs';
+import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -74,11 +79,12 @@ export class DatosGeneralesComponent implements OnInit {
     , private gradosService:GradosService
     , private tiposCarrerasService:TiposCarrerasService
     , private carrerasService:CarrerasService
+    , private curpsRegistradasService: CurpsRegistradasService
   ) { }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['', [Validators.required, Validators.minLength(18)],],
+    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern('^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9]{2}$')], [this.curpAsyncValidator.bind(this)]],
     nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
@@ -91,7 +97,24 @@ export class DatosGeneralesComponent implements OnInit {
     tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
     domicilio: ['', [Validators.required, Validators.minLength(5)]],
     com_obs: [''],
-  })
+  });
+
+  curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
+    console.log(control.value, 'curpAsyncValidator');
+    return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
+      console.log(exists, 'existe curp');
+      if (exists) {
+        Swal.fire({
+          icon: 'error',
+          title: 'CURP ya registrada',
+          text: 'La CURP ingresada ya se encuentra registrada en el sistema.',
+        });
+        return { curpExists: true };
+      }
+      return null;
+    });
+  }
+
 
 
   loadJaliscoData(): void {
@@ -281,8 +304,7 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   onSafe() {
-    this.myForm.markAllAsTouched();
-
+    this.myForm.markAsUntouched();
   }
 
   toUpperCaseCurp(event: Event): void {
