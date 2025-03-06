@@ -14,9 +14,7 @@ import { OpcionesGeneralesService } from '../../services/CRUD/opciones-generales
 export class HomeComponent implements OnInit {
   @ViewChild('datosForm') datosForm!: DatosGeneralesComponent;
 
-constructor(private curpsRegistradasService: CurpsRegistradasService
-        , private opcionesGeneralesService: OpcionesGeneralesService
-) { }
+  constructor(private curpsRegistradasService: CurpsRegistradasService, private opcionesGeneralesService: OpcionesGeneralesService) { }
 
   ngOnInit(): void {
     this.syncDataBase();

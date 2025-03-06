@@ -74,8 +74,6 @@ function initializeDatabase() {
         domicilio TEXT NOT NULL,
         com_obs TEXT NOT NULL,
         fecha_evento TEXT NOT NULL,
-        enviado INTEGER NULL,
-        confirmado INTEGER NULL,
         created_id INTEGER NOT NULL,
         updated_id INTEGER,
         deleted_id INTEGER,
@@ -106,6 +104,8 @@ function initializeDatabase() {
         id_aspirante_beneficio INTEGER,
         id_foto INTEGER,
         id_status INTEGER,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
         created_id INTEGER,
         updated_id INTEGER,
         deleted_id INTEGER,
@@ -192,7 +192,6 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_curps_registradas (
           curp TEXT PRIMARY KEY NULL
       );
-
 
       CREATE TABLE IF NOT EXISTS cat_cs_grados (
           id INTEGER PRIMARY KEY,

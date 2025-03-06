@@ -42,6 +42,11 @@ export class AspirantesBeneficioFotosService {
     return await this.databaseService.query(sql);
   }
 
+  async consultarRelacionesDesincronizadas(): Promise<any[]> {
+    const sql = 'SELECT * FROM sy_aspirantes_beneficio_fotos WHERE confirmado IS NULL ORDER BY created_at DESC;';
+    return await this.databaseService.query(sql);
+  }
+
   // Leer una relación por ID
   async obtenerRelacionPorId(id: number): Promise<any> {
     const sql = 'SELECT * FROM sy_aspirantes_beneficio_fotos WHERE id = ?;';
@@ -97,9 +102,17 @@ export class AspirantesBeneficioFotosService {
 
   // Eliminar una relación (soft delete)
   async eliminarRelacion(id: number): Promise<any> {
-    const sql = `DELETE FROM sy_aspirantes_beneficio_fotos WHERE id = ?;`;
-    const params = [id];
-    return await this.databaseService.execute(sql, params);
+    const sql = 'UPDATE sy_aspirantes_beneficio_fotos SET confirmado = ? WHERE id = ?;';
+
+    const params = [1, id];
+
+    try {
+      const result = await this.databaseService.execute(sql, params);
+      return result;
+    } catch (error) {
+      console.error('Error al eliminar la relacion:', error);
+      throw new Error('No se pudo eliminar la relacion');
+    }
   }
 
   async getLastId(): Promise<number | null> {

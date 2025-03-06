@@ -55,7 +55,7 @@ export class FotosService {
   }
 
   // Leer una foto por ID
-  async obtenerFotoPorId(id: number): Promise<any> {
+  async consultarFotoPorId(id: number): Promise<any> {
     const sql = 'SELECT * FROM ct_fotos WHERE id = ?;';
     const params = [id];
     const resultados = await this.databaseService.query(sql, params);

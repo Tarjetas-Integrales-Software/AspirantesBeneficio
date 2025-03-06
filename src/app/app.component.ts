@@ -58,7 +58,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncInterval(): void {
-    this.syncSubscription = interval(600000).pipe(
+    this.syncSubscription = interval(30000).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -69,65 +69,92 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private sincronizarBase(): void {
     this.syncAspirantesBeneficio();
-    this.syncFotos();
-    this.syncAspirantesBeneficioFotos();
     this.actualizarCurps();
   }
 
-  syncAspirantesBeneficio(): void {
-    this.aspirantesBeneficioService.consultarAspirantes().then((items) => {
-      this.aspirantesBeneficio = items;
+  async syncAspirantesBeneficio(): Promise<void> {
+    console.log("Sincronizando aspirantes");
 
-      items.map((item) => {
-        this.aspirantesBeneficioService.createAspirante(item).subscribe({
-          next: (response) => {
-            if (response.response) this.aspirantesBeneficioService.deleteAspirante(item.id);
-          },
-          error: (error) => {
-            console.error('Error al crear registro:', error);
-          }
-        })
-      });
-    });
-  }
-  syncFotos(): void {
-    this.fotosService.consultarFotos().then((items) => {
-      this.fotos = items;
+    try {
+      const items = await this.aspirantesBeneficioFotosService.consultarRelaciones();
 
-      items.map((item) => {
-        this.fotosService.createFoto(item).subscribe({
-          next: (response) => {
-            if (response.response) this.fotosService.eliminarFoto(item.id);
-          },
-          error: (error) => {
-            console.error('Error al crear registro:', error);
+      for (const relacion of items) {
+        const { id_aspirante_beneficio, id_foto } = relacion;
+
+        try {
+          const aspirante = await this.aspirantesBeneficioService.consultarAspirantePorId(id_aspirante_beneficio);
+          const foto = await this.fotosService.consultarFotoPorId(id_foto);
+
+          let nuevoIdAspirante: number | null = null;
+          let nuevoIdFoto: number | null = null;
+
+          // Crear aspirante y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.aspirantesBeneficioService.createAspirante(aspirante).subscribe({
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdAspirante = response.data.id;
+                  if (nuevoIdAspirante)
+                    await this.aspirantesBeneficioService.deleteAspirante(nuevoIdAspirante);
+                }
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear aspirante:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Crear foto y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.fotosService.createFoto(foto).subscribe({
+              next: (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdFoto = response.data.id;
+                }
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear foto:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Verificamos que los IDs sean números válidos antes de crear la relación
+          if (typeof nuevoIdAspirante === "number" && typeof nuevoIdFoto === "number") {
+            const nuevaRelacion = {
+              id_aspirante_beneficio: nuevoIdAspirante,
+              id_foto: nuevoIdFoto
+            };
+
+            this.aspirantesBeneficioFotosService.createRelacion(nuevaRelacion).subscribe({
+              next: (response) => {
+                if (response.response) {
+                  this.aspirantesBeneficioFotosService.eliminarRelacion(relacion.id);
+                }
+              },
+              error: (error) => console.error("Error al crear relación:", error)
+            });
+          } else {
+            console.error("No se pudo crear la relación porque faltan IDs válidos");
           }
-        })
-      });
-    });
+        } catch (error) {
+          console.error("Error obteniendo aspirante o foto:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
   }
+
   actualizarCurps(): void {
     this.curpsRegistradasService.getCurpsRegistradas().subscribe({
       next: ((response) => {
         this.curpsRegistradasService.syncLocalDataBase(response.data)
       }),
       error: ((error) => { })
-    });
-  }
-  syncAspirantesBeneficioFotos(): void {
-    this.aspirantesBeneficioFotosService.consultarRelaciones().then((items) => {
-      this.aspirantesBeneficioFotos = items;
-
-      items.map((item) => {
-        this.aspirantesBeneficioFotosService.createRelacion(item).subscribe({
-          next: (response) => {
-            if (response.response) this.aspirantesBeneficioFotosService.eliminarRelacion(item.id);
-          },
-          error: (error) => {
-            console.error('Error al crear registro:', error);
-          }
-        })
-      });
     });
   }
 }
