@@ -7,11 +7,9 @@
 
       <div x-show="open" click.away="open = false"
         class="mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 px-2 py-2 *:text-end">
-        <a (click)="menuShow = false" routerLink="/configuraciones" routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Configuraciones</a>
-        <a (click)="menuShow = false" routerLink="/registro" routerLinkActive="bg-[#f26507]/50"
+        <a (click)="menuShow = false" routerLink="/inicio/registro" routerLinkActive="bg-[#f26507]/50"
           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Registro</a>
-        <a (click)="menuShow = false" routerLink="/consulta" routerLinkActive="bg-[#f26507]/50"
+        <a (click)="menuShow = false" routerLink="/inicio/consulta" routerLinkActive="bg-[#f26507]/50"
           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Consulta</a>
         <a (click)="cerrarSesion()" routerLinkActive="bg-[#f26507]/50"
           class="block px-4 py-2 text-sm text-red-500 hover:bg-red-100 rounded-md">Cerrar Sesión</a>

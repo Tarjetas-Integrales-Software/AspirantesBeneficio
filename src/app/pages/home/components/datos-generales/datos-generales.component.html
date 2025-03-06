@@ -72,6 +72,54 @@
       <div class="flex flex-row gap-2">
 
 
+        <mat-form-field class="basis-1/4">
+          <mat-label>Grado </mat-label>
+          <mat-select [(ngModel)]="grado" name="grado"
+            (selectionChange)="getCarreras({id_grado: $event.value})">
+            <mat-option *ngFor="let grado of grados" [value]="grado.nombre">
+              {{ grado.nombre }}
+            </mat-option>
+          </mat-select>
+          <!-- @if( isValidField('grado') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("grado") }}
+          </mat-error>
+          } -->
+        </mat-form-field>
+
+        <mat-form-field class="basis-1/4">
+          <mat-label>Tipo Carrera </mat-label>
+          <mat-select [(ngModel)]="tipo_carrera" name="tipo_carrera"
+            (selectionChange)="getCarreras({id_tipo: $event.value})">
+            <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.nombre">
+              {{ tipo_carrera.nombre }}
+            </mat-option>
+          </mat-select>
+          <!-- @if( isValidField('tipo_carrera') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("tipo_carrera") }}
+          </mat-error>
+          } -->
+        </mat-form-field>
+
+        <mat-form-field class="basis-2/4">
+          <mat-label>Carrera</mat-label>
+          <mat-select formControlName="carrera" >
+            <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
+              {{carrera.nombre}}</mat-option>
+          </mat-select>
+          <!-- @if( isValidField('carrera') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("carrera") }}
+            </mat-error>
+            } -->
+        </mat-form-field>
+
+      </div>
+
+      <div class="flex flex-row gap-2">
+
+
         <mat-form-field class="basis-2/3">
           <mat-label>Municipio</mat-label>
           <mat-select [(ngModel)]="municipio" name="municipio"

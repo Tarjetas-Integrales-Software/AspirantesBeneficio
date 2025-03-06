@@ -22,6 +22,6 @@ export class MenuComponent {
     this.menuShow = false;
 
     this.storageService.remove('token');
-    this.router.navigate(['/login']);
+    this.router.navigate(['/auth/login']);
   }
 }

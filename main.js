@@ -61,6 +61,9 @@ function initializeDatabase() {
         telefono TEXT NOT NULL,
         email TEXT,
         fecha_nacimiento TEXT,
+        grado TEXT,
+        tipo_carrera TEXT,
+        carrera TEXT,
         estado TEXT NOT NULL,
         municipio TEXT NOT NULL,
         ciudad TEXT NOT NULL,
@@ -71,6 +74,8 @@ function initializeDatabase() {
         domicilio TEXT NOT NULL,
         com_obs TEXT NOT NULL,
         fecha_evento TEXT NOT NULL,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
         created_id INTEGER NOT NULL,
         updated_id INTEGER,
         deleted_id INTEGER,
@@ -170,10 +175,10 @@ function initializeDatabase() {
       );
 
       CREATE TABLE IF NOT EXISTS cs_opciones_generales (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          opcion_general TEXT NULL,
+          id INTEGER PRIMARY KEY,
+          opcion_general TEXT NULL UNIQUE,
           orden INTEGER NULL,
-          valor INTEGER NULL,
+          valor TEXT NULL,
           agrupador TEXT NULL,
           descripcion TEXT NULL,
           created_at DATETIME NULL,
@@ -187,6 +192,47 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_curps_registradas (
           curp TEXT PRIMARY KEY NULL
       );
+
+      CREATE TABLE IF NOT EXISTS cat_cs_grados (
+          id INTEGER PRIMARY KEY,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cat_cs_tipos_carreras (
+          id INTEGER PRIMARY KEY,
+          id_grado INTEGER NULL,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+
+      CREATE TABLE IF NOT EXISTS cat_cs_carreras (
+          id INTEGER PRIMARY KEY,
+          id_grado INTEGER NULL,
+          id_tipo INTEGER NULL,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
