@@ -7,6 +7,9 @@ import { StorageService } from '../services/storage.service';
 import { UsersService } from '../services/CRUD/users.service';
 import { NetworkStatusService } from '../services/network-status.service';
 import Swal from 'sweetalert2';
+import { GradosService } from '../services/CRUD/grados.service';
+import { CarrerasService } from '../services/CRUD/carreras.service';
+import { TiposCarrerasService } from '../services/CRUD/tipos-carreras.service';
 
 declare const window: any;
 
@@ -29,6 +32,9 @@ export class LoginComponent implements OnInit {
     , private storageService: StorageService
     , private usersService: UsersService
     , private networkStatusService: NetworkStatusService
+    , private gradosService: GradosService
+    , private tiposCarrerasService: TiposCarrerasService
+    , private carrerasService: CarrerasService
   ) {
 
     this.loginForm = this.fb.group({
@@ -76,11 +82,12 @@ export class LoginComponent implements OnInit {
       );
     } else {
       // aqui entra en caso de no haber conexion para validar el user y password en la db local
+
       const { email, password } = this.loginForm.value;
       this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
         .then(existe => {
           if (existe == true) {
-            this.router.navigate(['/registro']);
+            this.router.navigate(['/inicio/registro']);
           } else {
             Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
           }
@@ -100,5 +107,30 @@ export class LoginComponent implements OnInit {
       ),
       error: ((error) => { })
     });
+
+    this.gradosService.getGrados().subscribe({
+      next: ((response) => {
+        this.gradosService.syncLocalDataBase(response.data)
+      }
+      ),
+      error: ((error) => { })
+    });
+
+    this.tiposCarrerasService.getTiposCarreras().subscribe({
+      next: ((response) => {
+        this.tiposCarrerasService.syncLocalDataBase(response.data)
+      }
+      ),
+      error: ((error) => { })
+    });
+
+    this.carrerasService.getCarreras().subscribe({
+      next: ((response) => {
+        this.carrerasService.syncLocalDataBase(response.data)
+      }
+      ),
+      error: ((error) => { })
+    });
+
   }
 }

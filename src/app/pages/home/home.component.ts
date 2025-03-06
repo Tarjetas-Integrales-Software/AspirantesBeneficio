@@ -4,6 +4,7 @@ import { FotoComponent } from './components/foto/foto.component';
 import { CurpsRegistradasService } from '../../services/CRUD/curps-registradas.service';
 import { OpcionesGeneralesService } from '../../services/CRUD/opciones-generales.service';
 
+
 @Component({
   selector: 'app-home',
   imports: [DatosGeneralesComponent, FotoComponent],
@@ -28,6 +29,7 @@ constructor(private curpsRegistradasService: CurpsRegistradasService
       }),
       error: ((error) => { })
     });
+
     this.opcionesGeneralesService.getOpcionesGenerales().subscribe({
       next: ((response) => {
         this.opcionesGeneralesService.syncLocalDataBase(response.data)
@@ -35,6 +37,8 @@ constructor(private curpsRegistradasService: CurpsRegistradasService
       ),
       error: ((error) => { })
     });
+
+
   }
 
   submitDatosForm() {

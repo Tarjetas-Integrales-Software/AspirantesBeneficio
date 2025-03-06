@@ -187,6 +187,48 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_curps_registradas (
           curp TEXT PRIMARY KEY NULL
       );
+
+
+      CREATE TABLE IF NOT EXISTS cat_cs_grados (
+          id INTEGER PRIMARY KEY,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cat_cs_tipos_carreras (
+          id INTEGER PRIMARY KEY,
+          id_grado INTEGER NULL,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+
+      CREATE TABLE IF NOT EXISTS cat_cs_carreras (
+          id INTEGER PRIMARY KEY,
+          id_grado INTEGER NULL,
+          id_tipo INTEGER NULL,
+          nombre TEXT NULL UNIQUE,
+          descripcion TEXT NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
