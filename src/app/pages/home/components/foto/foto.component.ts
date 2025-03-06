@@ -198,7 +198,6 @@ export class FotoComponent implements OnInit {
           this.capturedImage = null;
           this.datosGeneralesComponent.myForm.reset();
           this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
-          this.datosGeneralesComponent.myForm.markAsPristine();
 
         } else {
           console.log("No hay imagen capturada para subir");

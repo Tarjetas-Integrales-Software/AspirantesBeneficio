@@ -59,19 +59,19 @@ export class DatosGeneralesComponent implements OnInit {
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['BADN980406HJCSVS00', [Validators.required, Validators.minLength(18)],],
-    nombre_completo: ['Nestor Daniel Basave Davalos', [Validators.required, Validators.minLength(1)]],
-    telefono: ['3323724897', [Validators.minLength(10)]],
+    curp: ['', [Validators.required, Validators.minLength(18)],],
+    nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
+    telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['danessseguro@gmail.com', [Validators.required, Validators.email]],
-    estado: ['Jalisco', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    estado: ['', [Validators.required, Validators.minLength(2)]],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
     tipo_zona: ['', [Validators.required, Validators.minLength(5)]],
     tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
-    domicilio: ['Malinche 117', [Validators.required, Validators.minLength(5)]],
-    com_obs: ['Ninguno'],
+    domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    com_obs: [''],
   })
 
 
