@@ -9,7 +9,7 @@
 
         <mat-form-field class="basis-1/2 ">
           <mat-label>CURP: </mat-label>
-          <input formControlName="curp" matInput maxlength="18" (input)="toUpperCaseCurp($event)">
+          <input formControlName="curp" matInput maxlength="18" (input)="toUpperCaseCurp($event)" >
           <mat-error *ngIf="isValidField('curp')" class="text-red-500">
             {{ getFieldError("curp") }}
           </mat-error>
@@ -71,11 +71,11 @@
 
       <div class="flex flex-row gap-2">
 
-
         <mat-form-field class="basis-1/4">
           <mat-label>Grado </mat-label>
           <mat-select [(ngModel)]="grado" name="grado"
-            (selectionChange)="getCarreras({id_grado: $event.value})">
+            (selectionChange)="getCarreras({id_grado: $event.value})"
+            [disabled]="selectedValue != '6'">
             <mat-option *ngFor="let grado of grados" [value]="grado.nombre">
               {{ grado.nombre }}
             </mat-option>
@@ -90,7 +90,8 @@
         <mat-form-field class="basis-1/4">
           <mat-label>Tipo Carrera </mat-label>
           <mat-select [(ngModel)]="tipo_carrera" name="tipo_carrera"
-            (selectionChange)="getCarreras({id_tipo: $event.value})">
+            (selectionChange)="getCarreras({id_tipo: $event.value})"
+            [disabled]="selectedValue != '6'">
             <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.nombre">
               {{ tipo_carrera.nombre }}
             </mat-option>
@@ -104,7 +105,7 @@
 
         <mat-form-field class="basis-2/4">
           <mat-label>Carrera</mat-label>
-          <mat-select formControlName="carrera" >
+          <mat-select formControlName="carrera" [disabled]="selectedValue != '6'">
             <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
               {{carrera.nombre}}</mat-option>
           </mat-select>
@@ -116,6 +117,7 @@
         </mat-form-field>
 
       </div>
+
 
       <div class="flex flex-row gap-2">
 
