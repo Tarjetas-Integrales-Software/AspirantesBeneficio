@@ -13,9 +13,6 @@ import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { ModalidadesService } from '../../../../services/CRUD/modalidades.service';
 import {
-  FormControl,
-  FormGroupDirective,
-  NgForm,
   Validators,
   FormsModule,
   ReactiveFormsModule,
@@ -23,6 +20,9 @@ import {
   FormBuilder,
 } from '@angular/forms';
 import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
+import { GradosService } from '../../../../services/CRUD/grados.service';
+import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
+import { CarrerasService } from '../../../../services/CRUD/carreras.service';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -52,10 +52,29 @@ export class DatosGeneralesComponent implements OnInit {
   colonias: any[] = [];
   modalidades: any[] = [];
 
+  grados: any[] = [];
+  grado: string = '';
+
+  tipos_carreras: any[] = [];
+  tipo_carrera: string = '';
+
+  carreras: any[] = [];
+
+
+
+
   tipoAsentamiento: string = '';
   tipoZona: string = '';
 
-  constructor(private homeService: HomeService, private networkStatusService: NetworkStatusService, private codigosPostalesService: CodigosPostalesService, private modalidadesService: ModalidadesService, private aspirantesBeneficioService: AspirantesBeneficioService) { }
+  constructor(private homeService: HomeService
+    , private networkStatusService: NetworkStatusService
+    , private codigosPostalesService: CodigosPostalesService
+    , private modalidadesService: ModalidadesService
+    , private aspirantesBeneficioService: AspirantesBeneficioService
+    , private gradosService:GradosService
+    , private tiposCarrerasService:TiposCarrerasService
+    , private carrerasService:CarrerasService
+  ) { }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
@@ -64,7 +83,7 @@ export class DatosGeneralesComponent implements OnInit {
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['', [Validators.required, Validators.email]],
-    estado: ['', [Validators.required, Validators.minLength(2)]],
+    estado: ['Jalisco', [Validators.required, Validators.minLength(2)]],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
@@ -123,6 +142,8 @@ export class DatosGeneralesComponent implements OnInit {
   municipios: any[] = [];
   municipio: string = '';
 
+
+
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
 
@@ -131,6 +152,9 @@ export class DatosGeneralesComponent implements OnInit {
     this.getCodigosPostales({});
     this.getMunicipios();
     this.getModalidades();
+    this.getGrados();
+    this.getTiposCarreras();
+
 
     // Llama al método para inhabilitar los inputs
     this.disableInputs();
@@ -140,6 +164,32 @@ export class DatosGeneralesComponent implements OnInit {
     this.myForm.get('tipo_zona')?.disable();
     this.myForm.get('tipo_asentamiento')?.disable();
   }
+
+  getGrados(): void {
+    this.gradosService.consultarGrados()
+      .then((grados) => {
+        this.grados = grados;
+      })
+      .catch((error) => console.error('Error al obtener grados:', error));
+  }
+
+  getTiposCarreras(): void {
+    this.tiposCarrerasService.consultarTiposCarreras()
+      .then((tipos_carreras) => {
+        this.tipos_carreras = tipos_carreras;
+      })
+      .catch((error) => console.error('Error al obtener tipos carreras:', error));
+  }
+
+  getCarreras(params: { id_grado?: number, id_tipo?: number }): void {
+    this.carrerasService.consultarCarreras()
+      .then((carreras) => {
+        this.carreras = carreras;
+      })
+      .catch((error) => console.error('Error al obtener carreras:', error));
+  }
+
+
 
   getMunicipios(): void {
     this.codigosPostalesService.consultarMunicipios()
