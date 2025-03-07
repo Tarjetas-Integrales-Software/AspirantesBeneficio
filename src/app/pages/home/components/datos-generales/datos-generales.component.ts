@@ -368,7 +368,6 @@ export class DatosGeneralesComponent implements OnInit {
       created_at: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
-      carrera: this.carreraNombre,
     };
   }
 
