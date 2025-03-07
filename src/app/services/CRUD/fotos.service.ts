@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { environment } from './../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatabaseService } from '../../services/database.service';
+
+const { ipcRenderer } = (window as any).require("electron");
 
 @Injectable({
   providedIn: 'root',
@@ -156,5 +158,45 @@ export class FotosService {
 
   getAspiranteFotoId(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
+  }
+
+  async registerPhoto(aspirante: any, foto: any) {
+    // Leer la imagen desde el main process
+    const { archivo, fecha, tipo } = foto;
+    const { id, curp } = aspirante;
+
+    const imageData = await this.getImageFromMainProcess(curp);
+
+    // Crear el FormData
+    const formData = new FormData();
+    formData.append('fecha', fecha);
+    formData.append('tipo', tipo);
+    formData.append('curp', curp);
+    formData.append('id_aspirante_beneficio', id.toString());
+
+    // Convertir el buffer a un archivo Blob
+    const blob = new Blob([imageData], { type: 'image/webp' });
+    formData.append('file', blob, archivo);
+
+    // Enviar la petición POST
+    return this.http.post(environment.apiUrl + '/lic/aspben/registrar-foto', formData, {
+      headers: new HttpHeaders({
+        'Accept': 'application/json'
+      })
+    }).toPromise();
+  }
+
+  private getImageFromMainProcess(imageName: string): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      ipcRenderer.send('get-image', imageName);
+      ipcRenderer.once('image-read-success', (event: any, data: any) => {
+        console.log(event);
+        resolve(data);
+      });
+      ipcRenderer.once('image-read-error', (event: any, err: any) => {
+        console.log(event);
+        reject(err);
+      });
+    });
   }
 }
