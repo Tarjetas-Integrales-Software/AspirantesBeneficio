@@ -87,7 +87,7 @@
 
         <mat-form-field class="basis-1/4">
           <mat-label>Tipo Carrera </mat-label>
-          <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera">
+          <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera" (selectionChange)="onTipoCarreraChange($event.value)">
             <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.id">
               {{ tipo_carrera.nombre }}
             </mat-option>
@@ -102,8 +102,9 @@
         <mat-form-field class="basis-2/4">
           <mat-label>Carrera</mat-label>
           <mat-select formControlName="carrera">
-            <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
-              {{carrera.nombre}}</mat-option>
+            <mat-option *ngFor="let carrera of carreras" [value]="carrera.id">
+              {{ carrera.nombre }}
+            </mat-option>
           </mat-select>
           <!-- @if( isValidField('carrera') ) {
             <mat-error class="text-red-500">

@@ -236,6 +236,14 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener tipos de carreras:', error));
   }
 
+  onTipoCarreraChange(tipoCarreraId: string): void {
+    this.carrerasService.consultarCarrerasPorIdGrado(this.grado, tipoCarreraId)
+      .then((carreras) => {
+        this.carreras = carreras;
+      })
+      .catch((error) => console.error('Error al obtener carreras:', error));
+  }
+
   getMunicipios(): void {
     this.codigosPostalesService.consultarMunicipios()
       .then((municipios) => {
