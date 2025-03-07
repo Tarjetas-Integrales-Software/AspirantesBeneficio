@@ -92,11 +92,8 @@ export class AppComponent implements OnInit, OnDestroy {
           await new Promise<void>((resolve, reject) => {
             this.aspirantesBeneficioService.createAspirante(aspirante).subscribe({
               next: async (response) => {
-                if (response.response && response.data?.id !== undefined) {
-                  nuevoIdAspirante = response.data.id;
-                  if (nuevoIdAspirante)
-                    await this.aspirantesBeneficioService.deleteAspirante(nuevoIdAspirante);
-                }
+                if (response.response && response.data?.id !== undefined) nuevoIdAspirante = response.data.id;
+
                 resolve();
               },
               error: (error) => {
@@ -139,6 +136,8 @@ export class AppComponent implements OnInit, OnDestroy {
             });
           } else {
             console.error("No se pudo crear la relación porque faltan IDs válidos");
+
+            // if()
           }
         } catch (error) {
           console.error("Error obteniendo aspirante o foto:", error);
