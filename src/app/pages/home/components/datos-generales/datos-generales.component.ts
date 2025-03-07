@@ -231,7 +231,7 @@ export class DatosGeneralesComponent implements OnInit {
 
     this.tiposCarrerasService.consultarTiposCarrerasPorGrado(gradoId.toString())
       .then((tiposCarreras) => {
-        this.tipos_carreras = tiposCarreras;
+      this.tipos_carreras = tiposCarreras.map(tc => tc.nombre);
       })
       .catch((error) => console.error('Error al obtener tipos de carreras:', error));
   }
@@ -239,7 +239,7 @@ export class DatosGeneralesComponent implements OnInit {
   onTipoCarreraChange(tipoCarreraId: string): void {
     this.carrerasService.consultarCarrerasPorIdGrado(this.grado, tipoCarreraId)
       .then((carreras) => {
-        this.carreras = carreras;
+        this.carreras = carreras.map(carrera => carrera.nombre);
       })
       .catch((error) => console.error('Error al obtener carreras:', error));
   }
