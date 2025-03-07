@@ -85,6 +85,23 @@ export class CarrerasService {
     return resultados;
   }
 
+  async consultarTiposCarrerasPorTipoCarrera(id_tipo?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+    let sql = `
+      SELECT id, nombre FROM cat_cs_carreras
+    `;
+
+    // Agregar filtro por id_grado si se proporciona
+    if (id_tipo) {
+      sql += ' WHERE id_tipo = ?';
+    }
+
+    sql += ') ORDER BY id;';
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql, id_tipo ? [id_tipo] : []);
+    return resultados;
+  }
+
 
 
 }

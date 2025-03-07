@@ -19,6 +19,11 @@ export const pagesRoutes: Routes = [
                 component: ConsultaComponent
             },
             {
+              path: 'reportes',
+              title: 'Reportes',
+              component: ConsultaComponent
+            },
+            {
                 path: '**',
                 redirectTo: 'registro'
             }

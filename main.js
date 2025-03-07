@@ -55,33 +55,31 @@ function initializeDatabase() {
     db.exec(`
       CREATE TABLE IF NOT EXISTS ct_aspirantes_beneficio (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_modalidad INTEGER,
+        id_modalidad INTEGER NOT NULL,
         curp TEXT NOT NULL,
         nombre_completo TEXT NOT NULL,
         telefono TEXT NOT NULL,
-        email TEXT,
-        fecha_nacimiento TEXT,
-        grado TEXT,
-        tipo_carrera TEXT,
-        carrera TEXT,
-        estado TEXT NOT NULL,
+        email TEXT NULL,
+        fecha_nacimiento TEXT NULL,
+        grado TEXT NULL,
+        tipo_carrera TEXT NULL,
+        carrera TEXT NULL,
+        estado TEXT NULL,
         municipio TEXT NOT NULL,
-        ciudad TEXT NOT NULL,
+        ciudad TEXT NULL,
         cp TEXT NOT NULL,
         colonia TEXT NOT NULL,
-        tipo_asentamiento TEXT,
-        tipo_zona TEXT NOT NULL,
+        tipo_asentamiento TEXT NULL,
+        tipo_zona TEXT NULL,
         domicilio TEXT NOT NULL,
-        com_obs TEXT NOT NULL,
+        com_obs TEXT NULL,
         fecha_evento TEXT NOT NULL,
-        enviado INTEGER NULL,
-        confirmado INTEGER NULL,
         created_id INTEGER NOT NULL,
-        updated_id INTEGER,
-        deleted_id INTEGER,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
         created_at TEXT NOT NULL,
-        updated_at TEXT,
-        deleted_at TEXT
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
     );
 
     CREATE TABLE IF NOT EXISTS ct_fotos (
@@ -106,6 +104,8 @@ function initializeDatabase() {
         id_aspirante_beneficio INTEGER,
         id_foto INTEGER,
         id_status INTEGER,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
         created_id INTEGER,
         updated_id INTEGER,
         deleted_id INTEGER,
@@ -192,7 +192,6 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_curps_registradas (
           curp TEXT PRIMARY KEY NULL
       );
-
 
       CREATE TABLE IF NOT EXISTS cat_cs_grados (
           id INTEGER PRIMARY KEY,

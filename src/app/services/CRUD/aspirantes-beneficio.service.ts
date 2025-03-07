@@ -18,12 +18,18 @@ export class AspirantesBeneficioService {
   }
 
   async deleteAspirante(id: number): Promise<any> {
-    console.log(id);
-    
-    const sql = 'DELETE FROM ct_aspirantes_beneficio WHERE id = ?;';
-    console.log(sql);
-    const params = [id];
-    return await this.databaseService.execute(sql, params);
+    const sql = 'UPDATE ct_aspirantes_beneficio SET confirmado = ? WHERE id = ?;';
+
+    const params = [1, id];
+
+    try {
+      const result = await this.databaseService.execute(sql, params);
+
+      return result;
+    } catch (error) {
+      console.error('Error al eliminar el aspirante:', error);
+      throw new Error('No se pudo eliminar el aspirante');
+    }
   }
 
   getAspirantesBeneficio(): Observable<any> {
@@ -102,7 +108,7 @@ export class AspirantesBeneficioService {
   }): Promise<any> {
     const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
 
-    if(curpRegistrada) return;
+    if (curpRegistrada) return;
 
     const sql = `
       INSERT OR REPLACE INTO ct_aspirantes_beneficio (
@@ -139,6 +145,11 @@ export class AspirantesBeneficioService {
   // Leer todos los aspirantes
   async consultarAspirantes(): Promise<any[]> {
     const sql = 'SELECT * FROM ct_aspirantes_beneficio ORDER BY fecha_evento DESC;';
+    return await this.databaseService.query(sql);
+  }
+
+  async consultarAspirantesDesincronizados(): Promise<any[]> {
+    const sql = 'SELECT * FROM ct_aspirantes_beneficio WHERE confirmado IS NULL ORDER BY fecha_evento DESC;';
     return await this.databaseService.query(sql);
   }
 

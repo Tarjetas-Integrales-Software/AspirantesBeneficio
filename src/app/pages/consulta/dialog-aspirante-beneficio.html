@@ -1,16 +1,21 @@
-<h2 mat-dialog-title class="text-xl font-bold text-center mb-4">Detalles del Aspirante</h2>
-<mat-dialog-content class="flex flex-col md:flex-row gap-6">
+<h2 mat-dialog-title class="text-xl font-bold text-center mb-4">
+  Detalles del Aspirante
+</h2>
+
+<mat-dialog-content class="flex flex-col md:flex-row items-center gap-6">
   <!-- Sección de la imagen -->
-  <div class="flex justify-center md:justify-start md:w-1/3">
-    <img
-      [src]="aspiranteBeneficio?.aspiranteBeneficioFoto || 'assets/default-profile.png'"
-      alt="Foto del aspirante"
-      class="w-48 h-48 rounded-lg shadow-lg object-cover border-2 border-gray-200 mx-auto"
-    />
+  <div class="w-full flex justify-center">
+    <div class="w-48 h-48 flex justify-center items-center">
+      <img
+        [src]="aspiranteBeneficio?.aspiranteBeneficioFoto || 'assets/default-profile.png'"
+        alt="Foto del aspirante"
+        class="w-full h-full rounded-lg shadow-lg object-cover border-2 border-gray-200"
+      />
+    </div>
   </div>
 
   <!-- Sección de la tabla -->
-  <div class="flex-1 overflow-x-auto">
+  <div class="flex-1 overflow-x-auto self-center">
     <table class="min-w-full bg-white rounded-lg shadow-md">
       <tbody>
         <tr class="border-b">
@@ -85,6 +90,9 @@
     </table>
   </div>
 </mat-dialog-content>
+
 <mat-dialog-actions class="flex justify-end mt-4">
-  <button mat-button mat-dialog-close class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">Cerrar</button>
+  <button mat-button mat-dialog-close class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+    Cerrar
+  </button>
 </mat-dialog-actions>
