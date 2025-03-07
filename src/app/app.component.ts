@@ -73,10 +73,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   async syncAspirantesBeneficio(): Promise<void> {
-    console.log("Sincronizando aspirantes");
-
     try {
-      const items = await this.aspirantesBeneficioFotosService.consultarRelaciones();
+      const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
 
       for (const relacion of items) {
         const { id_aspirante_beneficio, id_foto } = relacion;
