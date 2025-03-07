@@ -75,28 +75,28 @@ export class DatosGeneralesComponent implements OnInit {
     , private codigosPostalesService: CodigosPostalesService
     , private modalidadesService: ModalidadesService
     , private aspirantesBeneficioService: AspirantesBeneficioService
-    , private gradosService:GradosService
-    , private tiposCarrerasService:TiposCarrerasService
-    , private carrerasService:CarrerasService
+    , private gradosService: GradosService
+    , private tiposCarrerasService: TiposCarrerasService
+    , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
   ) { }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern('^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9]{2}$')], [this.curpAsyncValidator.bind(this)]],
+    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)], [this.curpAsyncValidator.bind(this)]],
     nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['', [Validators.required, Validators.email]],
-    carrera: [''],
-    grado: [''],
-    tipo_carrera: [''],
+    email: ['', ],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
     tipo_zona: ['', [Validators.required, Validators.minLength(5)]],
     tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
     domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    grado: ['',],
+    tipo_carrera: ['',],
+    carrera: ['',],
     com_obs: [''],
   });
 
@@ -152,6 +152,8 @@ export class DatosGeneralesComponent implements OnInit {
           return 'El email no es válido';
         case 'minlength':
           return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
+        case 'pattern':
+          return 'El formato de la curp no es correcto';
       }
     }
     return null;
@@ -161,6 +163,7 @@ export class DatosGeneralesComponent implements OnInit {
   selectedCar: string = '';
 
   codigosPostales: any[] = [];
+
   municipios: any[] = [];
   municipio: string = '';
 
@@ -168,8 +171,11 @@ export class DatosGeneralesComponent implements OnInit {
 
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
-
     if (online) this.syncDataBase();
+
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
 
     this.loadAllCodigosPostales();
     this.getMunicipios();
@@ -211,7 +217,30 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener carreras:', error));
   }
 
+  onGradoChange(gradoId: string): void {
 
+    if (gradoId && parseInt(gradoId) < 3) {
+      this.myForm.get('tipo_carrera')?.disable();
+      this.myForm.get('carrera')?.disable();
+    } else {
+      this.myForm.get('tipo_carrera')?.enable();
+      this.myForm.get('carrera')?.enable();
+    }
+
+    this.tiposCarrerasService.consultarTiposCarrerasPorGrado(gradoId.toString())
+      .then((tiposCarreras) => {
+      this.tipos_carreras = tiposCarreras.map(tc => tc.nombre);
+      })
+      .catch((error) => console.error('Error al obtener tipos de carreras:', error));
+  }
+
+  onTipoCarreraChange(tipoCarreraId: string): void {
+    this.carrerasService.consultarCarrerasPorIdGrado(this.grado, tipoCarreraId)
+      .then((carreras) => {
+        this.carreras = carreras.map(carrera => carrera.nombre);
+      })
+      .catch((error) => console.error('Error al obtener carreras:', error));
+  }
 
   getMunicipios(): void {
     this.codigosPostalesService.consultarMunicipios()
@@ -307,6 +336,7 @@ export class DatosGeneralesComponent implements OnInit {
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
+      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
       id: lastIdApirante + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
@@ -318,6 +348,16 @@ export class DatosGeneralesComponent implements OnInit {
       created_id: 1,
       created_at: formattedDate,
     };
+  }
+
+  selectedValue2(){
+    console.log('selectedValue2', this.selectedValue);
+    this.selectedValue = this.myForm.get('id_modalidad')?.value;
+    if(this.selectedValue == '6'){
+      this.myForm.get('grado')?.enable();
+    }else{
+      this.myForm.get('grado')?.disable();
+    }
   }
 
   onSafe() {
