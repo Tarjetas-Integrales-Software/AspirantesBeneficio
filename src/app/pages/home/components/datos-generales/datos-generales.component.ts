@@ -75,19 +75,19 @@ export class DatosGeneralesComponent implements OnInit {
     , private codigosPostalesService: CodigosPostalesService
     , private modalidadesService: ModalidadesService
     , private aspirantesBeneficioService: AspirantesBeneficioService
-    , private gradosService:GradosService
-    , private tiposCarrerasService:TiposCarrerasService
-    , private carrerasService:CarrerasService
+    , private gradosService: GradosService
+    , private tiposCarrerasService: TiposCarrerasService
+    , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
   ) { }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern('^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9]{2}$')], [this.curpAsyncValidator.bind(this)]],
+    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)], [this.curpAsyncValidator.bind(this)]],
     nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', ],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
@@ -151,6 +151,8 @@ export class DatosGeneralesComponent implements OnInit {
           return 'El email no es válido';
         case 'minlength':
           return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
+        case 'pattern':
+          return 'El formato de la curp no es correcto';
       }
     }
     return null;
