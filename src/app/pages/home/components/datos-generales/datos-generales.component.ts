@@ -70,6 +70,11 @@ export class DatosGeneralesComponent implements OnInit {
 
   allCodigosPostales: any[] = [];
 
+  // estos son las que se utilizan para mandar el formulario
+  gradoNombre: string = '';
+  tipoCarreraNombre: string = '';
+  carreraNombre: string = '';
+
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
@@ -229,17 +234,28 @@ export class DatosGeneralesComponent implements OnInit {
 
     this.tiposCarrerasService.consultarTiposCarrerasPorGrado(gradoId.toString())
       .then((tiposCarreras) => {
-      this.tipos_carreras = tiposCarreras.map(tc => tc.nombre);
+        this.tipos_carreras = tiposCarreras;
       })
       .catch((error) => console.error('Error al obtener tipos de carreras:', error));
+
+    const selectedGrado = this.grados.find(grado => grado.id === gradoId);
+    this.gradoNombre = selectedGrado ? selectedGrado.nombre : '';
   }
 
   onTipoCarreraChange(tipoCarreraId: string): void {
     this.carrerasService.consultarCarrerasPorIdGrado(this.grado, tipoCarreraId)
       .then((carreras) => {
-        this.carreras = carreras.map(carrera => carrera.nombre);
+        this.carreras = carreras;
       })
       .catch((error) => console.error('Error al obtener carreras:', error));
+
+    const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.id === tipoCarreraId);
+    this.tipoCarreraNombre = selectedTipoCarrera ? selectedTipoCarrera.nombre : '';
+  }
+
+  onCarreraChange(carreraId: string): void {
+    const selectedCarrera = this.carreras.find(carrera => carrera.id === carreraId);
+    this.carreraNombre = selectedCarrera ? selectedCarrera.nombre : '';
   }
 
   getMunicipios(): void {
@@ -347,6 +363,8 @@ export class DatosGeneralesComponent implements OnInit {
       fecha_evento: formattedDate,
       created_id: 1,
       created_at: formattedDate,
+      grado: this.gradoNombre,
+      tipo_carrera: this.tipoCarreraNombre,
     };
   }
 
