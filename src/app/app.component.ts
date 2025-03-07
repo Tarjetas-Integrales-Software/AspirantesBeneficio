@@ -132,28 +132,16 @@ export class AppComponent implements OnInit, OnDestroy {
                   this.aspirantesBeneficioFotosService.eliminarRelacion(relacion.id);
                 }
               },
-              error: (error) => console.error("Error al crear relación:", error)
+              error: (error) => {
+                this.eliminarRelacionados(nuevoIdAspirante, nuevoIdFoto);
+
+                console.error("Error al crear relación:", error);
+              }
             });
           } else {
             console.error("No se pudo crear la relación porque faltan IDs válidos");
 
-            if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
-              next: async (response) => {
-                if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
-              },
-              error: (error) => {
-                console.error("Error al crear aspirante:", error);
-              }
-            });
-
-            if (typeof nuevoIdFoto === "number") this.fotosService.deleteFoto(nuevoIdFoto).subscribe({
-              next: async (response) => {
-                if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
-              },
-              error: (error) => {
-                console.error("Error al crear aspirante:", error);
-              }
-            });
+            this.eliminarRelacionados(nuevoIdAspirante, nuevoIdFoto);
           }
         } catch (error) {
           console.error("Error obteniendo aspirante o foto:", error);
@@ -170,6 +158,26 @@ export class AppComponent implements OnInit, OnDestroy {
         this.curpsRegistradasService.syncLocalDataBase(response.data)
       }),
       error: ((error) => { })
+    });
+  }
+
+  eliminarRelacionados(nuevoIdAspirante: null | number, nuevoIdFoto: null | number): void {
+    if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
+
+    if (typeof nuevoIdFoto === "number") this.fotosService.deleteFoto(nuevoIdFoto).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
     });
   }
 }
