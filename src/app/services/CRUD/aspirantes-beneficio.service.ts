@@ -49,10 +49,11 @@ export class AspirantesBeneficioService {
       const sql = `
         INSERT OR REPLACE INTO ct_aspirantes_beneficio (
           id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+          grado, tipo_carrera, carrera,
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           domicilio, com_obs, fecha_evento, created_id, updated_id, deleted_id,
           created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const params = [
         item.id,
@@ -62,6 +63,9 @@ export class AspirantesBeneficioService {
         item.telefono,
         item.email,
         item.fecha_nacimiento,
+        item.grado,
+        item.tipo_carrera,
+        item.carrera,
         item.estado,
         item.municipio,
         item.ciudad,
@@ -93,6 +97,9 @@ export class AspirantesBeneficioService {
     telefono: string;
     email?: string;
     fecha_nacimiento: string;
+    grado: string;
+    tipo_carrera: string;
+    carrera: string;
     estado: string;
     municipio: string;
     ciudad: string;
@@ -112,10 +119,11 @@ export class AspirantesBeneficioService {
 
     const sql = `
       INSERT OR REPLACE INTO ct_aspirantes_beneficio (
-        id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento, estado,
-        municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
+        id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+        grado, tipo_carrera, carrera,
+        estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
         fecha_evento, created_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const params = [
       aspirante.id,
@@ -125,6 +133,9 @@ export class AspirantesBeneficioService {
       aspirante.telefono,
       aspirante.email,
       aspirante.fecha_nacimiento,
+      aspirante.grado,
+      aspirante.tipo_carrera,
+      aspirante.carrera,
       aspirante.estado,
       aspirante.municipio,
       aspirante.ciudad,
