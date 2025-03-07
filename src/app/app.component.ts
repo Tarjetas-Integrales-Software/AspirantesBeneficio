@@ -60,8 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncInterval(): void {
-    // this.syncSubscription = interval(environment.syncInterval).pipe(
-    this.syncSubscription = interval(60000).pipe(
+    this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
