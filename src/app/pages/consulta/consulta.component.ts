@@ -157,10 +157,17 @@ export class DialogAspiranteBeneficio implements OnInit {
   }
 
   getAspiranteFotoId(): void {
+    this.aspiranteBeneficioFoto = 'assets/default-profile.png';
+
     this.fotosService.getAspiranteFotoId(this.id).subscribe({
       next: (response) => {
         if (response.response)
           this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
+          this.cdr.detectChanges();
+
+
+        console.log("David: ", response.data);
+
       },
       error: (error) => {
         console.error('Error al obtener los datos del aspirante:', error);

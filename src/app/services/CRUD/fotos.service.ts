@@ -160,12 +160,12 @@ export class FotosService {
     return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
   }
 
-  async registerPhoto(foto: any, aspirante: any) {
+  async registerPhoto(aspirante: any, foto: any) {
     // Leer la imagen desde el main process
     const { archivo, fecha, tipo } = foto;
     const { id, curp } = aspirante;
 
-    const imageData = await this.getImageFromMainProcess(archivo);
+    const imageData = await this.getImageFromMainProcess(curp);
 
     // Crear el FormData
     const formData = new FormData();
