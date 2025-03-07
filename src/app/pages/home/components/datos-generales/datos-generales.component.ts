@@ -65,11 +65,10 @@ export class DatosGeneralesComponent implements OnInit {
 
   carreras: any[] = [];
 
-
-
-
   tipoAsentamiento: string = '';
   tipoZona: string = '';
+
+  allCodigosPostales: any[] = [];
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -89,7 +88,6 @@ export class DatosGeneralesComponent implements OnInit {
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['', [Validators.required, Validators.email]],
-    estado: ['Jalisco', [Validators.required, Validators.minLength(2)]],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
@@ -172,7 +170,7 @@ export class DatosGeneralesComponent implements OnInit {
 
     if (online) this.syncDataBase();
 
-    this.getCodigosPostales({});
+    this.loadAllCodigosPostales();
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
@@ -222,14 +220,30 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
 
-  getCodigosPostales(params: { cp?: string, colonia?: string, municipio?: string }): void {
-    const { cp, colonia, municipio } = params;
+  loadAllCodigosPostales(): void {
+    this.codigosPostalesService.getCodigosPostales().subscribe({
+      next: (response) => {
+        this.allCodigosPostales = response.data;
+      },
+      error: (error) => {
+        console.error('Error al cargar todos los códigos postales:', error);
+      }
+    });
+  }
 
-    this.codigosPostalesService.consultarCodigosPostales({ cp: cp, colonia: colonia, municipio: municipio })
-      .then((resultados) => {
-        this.codigosPostales = resultados;
-      })
-      .catch((error) => console.error('Error al consultar códigos postales:', error));
+  getCodigosPostales(params: { municipio?: string }): void {
+    const { municipio } = params;
+
+    if (municipio) {
+      const filtered = this.allCodigosPostales.filter(cp => cp.municipio.includes(municipio));
+      this.codigosPostales = Array.from(new Set(filtered.map(cp => cp.cp))).map(cp => {
+        return filtered.find(item => item.cp === cp);
+      });
+    } else {
+      this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
+        return this.allCodigosPostales.find(item => item.cp === cp);
+      });
+    }
   }
 
   getColoniasByCP(): void {
@@ -253,8 +267,10 @@ export class DatosGeneralesComponent implements OnInit {
   onColoniaChange(colonia: string): void {
     const selectedColonia = this.colonias.find(item => item.colonia === colonia);
     if (selectedColonia) {
+      console.log(selectedColonia);
       this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
       this.tipoZona = selectedColonia.tipo_zona;
+      console.log(this.tipoAsentamiento, this.tipoZona);
     }
   }
 
@@ -294,9 +310,10 @@ export class DatosGeneralesComponent implements OnInit {
       ...this.myForm.value,
       id: lastIdApirante + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      estado: 'Jalisco',
+      ciudad: this.myForm.get('municipio')?.value,
       tipos_asentamiento: this.tipoAsentamiento,
       tipo_zona: this.tipoZona,
-      ciudad: this.myForm.get('municipio')?.value,
       fecha_evento: formattedDate,
       created_id: 1,
       created_at: formattedDate,
