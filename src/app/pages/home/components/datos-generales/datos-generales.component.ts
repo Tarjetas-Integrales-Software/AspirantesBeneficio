@@ -165,7 +165,7 @@ export class DatosGeneralesComponent implements OnInit {
   selectedCar: string = '';
 
   codigosPostales: any[] = [];
-  
+
   municipios: any[] = [];
   municipio: string = '';
 
@@ -219,7 +219,13 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener carreras:', error));
   }
 
-
+  onGradoChange(gradoId: string): void {
+    this.tiposCarrerasService.consultarTiposCarrerasPorGrado(gradoId.toString())
+      .then((tiposCarreras) => {
+        this.tipos_carreras = tiposCarreras;
+      })
+      .catch((error) => console.error('Error al obtener tipos de carreras:', error));
+  }
 
   getMunicipios(): void {
     this.codigosPostalesService.consultarMunicipios()
