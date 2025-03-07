@@ -53,4 +53,22 @@ export class TiposCarrerasService {
     const resultados = await this.databaseService.query(sql);
     return resultados;
   }
+
+  async consultarTiposCarrerasPorGrado(id_grado?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+    let sql = `
+      SELECT id, nombre FROM cat_cs_tipos_carreras
+    `;
+
+    // Agregar filtro por id_grado si se proporciona
+    if (id_grado) {
+      sql += ' WHERE id_grado = ?';
+    }
+
+    sql += ') ORDER BY id;';
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql, id_grado ? [id_grado] : []);
+    return resultados;
+  }
+
 }
