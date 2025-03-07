@@ -137,7 +137,23 @@ export class AppComponent implements OnInit, OnDestroy {
           } else {
             console.error("No se pudo crear la relación porque faltan IDs válidos");
 
-            // if()
+            if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
+              },
+              error: (error) => {
+                console.error("Error al crear aspirante:", error);
+              }
+            });
+
+            if (typeof nuevoIdFoto === "number") this.fotosService.deleteFoto(nuevoIdFoto).subscribe({
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
+              },
+              error: (error) => {
+                console.error("Error al crear aspirante:", error);
+              }
+            });
           }
         } catch (error) {
           console.error("Error obteniendo aspirante o foto:", error);

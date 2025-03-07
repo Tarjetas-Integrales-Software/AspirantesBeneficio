@@ -127,6 +127,10 @@ export class FotosService {
     return await this.databaseService.execute(sql, params);
   }
 
+  deleteFoto(id: number): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/fotos/delete', { id: id });
+  }
+
   // Eliminar una foto (soft delete)
   async eliminarFoto(id: number): Promise<any> {
     const sql = `DELETE FROM ct_fotos WHERE id = ?;`;
