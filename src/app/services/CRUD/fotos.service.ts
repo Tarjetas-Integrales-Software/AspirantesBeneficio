@@ -190,11 +190,9 @@ export class FotosService {
     return new Promise((resolve, reject) => {
       ipcRenderer.send('get-image', imageName);
       ipcRenderer.once('image-read-success', (event: any, data: any) => {
-        console.log(event);
         resolve(data);
       });
       ipcRenderer.once('image-read-error', (event: any, err: any) => {
-        console.log(event);
         reject(err);
       });
     });

@@ -37,7 +37,7 @@ export class AspirantesBeneficioService {
   }
 
   getAspiranteBeneficioId(id: number): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_por_id', { id: id });
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_with_joins_por_id', { id: id });
   }
 
   deleteAspiranteBeneficio(id: number): Observable<any> {

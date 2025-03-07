@@ -135,15 +135,12 @@ export class FotoComponent implements OnInit {
         created_id: 0, // Asignar el ID adecuado si es necesario
         created_at: formattedFecha
       });
-      console.log('Foto guardada en la base de datos local');
     } catch (error) {
       console.error('Error al guardar la foto en la base de datos local:', error);
     }
   }
 
   async onSubmit(): Promise<void> {
-
-    console.log("Formulario válido:", this.datosGeneralesComponent.myForm.value);
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
       this.datosGeneralesComponent.onSafe();
@@ -192,7 +189,6 @@ export class FotoComponent implements OnInit {
     } else {
       // Marcar todos los campos como tocados para mostrar los errores
       this.datosGeneralesComponent.myForm.markAllAsTouched();
-      console.log("Formulario no válido");
       // Mostrar los errores en la consola del formulario
       this.mostrarErrores(this.datosGeneralesComponent.myForm);
     }

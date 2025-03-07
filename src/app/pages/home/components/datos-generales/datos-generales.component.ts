@@ -101,9 +101,7 @@ export class DatosGeneralesComponent implements OnInit {
   });
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
-    console.log(control.value, 'curpAsyncValidator');
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
-      console.log(exists, 'existe curp');
       if (exists) {
         Swal.fire({
           icon: 'error',
@@ -270,10 +268,8 @@ export class DatosGeneralesComponent implements OnInit {
   onColoniaChange(colonia: string): void {
     const selectedColonia = this.colonias.find(item => item.colonia === colonia);
     if (selectedColonia) {
-      console.log(selectedColonia);
       this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
       this.tipoZona = selectedColonia.tipo_zona;
-      console.log(this.tipoAsentamiento, this.tipoZona);
     }
   }
 

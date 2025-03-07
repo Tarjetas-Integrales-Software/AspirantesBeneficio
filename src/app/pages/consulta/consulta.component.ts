@@ -141,14 +141,15 @@ export class DialogAspiranteBeneficio implements OnInit {
 
   ngOnInit() {
     this.getAspiranteBeneficioId();
-    this.getAspiranteFotoId();
   }
 
   getAspiranteBeneficioId(): void {
     this.aspirantesBeneficioService.getAspiranteBeneficioId(this.id).subscribe({
       next: (response) => {
-        this.aspiranteBeneficio = response.data[0];
+        this.aspiranteBeneficio = response.data;
         this.cdr.detectChanges();
+
+        this.getAspiranteFotoId(this.aspiranteBeneficio.id_foto);
       },
       error: (error) => {
         console.error('Error al obtener los datos del aspirante:', error);
@@ -156,18 +157,14 @@ export class DialogAspiranteBeneficio implements OnInit {
     });
   }
 
-  getAspiranteFotoId(): void {
+  getAspiranteFotoId(id: number): void {
     this.aspiranteBeneficioFoto = 'assets/default-profile.png';
 
-    this.fotosService.getAspiranteFotoId(this.id).subscribe({
+    this.fotosService.getAspiranteFotoId(id).subscribe({
       next: (response) => {
         if (response.response)
           this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
-          this.cdr.detectChanges();
-
-
-        console.log("David: ", response.data);
-
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error al obtener los datos del aspirante:', error);
