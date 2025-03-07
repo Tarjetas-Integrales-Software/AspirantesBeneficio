@@ -290,3 +290,17 @@ ipcMain.on("save-image", (event, imageData, name) => {
     console.log("Imagen guardada en:", savePath);
   });
 });
+
+ipcMain.on("get-image", (event, name) => {
+  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+  const filePath = path.join(dirPath, name + ".webp");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer la imagen:", err);
+      event.reply("image-read-error", err);
+      return;
+    }
+    event.reply("image-read-success", data);
+  });
+});
