@@ -181,8 +181,6 @@ export class FotoComponent implements OnInit {
           //borramos la foto y datos del formulario
           this.capturedImage = null;
           this.datosGeneralesComponent.myForm.reset();
-          this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
-          this.datosGeneralesComponent.myForm.markAsPristine();
 
 
         } else {
