@@ -94,6 +94,9 @@ export class DatosGeneralesComponent implements OnInit {
     tipo_zona: ['', [Validators.required, Validators.minLength(5)]],
     tipo_asentamiento: ['', [Validators.required, Validators.minLength(5)]],
     domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    grado: ['',],
+    tipo_carrera: ['',],
+    carrera: ['',],
     com_obs: [''],
   });
 
@@ -162,6 +165,7 @@ export class DatosGeneralesComponent implements OnInit {
   selectedCar: string = '';
 
   codigosPostales: any[] = [];
+  
   municipios: any[] = [];
   municipio: string = '';
 
@@ -169,8 +173,11 @@ export class DatosGeneralesComponent implements OnInit {
 
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
-
     if (online) this.syncDataBase();
+
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
 
     this.loadAllCodigosPostales();
     this.getMunicipios();
@@ -310,6 +317,7 @@ export class DatosGeneralesComponent implements OnInit {
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
+      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
       id: lastIdApirante + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
@@ -320,6 +328,20 @@ export class DatosGeneralesComponent implements OnInit {
       created_id: 1,
       created_at: formattedDate,
     };
+  }
+
+  selectedValue2(){
+    console.log('selectedValue2', this.selectedValue);
+    this.selectedValue = this.myForm.get('id_modalidad')?.value;
+    if(this.selectedValue == '6'){
+      this.myForm.get('grado')?.enable();
+      this.myForm.get('tipo_carrera')?.enable();
+      this.myForm.get('carrera')?.enable();
+    }else{
+      this.myForm.get('grado')?.disable();
+      this.myForm.get('tipo_carrera')?.disable();
+      this.myForm.get('carrera')?.disable();
+    }
   }
 
   onSafe() {
