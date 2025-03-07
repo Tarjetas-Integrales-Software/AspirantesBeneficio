@@ -220,6 +220,15 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   onGradoChange(gradoId: string): void {
+
+    if (gradoId && parseInt(gradoId) < 3) {
+      this.myForm.get('tipo_carrera')?.disable();
+      this.myForm.get('carrera')?.disable();
+    } else {
+      this.myForm.get('tipo_carrera')?.enable();
+      this.myForm.get('carrera')?.enable();
+    }
+
     this.tiposCarrerasService.consultarTiposCarrerasPorGrado(gradoId.toString())
       .then((tiposCarreras) => {
         this.tipos_carreras = tiposCarreras;
@@ -341,12 +350,8 @@ export class DatosGeneralesComponent implements OnInit {
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
     if(this.selectedValue == '6'){
       this.myForm.get('grado')?.enable();
-      this.myForm.get('tipo_carrera')?.enable();
-      this.myForm.get('carrera')?.enable();
     }else{
       this.myForm.get('grado')?.disable();
-      this.myForm.get('tipo_carrera')?.disable();
-      this.myForm.get('carrera')?.disable();
     }
   }
 
