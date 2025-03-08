@@ -54,7 +54,7 @@ export class TiposCarrerasService {
     return resultados;
   }
 
-  async consultarTiposCarrerasPorGrado(id_grado?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+  async consultarTiposCarrerasPorGrado(id_grado?: string): Promise<{ id: number; nombre: string }[]> {
     let sql = `
       SELECT id, nombre FROM cat_cs_tipos_carreras
     `;
@@ -64,7 +64,7 @@ export class TiposCarrerasService {
       sql += ' WHERE id_grado = ?';
     }
 
-    sql += ') ORDER BY id;';
+    sql += ' ORDER BY id;';
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql, id_grado ? [id_grado] : []);

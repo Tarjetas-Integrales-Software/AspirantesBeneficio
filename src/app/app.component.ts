@@ -11,6 +11,8 @@ import { CurpsRegistradasService } from './services/CRUD/curps-registradas.servi
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
+import { environment } from '../environments/environment';
+
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
@@ -58,7 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncInterval(): void {
-    this.syncSubscription = interval(30000).pipe(
+    this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))

@@ -55,37 +55,32 @@ export class CarrerasService {
     return resultados;
   }
 
-  async consultarCarrerasPorIdGrado(id_grado?: string,id_tipo?: string): Promise<{ id: number; nombre: string;  }[]> {
+  async consultarCarrerasPorIdGrado(id_grado?: string, id_tipo?: string): Promise<{ id: number; nombre: string }[]> {
     let sql = `
-     SELECT id, nombre FROM cat_cs_carreras
+      SELECT id, nombre FROM cat_cs_carreras
     `;
-
-    // Agregar filtro por id_grado si se proporciona
 
     sql += ' WHERE 1 = 1 ';
 
-
-    // Agregar filtro por id_grado si se proporciona
     if (id_grado) {
       sql += ' AND id_grado = ? ';
     }
 
-    // Agregar filtro por id_tipo si se proporciona
     if (id_tipo) {
       sql += ' AND id_tipo = ? ';
     }
 
-    sql += ') ORDER BY nombre; ';
+    sql += ' ORDER BY nombre; ';
 
-    let _id_grado = id_grado ? [id_grado] : ''
-    let _id_tipo = id_tipo ? [id_tipo] : ''
+    const params = [];
+    if (id_grado) params.push(id_grado);
+    if (id_tipo) params.push(id_tipo);
 
-    // Ejecutar la consulta
-    const resultados = await this.databaseService.query(sql, [_id_grado,_id_tipo]);
+    const resultados = await this.databaseService.query(sql, params);
     return resultados;
   }
 
-  async consultarTiposCarrerasPorTipoCarrera(id_tipo?: string): Promise<{ id: number; colonia: string; tipo_zona: string; tipo_asentamiento: string }[]> {
+  async consultarTiposCarrerasPorTipoCarrera(id_tipo?: string): Promise<{ id: number; nombre: string;}[]> {
     let sql = `
       SELECT id, nombre FROM cat_cs_carreras
     `;
