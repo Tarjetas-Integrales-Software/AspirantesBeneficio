@@ -26,6 +26,13 @@
           Reportes
         </a>
 
+
+        <a (click)="menuShow = false" routerLink="/inicio/consulta" routerLinkActive="bg-[#f26507]/50"
+          class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
+          <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+          Consulta</a>
+
+
         <a (click)="menuShow = false" routerLink="/inicio/registro" routerLinkActive="bg-[#f26507]/50"
           class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
           <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"
@@ -39,11 +46,6 @@
             <path d="M19 16v6" />
           </svg>
           Registro</a>
-
-        <a (click)="menuShow = false" routerLink="/inicio/consulta" routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-          <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-          Consulta</a>
 
 
         <a (click)="cerrarSesion()" routerLinkActive="bg-[#f26507]/50"
