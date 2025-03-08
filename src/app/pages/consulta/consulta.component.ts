@@ -23,6 +23,7 @@ import {
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from '../../services/CRUD/fotos.service';
+import { StorageService } from '../../services/storage.service';
 
 export interface AspiranteBeneficio {
   id: string;
@@ -42,12 +43,18 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  rolesConPermiso: number[] = [103, 104];
+  rolesUsuario: Array<{ pkUserPerfil: number }> = [];
+
   readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService) {
+  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService, private storageService: StorageService) {
     this.dataSource = new MatTableDataSource();
+
+    if (this.storageService.exists("perfiles"))
+      this.rolesUsuario = this.storageService.get("perfiles");
   }
 
   ngOnInit(): void {
@@ -108,6 +115,13 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
       width: '800px',
       data: { id: id }
     });
+  }
+
+  get permisoAcciones(): boolean {
+    // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
+    return this.rolesUsuario.some(perfil =>
+      perfil.pkUserPerfil && this.rolesConPermiso.includes(Number(perfil.pkUserPerfil))
+    );
   }
 }
 
