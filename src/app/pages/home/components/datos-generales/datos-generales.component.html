@@ -92,7 +92,7 @@
         <mat-form-field class="basis-2/4">
           <mat-label>Carrera</mat-label>
           <mat-select formControlName="carrera">
-            <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
+            <mat-option *ngFor="let carrera of carreras" [value]="carrera.id">
               {{ carrera.nombre }}
             </mat-option>
           </mat-select>
