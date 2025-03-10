@@ -22,6 +22,11 @@ export const pagesRoutes: Routes = [
                 component: ConsultaComponent
             },
             {
+                path: 'editar/:id',
+                title: 'Editar',
+                component: HomeComponent
+            },
+            {
               path: 'reportes',
               title: 'Reportes',
               component: ReportesComponent

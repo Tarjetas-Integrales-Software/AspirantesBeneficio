@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -28,6 +28,7 @@ import { CarrerasService } from '../../../../services/CRUD/carreras.service';
 import { Observable } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -74,6 +75,10 @@ export class DatosGeneralesComponent implements OnInit {
   gradoNombre: string = '';
   tipoCarreraNombre: string = '';
   carreraNombre: string = '';
+
+  aspiranteBeneficio: any;
+  id: number = 1; // Replace with the actual ID
+  private cdr = inject(ChangeDetectorRef);
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -170,15 +175,12 @@ export class DatosGeneralesComponent implements OnInit {
   municipios: any[] = [];
   municipio: string = '';
 
-
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
 
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
     if (online) this.syncDataBase();
-
-    this.myForm.get('grado')?.disable();
-    this.myForm.get('tipo_carrera')?.disable();
-    this.myForm.get('carrera')?.disable();
 
     this.loadAllCodigosPostales();
     this.getMunicipios();
@@ -186,12 +188,32 @@ export class DatosGeneralesComponent implements OnInit {
     this.getGrados();
     this.getTiposCarreras();
 
-
     // Llama al método para inhabilitar los inputs
     this.disableInputs();
+
+    if ( !this.router.url.includes('editar') ) return;
+
+    this.activatedRoute.params
+      .pipe(
+        // switchMap( ({ id }) => this.heroesService.getHeroById( id ) ),
+      ).subscribe( hero => {
+
+        if ( !hero ) {
+          return this.router.navigateByUrl('/');
+        }
+
+        // this.heroForm.reset( hero );
+        return;
+      });
+
+    this.getAspiranteBeneficioId();
   }
 
   disableInputs(): void {
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
+
     this.myForm.get('tipo_zona')?.disable();
     this.myForm.get('tipo_asentamiento')?.disable();
   }
@@ -363,7 +385,6 @@ export class DatosGeneralesComponent implements OnInit {
       created_at: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
-      carrera: this.carreraNombre,
     };
   }
 
@@ -405,5 +426,23 @@ export class DatosGeneralesComponent implements OnInit {
 
   toTitleCase(str: string): string {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  getAspiranteBeneficioId(): void {
+    this.aspirantesBeneficioService.getAspiranteBeneficioId(this.id).subscribe({
+      next: (response) => {
+        this.aspiranteBeneficio = response.data;
+        this.cdr.detectChanges();
+        this.myForm.reset(this.aspiranteBeneficio);
+        this.getAspiranteFotoId(this.aspiranteBeneficio.id_foto);
+      },
+      error: (error) => {
+        console.error('Error al obtener los datos del aspirante:', error);
+      }
+    });
+  }
+
+  getAspiranteFotoId(id_foto: number): void {
+    // Implement the method to get the photo by ID
   }
 }

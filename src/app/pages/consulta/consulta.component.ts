@@ -24,6 +24,7 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from '../../services/CRUD/fotos.service';
 import { StorageService } from '../../services/storage.service';
+import { RouterLink } from '@angular/router';
 
 export interface AspiranteBeneficio {
   id: string;
@@ -34,7 +35,7 @@ export interface AspiranteBeneficio {
 
 @Component({
   selector: 'consultaPage',
-  imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule],
+  imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule, RouterLink],
   templateUrl: './consulta.component.html',
   styleUrl: './consulta.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
