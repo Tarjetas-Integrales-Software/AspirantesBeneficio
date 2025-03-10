@@ -23,6 +23,7 @@ import {
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from '../../services/CRUD/fotos.service';
+import { StorageService } from '../../services/storage.service';
 
 export interface AspiranteBeneficio {
   id: string;
@@ -42,12 +43,18 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  rolesConPermiso: number[] = [103, 104];
+  rolesUsuario: Array<{ pkUserPerfil: number }> = [];
+
   readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService) {
+  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService, private storageService: StorageService) {
     this.dataSource = new MatTableDataSource();
+
+    if (this.storageService.exists("perfiles"))
+      this.rolesUsuario = this.storageService.get("perfiles");
   }
 
   ngOnInit(): void {
@@ -109,6 +116,13 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
       data: { id: id }
     });
   }
+
+  get permisoAcciones(): boolean {
+    // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
+    return this.rolesUsuario.some(perfil =>
+      perfil.pkUserPerfil && this.rolesConPermiso.includes(Number(perfil.pkUserPerfil))
+    );
+  }
 }
 
 @Component({
@@ -141,14 +155,15 @@ export class DialogAspiranteBeneficio implements OnInit {
 
   ngOnInit() {
     this.getAspiranteBeneficioId();
-    this.getAspiranteFotoId();
   }
 
   getAspiranteBeneficioId(): void {
     this.aspirantesBeneficioService.getAspiranteBeneficioId(this.id).subscribe({
       next: (response) => {
-        this.aspiranteBeneficio = response.data[0];
+        this.aspiranteBeneficio = response.data;
         this.cdr.detectChanges();
+
+        this.getAspiranteFotoId(this.aspiranteBeneficio.id_foto);
       },
       error: (error) => {
         console.error('Error al obtener los datos del aspirante:', error);
@@ -156,11 +171,14 @@ export class DialogAspiranteBeneficio implements OnInit {
     });
   }
 
-  getAspiranteFotoId(): void {
-    this.fotosService.getAspiranteFotoId(this.id).subscribe({
+  getAspiranteFotoId(id: number): void {
+    this.aspiranteBeneficioFoto = 'assets/default-profile.png';
+
+    this.fotosService.getAspiranteFotoId(id).subscribe({
       next: (response) => {
         if (response.response)
           this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error al obtener los datos del aspirante:', error);

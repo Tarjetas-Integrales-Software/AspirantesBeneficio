@@ -106,9 +106,7 @@ export class DatosGeneralesComponent implements OnInit {
   });
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
-
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
-
       if (exists) {
         Swal.fire({
           icon: 'error',
@@ -356,6 +354,7 @@ export class DatosGeneralesComponent implements OnInit {
       id: lastIdApirante + 1,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
+      municipio: this.myForm.get('municipio')?.value,
       ciudad: this.myForm.get('municipio')?.value,
       tipo_asentamiento: this.tipoAsentamiento,
       tipo_zona: this.tipoZona,

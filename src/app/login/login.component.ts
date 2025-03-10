@@ -48,7 +48,6 @@ export class LoginComponent implements OnInit {
     //Sincronizar Usuarios de TISA hacia la DB Local
     this.syncDataBase();
 
-
     if (this.storageService.exists("token"))
       this.token = this.storageService.get("token");
 
@@ -70,6 +69,7 @@ export class LoginComponent implements OnInit {
           if (response.response) {
             this.storageService.set("token", response.token);
             this.storageService.set("user", response.user);
+            this.storageService.set("perfiles", response.perfiles);
 
             this.router.navigate(['/inicio/registro']);
           }

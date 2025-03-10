@@ -11,6 +11,8 @@ import { CurpsRegistradasService } from './services/CRUD/curps-registradas.servi
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
+import { environment } from '../environments/environment';
+
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
@@ -58,7 +60,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncInterval(): void {
-    this.syncSubscription = interval(30000).pipe(
+    this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -83,6 +85,8 @@ export class AppComponent implements OnInit, OnDestroy {
           const aspirante = await this.aspirantesBeneficioService.consultarAspirantePorId(id_aspirante_beneficio);
           const foto = await this.fotosService.consultarFotoPorId(id_foto);
 
+          let nuevoAspirante = {};
+          let nuevaFoto = {};
           let nuevoIdAspirante: number | null = null;
           let nuevoIdFoto: number | null = null;
 
@@ -90,7 +94,10 @@ export class AppComponent implements OnInit, OnDestroy {
           await new Promise<void>((resolve, reject) => {
             this.aspirantesBeneficioService.createAspirante(aspirante).subscribe({
               next: async (response) => {
-                if (response.response && response.data?.id !== undefined) nuevoIdAspirante = response.data.id;
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdAspirante = response.data.id;
+                  nuevoAspirante = response.data;
+                }
 
                 resolve();
               },
@@ -107,6 +114,7 @@ export class AppComponent implements OnInit, OnDestroy {
               next: (response) => {
                 if (response.response && response.data?.id !== undefined) {
                   nuevoIdFoto = response.data.id;
+                  nuevaFoto = response.data;
                 }
                 resolve();
               },
@@ -128,6 +136,8 @@ export class AppComponent implements OnInit, OnDestroy {
               next: (response) => {
                 if (response.response) {
                   this.aspirantesBeneficioFotosService.eliminarRelacion(relacion.id);
+
+                  this.fotosService.registerPhoto(nuevoAspirante, nuevaFoto)
                 }
               },
               error: (error) => {

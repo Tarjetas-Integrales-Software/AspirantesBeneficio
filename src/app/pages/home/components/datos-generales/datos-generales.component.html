@@ -106,7 +106,7 @@
 
         <mat-form-field class="basis-2/3">
           <mat-label>Municipio</mat-label>
-          <mat-select [(ngModel)]="municipio" name="municipio"
+          <mat-select [(ngModel)]="municipio" formControlName="municipio" name="municipio"
             (selectionChange)="getCodigosPostales({municipio: $event.value})">
             <mat-option *ngFor="let municipio of municipios" [value]="municipio.municipio">
               {{ municipio.municipio }}
