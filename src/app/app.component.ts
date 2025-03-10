@@ -39,8 +39,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.checkAndSync();
+    this.checkAndSyncCurps();
 
     this.startSyncInterval();
+    this.startSyncCurpInterval();
   }
 
   ngOnDestroy(): void {
@@ -55,7 +57,17 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
-      this.sincronizarBase();
+      this.syncAspirantesBeneficio();
+    });
+  }
+
+  private checkAndSyncCurps(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarCurps();
     });
   }
 
@@ -65,13 +77,18 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
-      this.sincronizarBase();
+      this.syncAspirantesBeneficio();
     });
   }
 
-  private sincronizarBase(): void {
-    this.syncAspirantesBeneficio();
-    this.actualizarCurps();
+  private startSyncCurpInterval(): void {
+    this.syncSubscription = interval(environment.syncInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarCurps();
+    });
   }
 
   async syncAspirantesBeneficio(): Promise<void> {
