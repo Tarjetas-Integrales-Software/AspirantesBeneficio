@@ -381,6 +381,12 @@ export class DatosGeneralesComponent implements OnInit {
     this.myForm.markAsUntouched();
   }
 
+  disabledGradoCarrera(): void {
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
+  }
+
   toUpperCaseCurp(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
