@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, i
 import { DatePipe } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -109,6 +112,16 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
 
   }
 
+  onRowClick(event: MouseEvent, rowId: number) {
+    // Verifica si el clic se realizó en la celda de acciones
+    const isActionCell = (event.target as HTMLElement).closest('.action-cell');
+
+    // Si no es la celda de acciones, abre el diálogo
+    if (!isActionCell) {
+      this.openDialog(rowId);
+    }
+  }
+
   openDialog(id: number) {
     this.dialog.open(DialogAspiranteBeneficio, {
       height: '600px',
@@ -122,6 +135,88 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     return this.rolesUsuario.some(perfil =>
       perfil.pkUserPerfil && this.rolesConPermiso.includes(Number(perfil.pkUserPerfil))
     );
+  }
+
+  downloadPdf() {
+    this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.id,
+            aspirante.id_modalidad,
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.telefono,
+            aspirante.email,
+            aspirante.fecha_nacimiento,
+            aspirante.estado,
+            aspirante.municipio,
+            aspirante.ciudad,
+            aspirante.cp,
+            aspirante.colonia,
+            aspirante.tipo_asentamiento,
+            aspirante.tipo_zona,
+            aspirante.domicilio,
+            aspirante.com_obs,
+            aspirante.fecha_evento,
+          ];
+        });
+
+        const doc = new jsPDF({ orientation: 'landscape' });
+        autoTable(doc, {
+          theme: 'grid',
+          head: [['ID', 'ID Modalidad', 'CURP', 'Nombre', 'Teléfono', 'email', 'Fecha de nacimiento', 'Estado', 'Municipio', 'Ciudad', 'CP', 'Colonia', 'Tipo de asentamiento', 'Tipo de zona', 'Domicilio', 'Comentarios / Observaciones', 'Fecha registro']],
+          body: prepare,
+          bodyStyles: { fontSize: 8 }
+        });
+        doc.save(`${this.getFileName()}`);
+      }
+    });
+  }
+
+  downloadExcel() {
+    const body = {};
+
+    this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.id,
+            aspirante.id_modalidad,
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.telefono,
+            aspirante.email,
+            aspirante.fecha_nacimiento,
+            aspirante.estado,
+            aspirante.municipio,
+            aspirante.ciudad,
+            aspirante.cp,
+            aspirante.colonia,
+            aspirante.tipo_asentamiento,
+            aspirante.tipo_zona,
+            aspirante.domicilio,
+            aspirante.com_obs,
+            aspirante.fecha_evento,
+          ];
+        });
+
+        prepare.unshift(['ID', 'ID Modalidad', 'CURP', 'Nombre', 'Teléfono', 'email', 'Fecha de nacimiento', 'Estado', 'Municipio', 'Ciudad', 'CP', 'Colonia', 'Tipo de asentamiento', 'Tipo de zona', 'Domicilio', 'Comentarios / Observaciones', 'Fecha registro']);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(prepare);
+
+        // Crea un libro de trabajo y agrega la hoja
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'MiTabla');
+
+        // Genera el archivo y lo descarga
+        XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
+      }
+    });
+  }
+
+  getFileName(): string {
+    return "Aspirantes";
   }
 }
 
