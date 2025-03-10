@@ -105,7 +105,7 @@ export class AspirantesBeneficioService {
     ciudad: string;
     cp: string;
     colonia: string;
-    tipo_asentamiento?: string;
+    tipo_asentamiento?: string; // Asegúrate de que el nombre sea tipo_asentamiento
     tipo_zona: string;
     domicilio: string;
     com_obs?: string;
@@ -141,7 +141,7 @@ export class AspirantesBeneficioService {
       aspirante.ciudad,
       aspirante.cp,
       aspirante.colonia,
-      aspirante.tipo_asentamiento,
+      aspirante.tipo_asentamiento, // Asegúrate de que el nombre sea tipo_asentamiento
       aspirante.tipo_zona,
       aspirante.domicilio,
       aspirante.com_obs,

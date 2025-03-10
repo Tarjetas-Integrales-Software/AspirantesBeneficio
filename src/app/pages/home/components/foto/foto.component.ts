@@ -144,7 +144,7 @@ export class FotoComponent implements OnInit {
         tipo: 'foto_aspben',
         // archivo: this.capturedImage!,
         archivo: curp + '.webp',
-        path: 'docsaspirantesbeneficio/' + curp + '.webp' , // Asignar el path adecuado si es necesario
+        path: 'docsaspirantesbeneficio/' + curp + '.webp', // Asignar el path adecuado si es necesario
         archivoOriginal: `captured_photo.${this.imageFormat}`,
         extension: this.imageFormat,
         created_id: 0, // Asignar el ID adecuado si es necesario
@@ -168,6 +168,7 @@ export class FotoComponent implements OnInit {
 
         if (this.capturedImage) {
           const form = await this.datosGeneralesComponent.getMyForm();
+          console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);

@@ -106,9 +106,9 @@ export class DatosGeneralesComponent implements OnInit {
   });
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
-    console.log(control.value, 'curpAsyncValidator');
+
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
-      console.log(exists, 'existe curp');
+
       if (exists) {
         Swal.fire({
           icon: 'error',
@@ -137,9 +137,7 @@ export class DatosGeneralesComponent implements OnInit {
   onCurpChange(): void {
     const curp = this.myForm.controls['curp'].value;
 
-    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => {
-      console.log(data);
-    });
+    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => {});
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -315,10 +313,8 @@ export class DatosGeneralesComponent implements OnInit {
   onColoniaChange(colonia: string): void {
     const selectedColonia = this.colonias.find(item => item.colonia === colonia);
     if (selectedColonia) {
-      console.log(selectedColonia);
       this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
       this.tipoZona = selectedColonia.tipo_zona;
-      console.log(this.tipoAsentamiento, this.tipoZona);
     }
   }
 
@@ -361,7 +357,7 @@ export class DatosGeneralesComponent implements OnInit {
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
       ciudad: this.myForm.get('municipio')?.value,
-      tipos_asentamiento: this.tipoAsentamiento,
+      tipo_asentamiento: this.tipoAsentamiento,
       tipo_zona: this.tipoZona,
       fecha_evento: formattedDate,
       created_id: 1,
@@ -373,7 +369,6 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   selectedValue2(){
-    console.log('selectedValue2', this.selectedValue);
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
     if(this.selectedValue == '6'){
       this.myForm.get('grado')?.enable();
