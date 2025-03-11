@@ -104,7 +104,7 @@
 
               @if (true) {
               <button mat-button (click)="openDialog(row.id)" color="primary">Consultar</button>
-              <button mat-button color="primary" [routerLink]="['editar/', row.id]" >Editar</button>
+              <button mat-button color="primary" [routerLink]="['/inicio/editar/', row.id]" >Editar</button>
               <button mat-button (click)="deleteAspiranteBeneficio(row.id)" color="accent">Eliminar</button>
               }
             </div>
@@ -112,7 +112,7 @@
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"
           class="cursor-pointer"></tr>
 
         <!-- Row shown when there is no matching data. -->

@@ -15,13 +15,23 @@ export class CodigosPostalesService {
   }
 
   getCodigosPostales(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/codposcol_all');
+    const sql = 'SELECT * FROM CS_CodigosPostales_Colonias';
+    const params: any[] = [];
+
+    return new Observable(observer => {
+      this.databaseService.query(sql, params).then(resultados => {
+        observer.next({ data: resultados });
+        observer.complete();
+      }).catch(error => {
+        observer.error(error);
+      });
+    });
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
-        INSERT OR REPLACE INTO CS_CodigosPostales_Colonias (
+        INSERT OR IGNORE INTO CS_CodigosPostales_Colonias (
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
           created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

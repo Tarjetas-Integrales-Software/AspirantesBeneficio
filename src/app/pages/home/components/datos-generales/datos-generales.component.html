@@ -2,6 +2,9 @@
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
     <!-- <h2 class="text-3xl">Datos Generales</h2> -->
+    @if (editar) {
+    <h2 class="text-3xl">editar page</h2>
+    }
 
     <form [formGroup]="myForm" class="my-2">
 
@@ -82,7 +85,8 @@
 
         <mat-form-field class="basis-1/4">
           <mat-label>Tipo Carrera </mat-label>
-          <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera" (selectionChange)="onTipoCarreraChange($event.value)">
+          <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera"
+            (selectionChange)="onTipoCarreraChange($event.value)">
             <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.id">
               {{ tipo_carrera.nombre }}
             </mat-option>
