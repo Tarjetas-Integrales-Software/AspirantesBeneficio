@@ -218,7 +218,11 @@ export class DatosGeneralesComponent implements OnInit {
         const selectedModalidad = this.modalidades.find(modalidad => modalidad.nombre === aspirante.data.id_modalidad);
         const selectedCP = this.codigosPostales.find(cp => cp.cp === aspirante.data.cp);
 
-        console.log(selectedGrado, selectedTipoCarrera, selectedCarrera, selectedModalidad, selectedCP);
+        console.log('selectedGrado:', selectedGrado);
+        console.log('selectedTipoCarrera:', selectedTipoCarrera);
+        console.log('selectedCarrera:', selectedCarrera);
+        console.log('selectedModalidad:', selectedModalidad);
+        console.log('selectedCP:', selectedCP);
 
         // Establecer los campos correspondientes en el formulario
         this.myForm.reset({
