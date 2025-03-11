@@ -47,7 +47,7 @@ export class ModalidadesService {
     const sql = `
       SELECT id, nombre 
       FROM cat_ct_modalidades 
-      WHERE id_tipo_beneficio = 2 
+      WHERE id_tipo_beneficio = 2 AND deleted_at IS NULL
       ORDER BY nombre;
     `;
 
