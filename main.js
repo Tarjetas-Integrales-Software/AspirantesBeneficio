@@ -25,7 +25,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+   mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -163,7 +163,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS cat_ct_configuraciones (
         id INTEGER PRIMARY KEY,
         id_equipo INTEGER NOT NULL,
-        clave TEXT NULL,
+        clave TEXT NOT NULL UNIQUE,
         valor TEXT NULL,
         descripcion TEXT NULL,
         created_id INTEGER NULL,
@@ -231,6 +231,29 @@ function initializeDatabase() {
           created_id INTEGER NULL,
           updated_id INTEGER NULL,
           deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS ct_curps_a_eliminar (
+          curp TEXT PRIMARY KEY NULL,
+          confirmo_eliminacion INTEGER NULL,
+          created_at DATETIME NULL,
+          updated_at DATETIME NULL,
+          deleted_at DATETIME NULL,
+          created_id INTEGER NULL,
+          updated_id INTEGER NULL,
+          deleted_id INTEGER NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cat_ct_modulos (
+        id INTEGER PRIMARY KEY,
+        nombre INTEGER NULL,
+        descripcion TEXT NULL,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
       );
 
     `);

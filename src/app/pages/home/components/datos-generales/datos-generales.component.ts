@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -28,6 +28,8 @@ import { CarrerasService } from '../../../../services/CRUD/carreras.service';
 import { Observable } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
+import {MatCardModule} from '@angular/material/card';
+import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -43,9 +45,11 @@ import Swal from 'sweetalert2';
     MatIconModule,
     MatInput,
     MatDatepickerModule,
+    MatCardModule,
   ],
   templateUrl: './datos-generales.component.html',
-  styleUrl: './datos-generales.component.scss'
+  styleUrl: './datos-generales.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DatosGeneralesComponent implements OnInit {
 
@@ -75,6 +79,8 @@ export class DatosGeneralesComponent implements OnInit {
   tipoCarreraNombre: string = '';
   carreraNombre: string = '';
 
+  modulo_actual: string = '';
+
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
@@ -84,6 +90,7 @@ export class DatosGeneralesComponent implements OnInit {
     , private tiposCarrerasService: TiposCarrerasService
     , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
+    , private configuracionesService: ConfiguracionesService
   ) { }
 
   myForm: FormGroup = this.fb.group({
@@ -181,6 +188,8 @@ export class DatosGeneralesComponent implements OnInit {
     this.myForm.get('grado')?.disable();
     this.myForm.get('tipo_carrera')?.disable();
     this.myForm.get('carrera')?.disable();
+
+    this.consultarModuloActual();
 
     this.loadAllCodigosPostales();
     this.getMunicipios();
@@ -365,6 +374,7 @@ export class DatosGeneralesComponent implements OnInit {
       created_at: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
+      modulo: this.modulo_actual
     };
   }
 
@@ -401,5 +411,16 @@ export class DatosGeneralesComponent implements OnInit {
 
   toTitleCase(str: string): string {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  consultarModuloActual(){
+    this.configuracionesService.consultarConfiguracionPorClave('modulo')
+      .then((valor) => {
+        console.log(valor,'valor');
+        this.modulo_actual = valor[0]["valor"];
+        console.log(this.modulo_actual, 'modulo_actual');
+        console.log(typeof(this.modulo_actual),'typeof');
+      })
+      .catch((error) => console.error('Error al obtener municipios:', error));
   }
 }
