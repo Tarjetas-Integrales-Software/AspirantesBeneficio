@@ -43,21 +43,37 @@ export class ConfiguracionesService {
     }
   }
 
-  async updateConfiguracionByClave(datos: any[]): Promise<void> {
-      for (const item of datos) {
-        const sql = `
-        UPDATE cat_ct_configuraciones
-        SET valor = ?
-        WHERE clave = ?
-        ORDER BY id;
-      `;
-        const params = [
-          item.valor,
-          item.clave,
-        ];
+  async insertOrUpdateConfiguracion(clave: string, valor: string): Promise<void> {
 
-        await this.databaseService.execute(sql, params);
-      }
+      const sql = `
+       INSERT INTO cat_ct_configuraciones (id_equipo, clave, valor)
+        VALUES (1, ?, ?)
+        ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor;
+    `;
+      const params = [
+        clave,
+        valor
+      ];
+
+      await this.databaseService.execute(sql, params);
+
+  }
+
+  async updateConfiguracionByClave(clave: string, valor: string): Promise<void> {
+
+      const sql = `
+      UPDATE cat_ct_configuraciones
+      SET valor = ?
+      WHERE clave = ?
+      ORDER BY id;
+    `;
+      const params = [
+        valor,
+        clave,
+      ];
+
+      await this.databaseService.execute(sql, params);
+
   }
 
   async consultarConfiguraciones(): Promise<{ id: number; modalidad: string }[]> {
@@ -69,6 +85,24 @@ export class ConfiguracionesService {
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql);
+    return resultados;
+  }
+
+  async consultarConfiguracionPorClave(clave?: string): Promise<{valor: string}[]> {
+    let sql = `
+      SELECT valor FROM cat_ct_configuraciones
+    `;
+
+    // Agregar filtro por id_grado si se proporciona
+    if (clave) {
+      sql += ' WHERE clave = ?';
+    }
+
+    sql += ' ORDER BY id;';
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql, clave ? [clave] : []);
+    console.log(resultados);
     return resultados;
   }
 

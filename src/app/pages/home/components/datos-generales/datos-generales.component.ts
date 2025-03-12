@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,6 +20,7 @@ import {
   FormBuilder,
   AbstractControl,
   ValidationErrors,
+  FormControl,
 } from '@angular/forms';
 import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
@@ -28,6 +29,9 @@ import { CarrerasService } from '../../../../services/CRUD/carreras.service';
 import { Observable } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
+import {MatCardModule} from '@angular/material/card';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -43,9 +47,12 @@ import Swal from 'sweetalert2';
     MatIconModule,
     MatInput,
     MatDatepickerModule,
+    MatCardModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './datos-generales.component.html',
-  styleUrl: './datos-generales.component.scss'
+  styleUrl: './datos-generales.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DatosGeneralesComponent implements OnInit {
 
@@ -75,6 +82,13 @@ export class DatosGeneralesComponent implements OnInit {
   tipoCarreraNombre: string = '';
   carreraNombre: string = '';
 
+  modulo_actual: string = '';
+
+  @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
+  myControl_cp = new FormControl('');
+  //options: string[] = [];
+  filteredOptions: string[];
+
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
@@ -84,7 +98,10 @@ export class DatosGeneralesComponent implements OnInit {
     , private tiposCarrerasService: TiposCarrerasService
     , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
-  ) { }
+    , private configuracionesService: ConfiguracionesService
+  ) {
+    this.filteredOptions = this.codigosPostales.slice();
+  }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
@@ -104,6 +121,21 @@ export class DatosGeneralesComponent implements OnInit {
     carrera: ['',],
     com_obs: [''],
   });
+
+
+
+  // ngAfterViewInit() {
+  //   if (this.cp) {
+  //     this.myControl_cp.setValue(this.cp.nativeElement.value);
+  //   }
+  // }
+
+  filter(): void {
+    const filterValue = this.codigoPostal?.nativeElement?.value;
+    console.log(filterValue);
+    console.log(this.codigosPostales);
+    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue?.toString()));
+  }
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
@@ -181,6 +213,8 @@ export class DatosGeneralesComponent implements OnInit {
     this.myForm.get('grado')?.disable();
     this.myForm.get('tipo_carrera')?.disable();
     this.myForm.get('carrera')?.disable();
+
+    this.consultarModuloActual();
 
     this.loadAllCodigosPostales();
     this.getMunicipios();
@@ -365,6 +399,7 @@ export class DatosGeneralesComponent implements OnInit {
       created_at: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
+      modulo: this.modulo_actual
     };
   }
 
@@ -401,5 +436,16 @@ export class DatosGeneralesComponent implements OnInit {
 
   toTitleCase(str: string): string {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  consultarModuloActual(){
+    this.configuracionesService.consultarConfiguracionPorClave('modulo')
+      .then((valor) => {
+        console.log(valor,'valor');
+        this.modulo_actual = valor[0]["valor"];
+        console.log(this.modulo_actual, 'modulo_actual');
+        console.log(typeof(this.modulo_actual),'typeof');
+      })
+      .catch((error) => console.error('Error al obtener municipios:', error));
   }
 }

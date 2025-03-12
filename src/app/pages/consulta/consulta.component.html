@@ -7,7 +7,7 @@
           <mat-label>Módulo</mat-label>
           <mat-select formControlName="modulo">
             @for (modulo of modulos; track modulo) {
-            <mat-option [value]="modulo.id">{{modulo.nombre}}</mat-option>
+            <mat-option [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
             }
           </mat-select>
         </mat-form-field>
