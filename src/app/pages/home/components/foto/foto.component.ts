@@ -2,7 +2,7 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
-import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
+import { AspirantesBeneficioService, Aspirante } from "../../../../services/CRUD/aspirantes-beneficio.service";
 import { HttpClient } from '@angular/common/http';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";

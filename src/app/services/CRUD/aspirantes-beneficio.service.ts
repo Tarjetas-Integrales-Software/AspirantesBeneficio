@@ -38,7 +38,7 @@ export class AspirantesBeneficioService {
 
   constructor(private databaseService: DatabaseService, private curpsRegistradasService: CurpsRegistradasService) { }
 
-  createAspirante(aspirante: Object): Observable<any> {
+  createAspirante(aspirante: Aspirante): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
   }
 
