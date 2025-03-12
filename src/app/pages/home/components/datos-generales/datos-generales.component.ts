@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,6 +20,7 @@ import {
   FormBuilder,
   AbstractControl,
   ValidationErrors,
+  FormControl,
 } from '@angular/forms';
 import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
@@ -29,6 +30,7 @@ import { Observable } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import {MatCardModule} from '@angular/material/card';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
 
 @Component({
@@ -46,6 +48,7 @@ import { ConfiguracionesService } from '../../../../services/CRUD/configuracione
     MatInput,
     MatDatepickerModule,
     MatCardModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './datos-generales.component.html',
   styleUrl: './datos-generales.component.scss',
@@ -81,6 +84,11 @@ export class DatosGeneralesComponent implements OnInit {
 
   modulo_actual: string = '';
 
+  @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
+  myControl_cp = new FormControl('');
+  //options: string[] = [];
+  filteredOptions: string[];
+
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
@@ -91,7 +99,9 @@ export class DatosGeneralesComponent implements OnInit {
     , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
     , private configuracionesService: ConfiguracionesService
-  ) { }
+  ) {
+    this.filteredOptions = this.codigosPostales.slice();
+  }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
@@ -111,6 +121,21 @@ export class DatosGeneralesComponent implements OnInit {
     carrera: ['',],
     com_obs: [''],
   });
+
+
+
+  // ngAfterViewInit() {
+  //   if (this.cp) {
+  //     this.myControl_cp.setValue(this.cp.nativeElement.value);
+  //   }
+  // }
+
+  filter(): void {
+    const filterValue = this.codigoPostal?.nativeElement?.value;
+    console.log(filterValue);
+    console.log(this.codigosPostales);
+    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue?.toString()));
+  }
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {

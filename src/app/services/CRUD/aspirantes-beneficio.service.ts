@@ -51,7 +51,7 @@ export class AspirantesBeneficioService {
           id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
           grado, tipo_carrera, carrera,
           estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
-          domicilio, com_obs, fecha_evento, created_id, updated_id, deleted_id,
+          domicilio, com_obs, fecha_evento, modulo, created_id, updated_id, deleted_id,
           created_at, updated_at, deleted_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
@@ -76,6 +76,7 @@ export class AspirantesBeneficioService {
         item.domicilio,
         item.com_obs,
         item.fecha_evento,
+        item.modulo,
         item.created_id,
         item.updated_id,
         item.deleted_id,
@@ -110,6 +111,7 @@ export class AspirantesBeneficioService {
     domicilio: string;
     com_obs?: string;
     fecha_evento: string;
+    modulo: string;
     created_id: number;
     created_at: string;
   }): Promise<any> {
@@ -122,7 +124,7 @@ export class AspirantesBeneficioService {
         id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
         grado, tipo_carrera, carrera,
         estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
-        fecha_evento, created_id, created_at
+        fecha_evento, modulo, created_id, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const params = [
@@ -146,6 +148,7 @@ export class AspirantesBeneficioService {
       aspirante.domicilio,
       aspirante.com_obs,
       aspirante.fecha_evento,
+      aspirante.modulo,
       aspirante.created_id,
       aspirante.created_at,
     ];

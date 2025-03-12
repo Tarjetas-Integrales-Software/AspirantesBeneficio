@@ -42,6 +42,31 @@ function createWindow() {
     mainWindow = null;
   });
 }
+function addColumnIfNotExists() {
+  try {
+    // Ruta de la base de datos en la carpeta de datos del usuario
+    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
+
+    console.log('Database path:', dbPath);
+
+    db = new Database(dbPath);
+
+    const rows = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
+
+      // Verificar si la columna 'modulo' ya existe
+      const columnExists_modulo = rows.some(row => row.name === 'modulo');
+      if (!columnExists_modulo) {
+        console.log("Agregando la columna 'modulo'...");
+        db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
+        console.log("Columna 'modulo' agregada con éxito.");
+      } else {
+          console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
+      }
+  } catch (error) {
+    console.error('Error altering table:', error);
+  }
+
+}
 
 function initializeDatabase() {
   // Ruta de la base de datos en la carpeta de datos del usuario
@@ -74,6 +99,7 @@ function initializeDatabase() {
         domicilio TEXT NOT NULL,
         com_obs TEXT NULL,
         fecha_evento TEXT NOT NULL,
+        modulo TEXT NULL,
         created_id INTEGER NOT NULL,
         updated_id INTEGER NULL,
         deleted_id INTEGER NULL,
@@ -260,6 +286,9 @@ function initializeDatabase() {
   } catch (error) {
     console.error('Error creating table:', error);
   }
+
+  // Ejecutar la función al iniciar Electron
+  addColumnIfNotExists();
 
   // Maneja solicitudes de consulta desde Angular
   ipcMain.handle('query', (event, sql, params) => {
