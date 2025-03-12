@@ -214,4 +214,26 @@ export class FotoComponent implements OnInit {
     }
     this.submitForm.emit();
   }
+
+  async onEdit() {
+    // Detener el video de la cámara
+    this.stopStream();
+
+    // Verificamos si el formulario es válido
+    if (this.datosGeneralesComponent.myForm.valid) {
+      const form = await this.datosGeneralesComponent.getMyForm();
+          console.log("Formulario editar válido this is form:", form);
+
+      try {
+        await this.aspirantesBeneficioService.editarAspirante(form);
+      } catch (error) {
+        console.error("Error en el proceso:", error);
+      }
+    } else {
+      // Marcar todos los campos como tocados para mostrar los errores
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      // Mostrar los errores en la consola del formulario
+      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+    }
+  }
 }

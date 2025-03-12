@@ -189,53 +189,50 @@ export class DatosGeneralesComponent implements OnInit {
     this.getModalidades();
     this.getGrados();
     this.getTiposCarreras();
+    this.getCarreras();
+    this.getColoniasByCP();
 
     // Llama al método para inhabilitar los inputs
-
     if (!this.router.url.includes('editar')) {
       this.disableInputs();
       return;
     } else {
       this.editar = true;
       this.disabledInputsEdit();
-    }
 
-    this.activatedRoute.params
-      .pipe(
-        switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
-      ).subscribe(aspirante => {
+      this.activatedRoute.params
+        .pipe(
+          switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
+        ).subscribe(aspirante => {
 
-        if (!aspirante) {
-          return this.router.navigateByUrl('/');
-        }
+          if (!aspirante) {
+            return this.router.navigateByUrl('/');
+          }
 
-        console.log(aspirante.data);
+          console.log('Aspirante:', aspirante);
 
-        // Obtener los IDs correspondientes a los nombres
-        const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
-        const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.nombre === aspirante.data.tipo_carrera);
-        const selectedCarrera = this.carreras.find(carrera => carrera.nombre === aspirante.data.carrera);
-        const selectedModalidad = this.modalidades.find(modalidad => modalidad.nombre === aspirante.data.id_modalidad);
-        const selectedCP = this.codigosPostales.find(cp => cp.cp === aspirante.data.cp);
+          // Obtener los IDs correspondientes a los nombres
+          const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
+          const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.nombre === aspirante.data.tipo_carrera);
+          const selectedCarrera = this.carreras.find(carrera => carrera.nombre === aspirante.data.carrera);
+          const selectedModalidad = this.modalidades.find(modalidad => modalidad.id === parseInt(aspirante.data.id_modalidad, 10));
+          const selectedCP = this.allCodigosPostales.find(cp => cp.cp === aspirante.data.cp);
 
-        console.log('selectedGrado:', selectedGrado);
-        console.log('selectedTipoCarrera:', selectedTipoCarrera);
-        console.log('selectedCarrera:', selectedCarrera);
-        console.log('selectedModalidad:', selectedModalidad);
-        console.log('selectedCP:', selectedCP);
+          this.getCodigosPostales({ municipio: aspirante.data.municipio });
 
-        // Establecer los campos correspondientes en el formulario
-        this.myForm.reset({
-          ...aspirante.data,
-          grado: selectedGrado ? selectedGrado.id : '',
-          tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
-          carrera: selectedCarrera ? selectedCarrera.id : '',
-          id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
-          cp: selectedCP ? selectedCP.cp : ''
+          // Establecer los campos correspondientes en el formulario
+          this.myForm.reset({
+            ...aspirante.data,
+            grado: selectedGrado ? selectedGrado.id : '',
+            tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
+            carrera: selectedCarrera ? selectedCarrera.nombre : '',
+            id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
+            cp: selectedCP ? selectedCP.cp : ''
+          });
+
+          return;
         });
-
-        return;
-      });
+    }
   }
 
   disableInputs(): void {
@@ -248,9 +245,9 @@ export class DatosGeneralesComponent implements OnInit {
 
   disabledInputsEdit(): void {
     this.myForm.get('curp')?.disable();
-      this.myForm.get('grado')?.enable();
-      this.myForm.get('tipo_carrera')?.enable();
-      this.myForm.get('carrera')?.enable();
+    this.myForm.get('grado')?.enable();
+    this.myForm.get('tipo_carrera')?.enable();
+    this.myForm.get('carrera')?.enable();
   }
 
   getGrados(): void {
@@ -269,7 +266,7 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener tipos carreras:', error));
   }
 
-  getCarreras(params: { id_grado?: number, id_tipo?: number }): void {
+  getCarreras(): void {
     this.carrerasService.consultarCarreras()
       .then((carreras) => {
         this.carreras = carreras;
