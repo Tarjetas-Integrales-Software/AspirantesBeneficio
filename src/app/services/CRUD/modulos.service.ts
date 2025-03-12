@@ -14,6 +14,6 @@ export class ModulosService {
   }
 
   getModulos(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/modulos_with_joins');
+    return this.http.get(environment.apiUrl + '/lic/aspben/modulos_all');
   }
 }
