@@ -21,7 +21,7 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
+import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
@@ -29,6 +29,7 @@ import { Observable, switchMap } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from '@angular/router';
+import { cp } from 'fs';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -77,6 +78,30 @@ export class DatosGeneralesComponent implements OnInit {
   carreraNombre: string = '';
 
   editar: boolean = false;  // Variable para saber si se está editando un registro
+  editAspirante: Aspirante = {
+    id: 0,
+    id_modalidad: 0,
+    curp: '',
+    nombre_completo: '',
+    telefono: '',
+    fecha_nacimiento: '',
+    email: '',
+    municipio: '',
+    cp: '',
+    colonia: '',
+    tipo_zona: '',
+    tipo_asentamiento: '',
+    domicilio: '',
+    grado: '',
+    tipo_carrera: '',
+    carrera: '',
+    com_obs: '',
+    estado: '',
+    ciudad: '',
+    fecha_evento: '',
+    created_id: 0,
+    created_at: ''
+  };       // ID del registro a editar
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -204,6 +229,7 @@ export class DatosGeneralesComponent implements OnInit {
         .pipe(
           switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
         ).subscribe(aspirante => {
+          this.editAspirante = aspirante.data;
 
           if (!aspirante) {
             return this.router.navigateByUrl('/');
@@ -390,15 +416,14 @@ export class DatosGeneralesComponent implements OnInit {
 
   async getMyForm(): Promise<any> {
 
-    const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
-
+    const idApirante = (await this.aspirantesBeneficioService.getLastId() || 0) + 1;
     const now = new Date();
 
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
       nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
-      id: lastIdApirante + 1,
+      id: idApirante,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
       municipio: this.myForm.get('municipio')?.value,
@@ -408,6 +433,23 @@ export class DatosGeneralesComponent implements OnInit {
       fecha_evento: formattedDate,
       created_id: 1,
       created_at: formattedDate,
+      grado: this.gradoNombre,
+      tipo_carrera: this.tipoCarreraNombre,
+    };
+  }
+
+  getMyFormEdit(): any {
+    return {
+      ...this.myForm.value,
+      id: this.editAspirante.id,
+      curp: this.editAspirante.curp,
+      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      estado: 'Jalisco',
+      municipio: this.myForm.get('municipio')?.value,
+      ciudad: this.myForm.get('municipio')?.value,
+      tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
+      tipo_zona: this.myForm.get('tipo_zona')?.value,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
     };

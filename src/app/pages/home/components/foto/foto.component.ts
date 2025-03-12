@@ -166,7 +166,7 @@ export class FotoComponent implements OnInit {
       try {
 
         if (this.capturedImage) {
-          const form = await this.datosGeneralesComponent.getMyForm();
+          const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
           console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
@@ -221,13 +221,35 @@ export class FotoComponent implements OnInit {
 
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
-      const form = await this.datosGeneralesComponent.getMyForm();
-          console.log("Formulario editar válido this is form:", form);
+      const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
+      console.log("Formulario editar válido this is form:", form);
 
       try {
-        await this.aspirantesBeneficioService.editarAspirante(form);
+        const response = await this.aspirantesBeneficioService.editarAspirante(form);
+        if (response.success) {
+          Swal.fire({
+            title: 'Actualización exitosa!',
+            text: response.message,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            title: 'Error en la actualización',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+          });
+        }
       } catch (error) {
         console.error("Error en el proceso:", error);
+        Swal.fire({
+          title: 'Error en la actualización',
+          text: 'Ocurrió un error al intentar actualizar el aspirante',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
       }
     } else {
       // Marcar todos los campos como tocados para mostrar los errores

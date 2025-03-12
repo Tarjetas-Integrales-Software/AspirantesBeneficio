@@ -5,6 +5,31 @@ import { Observable } from 'rxjs';
 import { DatabaseService } from '../../services/database.service';
 import { CurpsRegistradasService } from './curps-registradas.service';
 
+export interface Aspirante {
+  id: number;
+  id_modalidad: number;
+  curp: string;
+  nombre_completo: string;
+  telefono: string;
+  email?: string;
+  fecha_nacimiento: string;
+  grado: string;
+  tipo_carrera: string;
+  carrera: string;
+  estado: string;
+  municipio: string;
+  ciudad: string;
+  cp: string;
+  colonia: string;
+  tipo_asentamiento?: string;
+  tipo_zona: string;
+  domicilio: string;
+  com_obs?: string;
+  fecha_evento: string;
+  created_id: number;
+  created_at: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -38,6 +63,10 @@ export class AspirantesBeneficioService {
 
   getAspiranteBeneficioId(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_with_joins_por_id', { id: id });
+  }
+
+  editAspirante(aspirante: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit', { ...aspirante });
   }
 
   deleteAspiranteBeneficio(id: number): Observable<any> {
@@ -111,30 +140,7 @@ export class AspirantesBeneficioService {
   }
 
   // Crear un nuevo aspirante
-  async crearAspirante(aspirante: {
-    id: number;
-    id_modalidad: number;
-    curp: string;
-    nombre_completo: string;
-    telefono: string;
-    email?: string;
-    fecha_nacimiento: string;
-    grado: string;
-    tipo_carrera: string;
-    carrera: string;
-    estado: string;
-    municipio: string;
-    ciudad: string;
-    cp: string;
-    colonia: string;
-    tipo_asentamiento?: string; // Asegúrate de que el nombre sea tipo_asentamiento
-    tipo_zona: string;
-    domicilio: string;
-    com_obs?: string;
-    fecha_evento: string;
-    created_id: number;
-    created_at: string;
-  }): Promise<any> {
+  async crearAspirante(aspirante: Aspirante): Promise<any> {
     await this.ensureTableSchema(); // Asegurarse de que la tabla tenga las columnas necesarias
 
     const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
@@ -212,62 +218,18 @@ export class AspirantesBeneficioService {
     }
   }
 
-  async editarAspirante(aspirante: {
-    id: number;
-    id_modalidad: number;
-    curp: string;
-    nombre_completo: string;
-    telefono: string;
-    email?: string;
-    fecha_nacimiento: string;
-    grado: string;
-    tipo_carrera: string;
-    carrera: string;
-    estado: string;
-    municipio: string;
-    ciudad: string;
-    cp: string;
-    colonia: string;
-    tipo_asentamiento?: string;
-    tipo_zona: string;
-    domicilio: string;
-    com_obs?: string;
-    fecha_evento: string;
-    created_id: number;
-    created_at: string;
-  }): Promise<any> {
-    const sql = `
-      UPDATE ct_aspirantes_beneficio
-      SET id_modalidad = ?, curp = ?, nombre_completo = ?, telefono = ?, email = ?, fecha_nacimiento = ?,
-          grado = ?, tipo_carrera = ?, carrera = ?, estado = ?, municipio = ?, ciudad = ?, cp = ?, colonia = ?,
-          tipo_asentamiento = ?, tipo_zona = ?, domicilio = ?, com_obs = ?, fecha_evento = ?, created_id = ?, created_at = ?
-      WHERE id = ?;
-    `;
-    const params = [
-      aspirante.id_modalidad,
-      aspirante.curp,
-      aspirante.nombre_completo,
-      aspirante.telefono,
-      aspirante.email,
-      aspirante.fecha_nacimiento,
-      aspirante.grado,
-      aspirante.tipo_carrera,
-      aspirante.carrera,
-      aspirante.estado,
-      aspirante.municipio,
-      aspirante.ciudad,
-      aspirante.cp,
-      aspirante.colonia,
-      aspirante.tipo_asentamiento,
-      aspirante.tipo_zona,
-      aspirante.domicilio,
-      aspirante.com_obs,
-      aspirante.fecha_evento,
-      aspirante.created_id,
-      aspirante.created_at,
-      aspirante.id
-    ];
-
-    return await this.databaseService.execute(sql, params);
+  async editarAspirante(aspirante: Aspirante): Promise<any> {
+    try {
+      const response = await this.editAspirante(aspirante).toPromise();
+      if (response.success) {
+        return { success: true, message: 'Aspirante actualizado correctamente' };
+      } else {
+        console.warn('No se encontró el aspirante para actualizar:', aspirante);
+        return { success: false, message: 'No se encontró el aspirante para actualizar' };
+      }
+    } catch (error) {
+      console.error('Error al actualizar el aspirante:', error);
+      return { success: false, message: 'Error al actualizar el aspirante' };
+    }
   }
 }
