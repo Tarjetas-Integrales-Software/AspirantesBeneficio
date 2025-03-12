@@ -88,6 +88,28 @@ export class AspirantesBeneficioService {
     }
   }
 
+  async ensureTableSchema() {
+    const sql = `
+      PRAGMA table_info(ct_aspirantes_beneficio);
+    `;
+    const result = await this.databaseService.query(sql);
+
+    const columns = result.map((row: any) => row.name);
+    const requiredColumns = [
+      'id', 'id_modalidad', 'curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento',
+      'grado', 'tipo_carrera', 'carrera', 'estado', 'municipio', 'ciudad', 'cp', 'colonia',
+      'tipo_asentamiento', 'tipo_zona', 'domicilio', 'com_obs', 'fecha_evento', 'created_id',
+      'updated_id', 'deleted_id', 'created_at', 'updated_at', 'deleted_at'
+    ];
+
+    for (const column of requiredColumns) {
+      if (!columns.includes(column)) {
+        const alterSql = `ALTER TABLE ct_aspirantes_beneficio ADD COLUMN ${column} TEXT;`;
+        await this.databaseService.execute(alterSql);
+      }
+    }
+  }
+
   // Crear un nuevo aspirante
   async crearAspirante(aspirante: {
     id: number;
@@ -113,6 +135,8 @@ export class AspirantesBeneficioService {
     created_id: number;
     created_at: string;
   }): Promise<any> {
+    await this.ensureTableSchema(); // Asegurarse de que la tabla tenga las columnas necesarias
+
     const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
 
     if (curpRegistrada) return;
@@ -141,7 +165,7 @@ export class AspirantesBeneficioService {
       aspirante.ciudad,
       aspirante.cp,
       aspirante.colonia,
-      aspirante.tipo_asentamiento, // Asegúrate de que el nombre sea tipo_asentamiento
+      aspirante.tipo_asentamiento,
       aspirante.tipo_zona,
       aspirante.domicilio,
       aspirante.com_obs,
@@ -186,5 +210,64 @@ export class AspirantesBeneficioService {
       console.error('Error al obtener el último id:', error);
       throw error; // Relanzar el error para manejarlo en el llamador
     }
+  }
+
+  async editarAspirante(aspirante: {
+    id: number;
+    id_modalidad: number;
+    curp: string;
+    nombre_completo: string;
+    telefono: string;
+    email?: string;
+    fecha_nacimiento: string;
+    grado: string;
+    tipo_carrera: string;
+    carrera: string;
+    estado: string;
+    municipio: string;
+    ciudad: string;
+    cp: string;
+    colonia: string;
+    tipo_asentamiento?: string;
+    tipo_zona: string;
+    domicilio: string;
+    com_obs?: string;
+    fecha_evento: string;
+    created_id: number;
+    created_at: string;
+  }): Promise<any> {
+    const sql = `
+      UPDATE ct_aspirantes_beneficio
+      SET id_modalidad = ?, curp = ?, nombre_completo = ?, telefono = ?, email = ?, fecha_nacimiento = ?,
+          grado = ?, tipo_carrera = ?, carrera = ?, estado = ?, municipio = ?, ciudad = ?, cp = ?, colonia = ?,
+          tipo_asentamiento = ?, tipo_zona = ?, domicilio = ?, com_obs = ?, fecha_evento = ?, created_id = ?, created_at = ?
+      WHERE id = ?;
+    `;
+    const params = [
+      aspirante.id_modalidad,
+      aspirante.curp,
+      aspirante.nombre_completo,
+      aspirante.telefono,
+      aspirante.email,
+      aspirante.fecha_nacimiento,
+      aspirante.grado,
+      aspirante.tipo_carrera,
+      aspirante.carrera,
+      aspirante.estado,
+      aspirante.municipio,
+      aspirante.ciudad,
+      aspirante.cp,
+      aspirante.colonia,
+      aspirante.tipo_asentamiento,
+      aspirante.tipo_zona,
+      aspirante.domicilio,
+      aspirante.com_obs,
+      aspirante.fecha_evento,
+      aspirante.created_id,
+      aspirante.created_at,
+      aspirante.id
+    ];
+
+    return await this.databaseService.execute(sql, params);
   }
 }

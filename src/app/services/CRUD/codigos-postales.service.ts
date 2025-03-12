@@ -3,6 +3,7 @@ import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatabaseService } from '../../services/database.service';
+import { NetworkStatusService } from '../network-status.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,20 +11,34 @@ import { DatabaseService } from '../../services/database.service';
 export class CodigosPostalesService {
   private http = inject(HttpClient);
 
-  constructor(private databaseService: DatabaseService) {
+  constructor(private databaseService: DatabaseService, private networkStatusService: NetworkStatusService) {
 
   }
 
   getCodigosPostales(): Observable<any> {
-    const sql = 'SELECT * FROM CS_CodigosPostales_Colonias';
-    const params: any[] = [];
-
     return new Observable(observer => {
-      this.databaseService.query(sql, params).then(resultados => {
-        observer.next({ data: resultados });
-        observer.complete();
-      }).catch(error => {
-        observer.error(error);
+      this.networkStatusService.isOnline.subscribe(online => {
+        if (online) {
+          this.http.get(environment.apiUrl + '/lic/aspben/codposcol_all').subscribe({
+            next: (response) => {
+              observer.next(response);
+              observer.complete();
+            },
+            error: (error) => {
+              observer.error(error);
+            }
+          });
+        } else {
+          const sql = 'SELECT * FROM CS_CodigosPostales_Colonias';
+          const params: any[] = [];
+
+          this.databaseService.query(sql, params).then(resultados => {
+            observer.next({ data: resultados });
+            observer.complete();
+          }).catch(error => {
+            observer.error(error);
+          });
+        }
       });
     });
   }
@@ -54,6 +69,12 @@ export class CodigosPostalesService {
 
       await this.databaseService.execute(sql, params);
     }
+  }
+
+  async consultarCodigosPostalesUnicos(): Promise<string[]> {
+    const sql = 'SELECT DISTINCT cp FROM CS_CodigosPostales_Colonias ORDER BY cp';
+    const resultados = await this.databaseService.query(sql);
+    return resultados.map((row: any) => row.cp);
   }
 
   async consultarCodigosPostales(query: { cp?: string, colonia?: string, municipio?: string }): Promise<any[]> {
