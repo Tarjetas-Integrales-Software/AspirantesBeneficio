@@ -113,7 +113,7 @@ export class DatosGeneralesComponent implements OnInit {
   @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
   myControl_cp = new FormControl('');
   //options: string[] = [];
-  filteredOptions: string[];
+  filteredOptions: any[] = [];
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -161,10 +161,8 @@ export class DatosGeneralesComponent implements OnInit {
   // }
 
   filter(): void {
-    const filterValue = this.codigoPostal?.nativeElement?.value;
-    console.log(filterValue);
-    console.log(this.codigosPostales);
-    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue?.toString()));
+    const filterValue = this.codigoPostal?.nativeElement?.value.toLowerCase() || '';
+    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue));
   }
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
