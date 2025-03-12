@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, inject, Output, EventEmitter } from "@angular/core"
 import { MatDividerModule } from '@angular/material/divider';
-import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,6 +9,8 @@ import { CommonModule } from "@angular/common"
 import { Validators,FormsModule,ReactiveFormsModule,FormGroup,FormBuilder, } from "@angular/forms"
 import { get } from "http";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
+import { ModulosService } from "../../services/CRUD/modulos.service";
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -22,100 +24,82 @@ import { ConfiguracionesService } from "../../services/CRUD/configuraciones.serv
         FormsModule,
         ReactiveFormsModule,
         MatIconModule,
-        //MatInput,
         MatDatepickerModule,
   ],
   templateUrl: './configuraciones.component.html',
   styleUrl: './configuraciones.component.scss'
 })
-export class ConfiguracionesComponent
-//implements OnInit
+export class ConfiguracionesComponent implements OnInit
 {
-  // @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
-  // @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
-  // @Output() submitForm = new EventEmitter<void>();
+  @Output() submitForm = new EventEmitter<void>();
+  private fb = inject(FormBuilder);
+  modulos: any[] = [];
+  selectedValue_modu: string = '';
 
-  // private fb = inject(FormBuilder);
+  constructor(private modulosService: ModulosService
+    , private configuracionesService: ConfiguracionesService
+  ) { }
 
-  // constructor(private configuracionesService: ConfiguracionesService) { }
+    myForm: FormGroup = this.fb.group({
+      modulo: ['', [Validators.required, Validators.minLength(5)]],
 
-  // myForm: FormGroup = this.fb.group({
-  //   id_formato_imagen: ['', []],
-  // })
+    });
 
+  ngOnInit() {
+    this.getModulosAspben()
+  }
 
-  // devices: MediaDeviceInfo[] = []
-  // selectedDevice = ""
-  // stream: MediaStream | null = null
-  // imageFormat: "jpeg" | "webp" = "webp"
+  async getModulosAspben() {
+    this.modulosService.consultarModulos()
+      .then(modulos => {
+        this.modulos = modulos;
+      })
+      .catch(error => console.error('Error al obtener modulos:', error));
+  }
 
-  // formatos_imagen: any[] = [];
-  // selectedValue_formatoimagen: string = ''; //formato de imagen seleccionada
+  selectedValue_modulo(){
+    console.log('selectedValue_modu', this.selectedValue_modu);
+    this.selectedValue_modu = this.myForm.get('modulo')?.value;
+  }
 
+  isValidField(fieldName: string): boolean | null {
+    return (this.myForm.controls[fieldName].errors && this.myForm.controls[fieldName].touched);
+  }
 
+  getFieldError(fieldName: string): string | null {
+    if (!this.myForm.controls[fieldName].errors) return null;
 
+    const errors = this.myForm.controls[fieldName].errors ?? {};
 
-  // ngOnInit() {
-  //   this.getAvailableCameras()
-  // }
+    for (const key of Object.keys(errors)) {
+      switch (key) {
+        case 'required':
+          return 'Este campo es requerido';
+        case 'email':
+          return 'El email no es válido';
+        case 'minlength':
+          return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
+        case 'pattern':
+          return 'El formato de la curp no es correcto';
+      }
+    }
+    return null;
+  }
 
-  // async getAvailableCameras() {
-  //   try {
-  //     const devices = await navigator.mediaDevices.enumerateDevices()
-  //     this.devices = devices.filter((device) => device.kind === "videoinput")
-  //   } catch (error) {
-  //     console.error("Error accessing media devices:", error)
-  //   }
-  // }
+  async onSubmit(): Promise<void> {
+    try {
+      this.selectedValue_modu = this.myForm.get('modulo')?.value;
+      await this.configuracionesService.insertOrUpdateConfiguracion('modulo',this.selectedValue_modu);
+      Swal.fire({
+        title: 'Actualizacion exitosa!',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (error) {
 
-  // async startStream() {
-  //   if (this.stream) {
-  //     this.stopStream()
-  //   }
-
-  //   try {
-  //     this.stream = await navigator.mediaDevices.getUserMedia({
-  //       video: { deviceId: this.selectedDevice },
-  //     })
-  //     this.videoElement.nativeElement.srcObject = this.stream
-  //   } catch (error) {
-  //     console.error("Error accessing the camera:", error)
-  //   }
-  // }
-
-  // stopStream() {
-  //   if (this.stream) {
-  //     this.stream.getTracks().forEach((track) => track.stop())
-  //     this.stream = null
-  //   }
-  //   this.videoElement.nativeElement.srcObject = null
-  // }
-
-
-  // isValidField(fieldName: string): boolean | null {
-  //   return (this.myForm.controls[fieldName].errors && this.myForm.controls[fieldName].touched);
-  // }
-
-  // getFieldError(fieldName: string): string | null {
-  //   if (!this.myForm.controls[fieldName].errors) return null;
-
-  //   const errors = this.myForm.controls[fieldName].errors ?? {};
-
-  //   for (const key of Object.keys(errors)) {
-  //     switch (key) {
-  //       case 'required':
-  //         return 'Este campo es requerido';
-  //       case 'email':
-  //         return 'El email no es válido';
-  //       case 'minlength':
-  //         return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
-  //     }
-  //   }
-  //   return null;
-  // }
-
-  // onSubmit(): void {
-
-  // }
+    }
+    this.submitForm.emit();
+  }
 
 }
