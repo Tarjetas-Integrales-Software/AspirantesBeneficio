@@ -17,6 +17,10 @@ export class AspirantesBeneficioService {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
   }
 
+  editAspirante(aspirante: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit', { ...aspirante });
+  }
+
   async deleteAspirante(id: number): Promise<any> {
     const sql = 'UPDATE ct_aspirantes_beneficio SET confirmado = ? WHERE id = ?;';
 
@@ -32,8 +36,11 @@ export class AspirantesBeneficioService {
     }
   }
 
-  getAspirantesBeneficio(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
+  getAspirantesBeneficioAll(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all', { ...body });
+  }
+  getAspirantesBeneficioPaginated(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_paginated', { ...body });
   }
 
   getAspiranteBeneficioId(id: number): Observable<any> {
