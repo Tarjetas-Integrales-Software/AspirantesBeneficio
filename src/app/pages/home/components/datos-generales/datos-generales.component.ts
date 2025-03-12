@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,6 +20,7 @@ import {
   FormBuilder,
   AbstractControl,
   ValidationErrors,
+  FormControl,
 } from '@angular/forms';
 import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
@@ -29,7 +30,9 @@ import { Observable, switchMap } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from '@angular/router';
-import { cp } from 'fs';
+import {MatCardModule} from '@angular/material/card';
+import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -45,9 +48,12 @@ import { cp } from 'fs';
     MatIconModule,
     MatInput,
     MatDatepickerModule,
+    MatCardModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './datos-generales.component.html',
-  styleUrl: './datos-generales.component.scss'
+  styleUrl: './datos-generales.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DatosGeneralesComponent implements OnInit {
 
@@ -102,6 +108,12 @@ export class DatosGeneralesComponent implements OnInit {
     created_id: 0,
     created_at: ''
   };       // ID del registro a editar
+  modulo_actual: string = '';
+
+  @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
+  myControl_cp = new FormControl('');
+  //options: string[] = [];
+  filteredOptions: string[];
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -112,7 +124,10 @@ export class DatosGeneralesComponent implements OnInit {
     , private tiposCarrerasService: TiposCarrerasService
     , private carrerasService: CarrerasService
     , private curpsRegistradasService: CurpsRegistradasService
-  ) { }
+    , private configuracionesService: ConfiguracionesService
+  ) {
+    this.filteredOptions = this.codigosPostales.slice();
+  }
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
@@ -136,6 +151,21 @@ export class DatosGeneralesComponent implements OnInit {
     carrera: ['',],
     com_obs: [''],
   });
+
+
+
+  // ngAfterViewInit() {
+  //   if (this.cp) {
+  //     this.myControl_cp.setValue(this.cp.nativeElement.value);
+  //   }
+  // }
+
+  filter(): void {
+    const filterValue = this.codigoPostal?.nativeElement?.value;
+    console.log(filterValue);
+    console.log(this.codigosPostales);
+    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue?.toString()));
+  }
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
     if (this.editar) {
@@ -435,6 +465,7 @@ export class DatosGeneralesComponent implements OnInit {
       created_at: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
+      modulo: this.modulo_actual
     };
   }
 
@@ -497,7 +528,14 @@ export class DatosGeneralesComponent implements OnInit {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  getAspiranteFotoId(id_foto: number): void {
-    // Implement the method to get the photo by ID
+  consultarModuloActual(){
+    this.configuracionesService.consultarConfiguracionPorClave('modulo')
+      .then((valor) => {
+        console.log(valor,'valor');
+        this.modulo_actual = valor[0]["valor"];
+        console.log(this.modulo_actual, 'modulo_actual');
+        console.log(typeof(this.modulo_actual),'typeof');
+      })
+      .catch((error) => console.error('Error al obtener municipios:', error));
   }
 }
