@@ -3,5 +3,6 @@ export const environment = {
     apiUrl: 'https://backmibeneficio.tisaweb.mx/api/v1',
     baseUrl: 'https://backmibeneficio.tisaweb.mx',
     cryptoKey: 'Tisa.2025',
-    syncInterval: 600000
+    syncInterval: 600000,
+    syncCurpInterval: 300000
 };
