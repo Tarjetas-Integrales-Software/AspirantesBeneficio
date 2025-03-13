@@ -40,8 +40,8 @@ export class LoginComponent implements OnInit {
   ) {
 
     this.loginForm = this.fb.group({
-      email: ['danessseguro@gmail.com', [Validators.required]],
-      password: ['nDav4.Tis4', [Validators.required, Validators.minLength(5)]]
+      email: ['aspben_nestor_davalos', [Validators.required]],
+      password: ['1234K', [Validators.required, Validators.minLength(5)]]
     });
   }
 
@@ -73,7 +73,7 @@ export class LoginComponent implements OnInit {
             this.storageService.set("user", response.user);
             this.storageService.set("perfiles", response.perfiles);
 
-            this.router.navigate(['/inicio/registro']);
+            this.router.navigate(['/inicio/configuraciones']);
           }
           this.loading = false;
         },

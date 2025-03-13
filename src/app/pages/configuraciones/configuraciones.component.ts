@@ -87,9 +87,10 @@ export class ConfiguracionesComponent implements OnInit
   }
 
   async onSubmit(): Promise<void> {
+    console.log('submitForm', this.myForm.value);
     try {
       this.selectedValue_modu = this.myForm.get('modulo')?.value;
-      await this.configuracionesService.insertOrUpdateConfiguracion('modulo',this.selectedValue_modu);
+      await this.configuracionesService.insertOrUpdateConfiguracion('modulo', this.selectedValue_modu);
       Swal.fire({
         title: 'Actualizacion exitosa!',
         icon: 'success',
@@ -97,7 +98,13 @@ export class ConfiguracionesComponent implements OnInit
         showConfirmButton: false
       });
     } catch (error) {
-
+      console.error('Error al guardar la configuracion en la base de datos local:', error);
+      Swal.fire({
+        title: 'Error al guardar la configuracion en la base de datos local',
+        icon: 'error',
+        timer: 2000,
+        showConfirmButton: false
+      });
     }
     this.submitForm.emit();
   }
