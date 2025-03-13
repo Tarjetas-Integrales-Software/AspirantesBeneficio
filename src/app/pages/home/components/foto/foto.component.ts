@@ -2,7 +2,7 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
-import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
+import { AspirantesBeneficioService, Aspirante } from "../../../../services/CRUD/aspirantes-beneficio.service";
 import { HttpClient } from '@angular/common/http';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
@@ -144,7 +144,7 @@ export class FotoComponent implements OnInit {
         tipo: 'foto_aspben',
         // archivo: this.capturedImage!,
         archivo: curp + '.webp',
-        path: 'docsaspirantesbeneficio/' + curp + '.webp' , // Asignar el path adecuado si es necesario
+        path: 'docsaspirantesbeneficio/' + curp + '.webp', // Asignar el path adecuado si es necesario
         archivoOriginal: `captured_photo.${this.imageFormat}`,
         extension: this.imageFormat,
         created_id: 0, // Asignar el ID adecuado si es necesario
@@ -166,7 +166,8 @@ export class FotoComponent implements OnInit {
       try {
 
         if (this.capturedImage) {
-          const form = await this.datosGeneralesComponent.getMyForm();
+          const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
+          console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
@@ -196,8 +197,8 @@ export class FotoComponent implements OnInit {
           //borramos la foto y datos del formulario
           this.capturedImage = null;
           this.datosGeneralesComponent.myForm.reset();
-          this.datosGeneralesComponent.myForm.get('estado')?.setValue('Jalisco');
           this.datosGeneralesComponent.myForm.markAsPristine();
+          this.datosGeneralesComponent.disabledGradoCarrera();
 
         } else {
           console.log("No hay imagen capturada para subir");
@@ -212,5 +213,49 @@ export class FotoComponent implements OnInit {
       this.mostrarErrores(this.datosGeneralesComponent.myForm);
     }
     this.submitForm.emit();
+  }
+
+  async onEdit() {
+    // Detener el video de la cámara
+    this.stopStream();
+
+    // Verificamos si el formulario es válido
+    if (this.datosGeneralesComponent.myForm.valid) {
+      const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
+      console.log("Formulario editar válido this is form:", form);
+
+      try {
+        const response = await this.aspirantesBeneficioService.editarAspirante(form);
+        if (response.success) {
+          Swal.fire({
+            title: 'Actualización exitosa!',
+            text: response.message,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            title: 'Error en la actualización',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+          });
+        }
+      } catch (error) {
+        console.error("Error en el proceso:", error);
+        Swal.fire({
+          title: 'Error en la actualización',
+          text: 'Ocurrió un error al intentar actualizar el aspirante',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
+      }
+    } else {
+      // Marcar todos los campos como tocados para mostrar los errores
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      // Mostrar los errores en la consola del formulario
+      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+    }
   }
 }
