@@ -1,16 +1,24 @@
 import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, inject, ChangeDetectorRef } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -23,6 +31,9 @@ import {
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from '../../services/CRUD/fotos.service';
+import { UsersService } from '../../services/CRUD/users.service';
+import { ModulosService } from '../../services/CRUD/modulos.service';
+import { ModalidadesService } from '../../services/CRUD/modalidades.service';
 import { StorageService } from '../../services/storage.service';
 import { RouterLink } from '@angular/router';
 
@@ -35,27 +46,58 @@ export interface AspiranteBeneficio {
 
 @Component({
   selector: 'consultaPage',
-  imports: [DatePipe, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatPaginatorModule, MatIconModule, MatButtonModule, RouterLink],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatProgressSpinnerModule, MatPaginatorModule, MatIconModule, MatButtonModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule],
   templateUrl: './consulta.component.html',
   styleUrl: './consulta.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsultaComponent implements OnInit, AfterViewInit {
-  displayedColumns: string[] = ['curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'fecha_evento', 'acciones'];
+  displayedColumns: string[] = ['curp', 'nombre_completo', 'nombre_modalidad', 'modulo', 'fecha_evento', 'email_cajero', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'grado', 'tipo_carrera', 'carrera', 'acciones'];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  modulos: any[] = [];
+  modalidades: any[] = [];
+  cajeros: any[] = [];
+
+  formConsulta: FormGroup;
+
   rolesConPermiso: number[] = [103, 104];
-  rolesUsuario: Array<{ pkUserPerfil: number }> = [];
+  rolesUsuario: Array<{ fkRole: number }> = [];
+
+  currentPage: number = 0;
+  lastPage: number = 1;
+  perPage: number = 5;
+  total: number = 0;
+
+  loading: boolean = false;
+  generado: boolean = false;
 
   readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private networkStatusService: NetworkStatusService, private aspirantesBeneficioService: AspirantesBeneficioService, private storageService: StorageService) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
+    private networkStatusService: NetworkStatusService,
+    private aspirantesBeneficioService: AspirantesBeneficioService,
+    private modulosService: ModulosService,
+    private modalidadesService: ModalidadesService,
+    private usersService: UsersService,
+    private storageService: StorageService) {
     this.dataSource = new MatTableDataSource();
 
     if (this.storageService.exists("perfiles"))
       this.rolesUsuario = this.storageService.get("perfiles");
+
+    this.formConsulta = this.fb.group({
+      search: [''],
+      modulo: [''],
+      modalidad: [''],
+      fechaInicio: [new Date()],
+      fechaFin: [new Date()],
+      cajero: ['']
+    });
   }
 
   ngOnInit(): void {
@@ -64,6 +106,9 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     if (online) { }
 
     this.getAspirantesBeneficio();
+    this.getModulos();
+    this.getModalidades();
+    this.getCajeros();
   }
 
   ngAfterViewInit() {
@@ -71,21 +116,75 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+  getAspirantesBeneficio(): void {
+    const body = this.getBody(true);
 
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
+    this.loading = true;
+
+    this.aspirantesBeneficioService.getAspirantesBeneficioPaginated(body).subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.dataSource.data = response.data;
+
+          const { currentPage, lastPage, perPage, total } = response["pagination"];
+
+          this.currentPage = currentPage - 1;
+          this.lastPage = lastPage;
+          this.perPage = perPage;
+          this.total = total;
+        }
+      }),
+      complete: () => {
+        this.loading = false;
+        this.generado = true;
+
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
   }
 
-  getAspirantesBeneficio(): void {
-    this.aspirantesBeneficioService.getAspirantesBeneficio().subscribe({
+  getModulos(): void {
+    this.modulosService.getModulos().subscribe({
       next: ((response) => {
-        this.dataSource.data = response.data;
+        if (response.response) {
+          this.modulos = response.data;
+        }
       }),
-      error: ((error) => { })
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
+  }
+  getModalidades(): void {
+    this.modalidadesService.getModalidades().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.modalidades = response.data.filter((modalidad: { id_tipo_beneficio: string }) => modalidad.id_tipo_beneficio == "2");
+        }
+      }),
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
+  }
+  getCajeros(): void {
+    this.usersService.getUsers().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.cajeros = response.data["usuarios_aspben"];
+        }
+      }),
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
     });
   }
 
@@ -110,6 +209,16 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
 
   }
 
+  onRowClick(event: MouseEvent, rowId: number) {
+    // Verifica si el clic se realizó en la celda de acciones
+    const isActionCell = (event.target as HTMLElement).closest('.action-cell');
+
+    // Si no es la celda de acciones, abre el diálogo
+    if (!isActionCell) {
+      this.openDialog(rowId);
+    }
+  }
+
   openDialog(id: number) {
     this.dialog.open(DialogAspiranteBeneficio, {
       height: '600px',
@@ -121,8 +230,190 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
   get permisoAcciones(): boolean {
     // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
     return this.rolesUsuario.some(perfil =>
-      perfil.pkUserPerfil && this.rolesConPermiso.includes(Number(perfil.pkUserPerfil))
+      perfil.fkRole && this.rolesConPermiso.includes(Number(perfil.fkRole))
     );
+  }
+
+  downloadPdf() {
+    const body = this.getBody();
+
+    this.aspirantesBeneficioService.getAspirantesBeneficioAll(body).subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.id,
+            aspirante.id_modalidad,
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.nombre_modalidad,
+            aspirante.modulo,
+            aspirante.fecha_evento,
+            aspirante.email_cajero,
+            aspirante.telefono,
+            aspirante.email,
+            aspirante.fecha_nacimiento,
+            aspirante.estado,
+            aspirante.municipio,
+            aspirante.ciudad,
+            aspirante.cp,
+            aspirante.colonia,
+            aspirante.tipo_asentamiento,
+            aspirante.tipo_zona,
+            aspirante.domicilio,
+            aspirante.grado,
+            aspirante.tipo_carrera,
+            aspirante.carrera,
+            aspirante.com_obs,
+          ];
+        });
+
+        const doc = new jsPDF({ orientation: 'landscape' });
+        autoTable(doc, {
+          theme: 'grid',
+          head: [[
+            "ID",
+            "ID Modalidad",
+            "CURP",
+            "Nombre Completo",
+            "Nombre Modalidad",
+            "Módulo",
+            "Fecha Evento",
+            "Email Cajero",
+            "Teléfono",
+            "Email",
+            "Fecha Nacimiento",
+            "Estado",
+            "Municipio",
+            "Ciudad",
+            "Código Postal",
+            "Colonia",
+            "Tipo Asentamiento",
+            "Tipo Zona",
+            "Domicilio",
+            "Grado",
+            "Tipo Carrera",
+            "Carrera",
+            "Comentarios / Observaciones"
+          ]],
+          body: prepare,
+          bodyStyles: { fontSize: 8 }
+        });
+        doc.save(`${this.getFileName()}`);
+      }
+    });
+  }
+
+  downloadExcel() {
+    const body = this.getBody();
+
+    this.aspirantesBeneficioService.getAspirantesBeneficioAll(body).subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.id,
+            aspirante.id_modalidad,
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.nombre_modalidad,
+            aspirante.modulo,
+            aspirante.fecha_evento,
+            aspirante.email_cajero,
+            aspirante.telefono,
+            aspirante.email,
+            aspirante.fecha_nacimiento,
+            aspirante.estado,
+            aspirante.municipio,
+            aspirante.ciudad,
+            aspirante.cp,
+            aspirante.colonia,
+            aspirante.tipo_asentamiento,
+            aspirante.tipo_zona,
+            aspirante.domicilio,
+            aspirante.grado,
+            aspirante.tipo_carrera,
+            aspirante.carrera,
+            aspirante.com_obs,
+          ];
+        });
+
+        prepare.unshift([
+          "ID",
+          "ID Modalidad",
+          "CURP",
+          "Nombre Completo",
+          "Nombre Modalidad",
+          "Módulo",
+          "Fecha Evento",
+          "Email Cajero",
+          "Teléfono",
+          "Email",
+          "Fecha Nacimiento",
+          "Estado",
+          "Municipio",
+          "Ciudad",
+          "Código Postal",
+          "Colonia",
+          "Tipo Asentamiento",
+          "Tipo Zona",
+          "Domicilio",
+          "Grado",
+          "Tipo Carrera",
+          "Carrera",
+          "Comentarios / Observaciones"
+        ]);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(prepare);
+
+        // Crea un libro de trabajo y agrega la hoja
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Aspirantes');
+
+        // Genera el archivo y lo descarga
+        XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
+      }
+    });
+  }
+
+  getFileName(): string {
+    return "Aspirantes";
+  }
+
+  getBody(paginated: boolean = false): {
+    search?: string;
+    page?: number;
+    per_page?: number;
+  } {
+    const _modulo = this.formConsulta.get('modulo')?.value,
+      _modalidad = this.formConsulta.get('modalidad')?.value,
+      _fechaInicio = this.formConsulta.get('fechaInicio')?.value,
+      _fechaFin = this.formConsulta.get('fechaFin')?.value,
+      _cajero = this.formConsulta.get('cajero')?.value,
+      _search = this.formConsulta.get('search')?.value;
+
+    const body: any = {}
+
+    if (paginated) {
+      body["per_page"] = this.perPage;
+      body["page"] = this.currentPage + 1;
+    }
+
+    if (_modulo !== "") body['modulo'] = _modulo;
+    if (_modalidad !== "") body['modalidad'] = _modalidad;
+    if (_fechaInicio !== null) body['fechaInicio'] = _fechaInicio.toISOString().substring(0, 10);
+    if (_fechaFin !== null) body['fechaFin'] = _fechaFin.toISOString().substring(0, 10);
+    if (_cajero !== "") body['cajero'] = _cajero;
+    if (_search !== "") body['search'] = _search;
+
+    return body;
+  }
+
+  onPaginateChange(event: PageEvent): void {
+    // Actualiza las variables según el evento del paginador
+    this.currentPage = event.pageIndex; // Página actual (base 0)
+    this.perPage = event.pageSize; // Tamaño de página seleccionado
+
+    // Vuelve a cargar los datos
+    this.getAspirantesBeneficio();
   }
 }
 

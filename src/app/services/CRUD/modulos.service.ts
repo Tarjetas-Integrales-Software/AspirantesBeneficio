@@ -8,7 +8,6 @@ import { DatabaseService } from '../../services/database.service';
   providedIn: 'root'
 })
 export class ModulosService {
-
   private http = inject(HttpClient);
 
   constructor(private databaseService: DatabaseService) {

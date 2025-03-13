@@ -58,8 +58,11 @@ export class AspirantesBeneficioService {
     }
   }
 
-  getAspirantesBeneficio(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all');
+  getAspirantesBeneficioAll(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_all', { ...body });
+  }
+  getAspirantesBeneficioPaginated(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_paginated', { ...body });
   }
 
   getAspiranteBeneficioId(id: number): Observable<any> {
