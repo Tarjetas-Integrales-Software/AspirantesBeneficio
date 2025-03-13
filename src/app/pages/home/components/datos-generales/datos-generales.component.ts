@@ -108,7 +108,7 @@ export class DatosGeneralesComponent implements OnInit {
     created_id: 0,
     created_at: ''
   };       // ID del registro a editar
-  modulo_actual: string = '';
+  modulo_actual: string | null = null;
 
   @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
   //options: string[] = [];
@@ -226,6 +226,40 @@ export class DatosGeneralesComponent implements OnInit {
   private activatedRoute = inject(ActivatedRoute);
 
   ngOnInit(): void {
+    this.modulo_actual = this.configuracionesService.getSelectedValueModu();
+    if(!this.modulo_actual) {
+      let timerInterval: NodeJS.Timeout;
+          Swal.fire({
+            icon: 'info',
+            title: 'Aún no seleccionás un módulo...',
+            html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            timer: 5000,
+            timerProgressBar: true,
+            didOpen: () => {
+              Swal.showLoading();
+              const container = Swal.getHtmlContainer();
+              if (!container) return; // Verifica que no sea null
+              const b = container.querySelector('b') as HTMLElement | null;
+              if (!b) return; // Verifica que 'b' exista
+
+              timerInterval = setInterval(() => {
+                const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
+                if (typeof timerLeft === 'number') { // Verifica si es un número
+                  b.textContent = Math.ceil(timerLeft / 1000).toString();
+                }
+              }, 1000);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+            }
+          }).then((result) => {
+            if (result.dismiss === Swal.DismissReason.timer) {
+              this.router.navigateByUrl('/inicio/configuraciones');
+            }
+          });
+    }
     const online = this.networkStatusService.checkConnection();
     if (online) this.syncDataBase();
 
@@ -376,6 +410,8 @@ export class DatosGeneralesComponent implements OnInit {
         return this.allCodigosPostales.find(item => item.cp === cp);
       });
     }
+    console.log('allcodigospostales',this.allCodigosPostales)
+    console.log('codigospostales',this.codigosPostales)
   }
 
   getColoniasByCP(): void {
@@ -517,14 +553,4 @@ export class DatosGeneralesComponent implements OnInit {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  consultarModuloActual() {
-    this.configuracionesService.consultarConfiguracionPorClave('modulo')
-      .then((valor) => {
-        console.log(valor, 'valor');
-        this.modulo_actual = valor[0]["valor"];
-        console.log(this.modulo_actual, 'modulo_actual');
-        console.log(typeof (this.modulo_actual), 'typeof');
-      })
-      .catch((error) => console.error('Error al obtener municipios:', error));
-  }
 }

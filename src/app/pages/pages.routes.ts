@@ -12,6 +12,11 @@ export const pagesRoutes: Routes = [
         component: PagesComponent,
         children: [
             {
+              path: 'configuraciones',
+              title: 'Configuraciones',
+              component: ConfiguracionesComponent
+            },
+            {
                 path: 'registro',
                 title: 'Registro',
                 component: HomeComponent
@@ -30,11 +35,6 @@ export const pagesRoutes: Routes = [
               path: 'reportes',
               title: 'Reportes',
               component: ReportesComponent
-            },
-            {
-              path: 'configuraciones',
-              title: 'Configuraciones',
-              component: ConfiguracionesComponent
             },
             {
               path: 'checador-asistencia',

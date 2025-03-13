@@ -46,7 +46,7 @@ export interface AspiranteBeneficio {
 
 @Component({
   selector: 'consultaPage',
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatProgressSpinnerModule, MatPaginatorModule, MatIconModule, MatButtonModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, MatFormFieldModule, MatInputModule, MatTableModule, MatSortModule, MatProgressSpinnerModule, MatPaginatorModule, MatIconModule, MatButtonModule, MatSelectModule, MatDatepickerModule, MatNativeDateModule, RouterLink],
   templateUrl: './consulta.component.html',
   styleUrl: './consulta.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
