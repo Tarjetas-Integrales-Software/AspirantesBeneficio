@@ -53,24 +53,14 @@ function dropTablesIfExists() {
     db = new Database(dbPath);
 
     // Verificar si la tabla existe antes de eliminarla
-    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';", (err, row) => {
-      if (err) {
-          console.error("Error al verificar la tabla:", err);
-          return;
-      }
+    const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
-      if (row) {
-          db.exec("DROP TABLE cat_ct_configuraciones;", (err) => {
-              if (err) {
-                  console.error("Error al eliminar la tabla:", err);
-              } else {
-                  console.log("Tabla eliminada con éxito.");
-              }
-          });
-      } else {
-          console.log("La tabla no existe, no se eliminó.");
-      }
-    });
+    if (row) {
+        db.prepare("DROP TABLE cat_ct_configuraciones;").run();
+        console.log("Tabla eliminada con éxito.");
+    } else {
+        console.log("La tabla no existe, no se elimino.");
+    }
 
   } catch (error) {
     console.error('Error en drop table:', error);
