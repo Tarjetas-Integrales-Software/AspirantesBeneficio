@@ -82,7 +82,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncCurpInterval(): void {
-    this.syncSubscription = interval(10000).pipe(
+    this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
