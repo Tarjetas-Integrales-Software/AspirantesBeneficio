@@ -90,7 +90,7 @@ export class ConfiguracionesComponent implements OnInit
     console.log('submitForm', this.myForm.value);
     try {
       this.selectedValue_modu = this.myForm.get('modulo')?.value;
-      await this.configuracionesService.insertOrUpdateConfiguracion('modulo',this.selectedValue_modu);
+      await this.configuracionesService.insertOrUpdateConfiguracion('modulo', this.selectedValue_modu);
       Swal.fire({
         title: 'Actualizacion exitosa!',
         icon: 'success',

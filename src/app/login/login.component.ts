@@ -73,7 +73,7 @@ export class LoginComponent implements OnInit {
             this.storageService.set("user", response.user);
             this.storageService.set("perfiles", response.perfiles);
 
-            this.router.navigate(['/inicio/registro']);
+            this.router.navigate(['/inicio/configuraciones']);
           }
           this.loading = false;
         },

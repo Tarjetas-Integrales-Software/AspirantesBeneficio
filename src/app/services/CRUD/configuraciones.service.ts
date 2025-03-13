@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -10,8 +10,19 @@ import { DatabaseService } from '../../services/database.service';
 export class ConfiguracionesService {
 
   private http = inject(HttpClient);
+  public selectedValueModuSignal = signal<string | null>(null);
 
   constructor(private databaseService: DatabaseService) { }
+
+  // Método para actualizar el valor de la señal
+  updateSelectedValueModu(value: string): void {
+    this.selectedValueModuSignal.set(value);
+  }
+
+  // Método para obtener el valor de la señal
+  getSelectedValueModu(): string | null {
+    return this.selectedValueModuSignal();
+  }
 
   getConfiguraciones(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/configuraciones_all');
@@ -55,8 +66,8 @@ export class ConfiguracionesService {
         valor
       ];
 
+      this.updateSelectedValueModu(valor);
       await this.databaseService.execute(sql, params);
-
   }
 
   async updateConfiguracionByClave(clave: string, valor: string): Promise<void> {
@@ -74,6 +85,7 @@ export class ConfiguracionesService {
 
       await this.databaseService.execute(sql, params);
 
+      this.updateSelectedValueModu(valor);
   }
 
   async consultarConfiguraciones(): Promise<{ id: number; modalidad: string }[]> {
