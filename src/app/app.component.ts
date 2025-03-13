@@ -88,6 +88,8 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarCurps();
+
+      //this.validarSincronizacionCompleta(); //EMD
     });
   }
 
@@ -174,6 +176,15 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async validarSincronizacionCompleta(): Promise<boolean>{
+    const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
+    if(items.length > 0){
+      return false;
+    }else{
+      return true;
     }
   }
 

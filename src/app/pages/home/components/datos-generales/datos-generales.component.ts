@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit  } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -22,15 +22,16 @@ import {
   ValidationErrors,
   FormControl,
 } from '@angular/forms';
-import { AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
+import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD/aspirantes-beneficio.service';
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
-import {MatCardModule} from '@angular/material/card';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
 
 @Component({
@@ -82,12 +83,36 @@ export class DatosGeneralesComponent implements OnInit {
   tipoCarreraNombre: string = '';
   carreraNombre: string = '';
 
+  editar: boolean = false;  // Variable para saber si se está editando un registro
+  editAspirante: Aspirante = {
+    id: 0,
+    id_modalidad: 0,
+    curp: '',
+    nombre_completo: '',
+    telefono: '',
+    fecha_nacimiento: '',
+    email: '',
+    municipio: '',
+    cp: '',
+    colonia: '',
+    tipo_zona: '',
+    tipo_asentamiento: '',
+    domicilio: '',
+    grado: '',
+    tipo_carrera: '',
+    carrera: '',
+    com_obs: '',
+    estado: '',
+    ciudad: '',
+    fecha_evento: '',
+    created_id: 0,
+    created_at: ''
+  };       // ID del registro a editar
   modulo_actual: string = '';
 
   @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
-  myControl_cp = new FormControl('');
   //options: string[] = [];
-  filteredOptions: string[];
+  filteredOptions: any[] = [];
 
   constructor(private homeService: HomeService
     , private networkStatusService: NetworkStatusService
@@ -105,11 +130,15 @@ export class DatosGeneralesComponent implements OnInit {
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['', [Validators.required, Validators.minLength(18), Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)], [this.curpAsyncValidator.bind(this)]],
+    curp: ['', [
+      Validators.required,
+      Validators.minLength(18),
+      Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
+    ], this.editar ? null : this.curpAsyncValidator.bind(this)],
     nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['', ],
+    email: ['',],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
@@ -122,22 +151,15 @@ export class DatosGeneralesComponent implements OnInit {
     com_obs: [''],
   });
 
-
-
-  // ngAfterViewInit() {
-  //   if (this.cp) {
-  //     this.myControl_cp.setValue(this.cp.nativeElement.value);
-  //   }
-  // }
-
   filter(): void {
-    const filterValue = this.codigoPostal?.nativeElement?.value;
-    console.log(filterValue);
-    console.log(this.codigosPostales);
-    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue?.toString()));
+    const filterValue = this.codigoPostal?.nativeElement?.value.toLowerCase() || '';
+    this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue));
   }
 
   curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
+    if (this.editar) {
+      return Promise.resolve(null);
+    }
     return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
       if (exists) {
         Swal.fire({
@@ -150,8 +172,6 @@ export class DatosGeneralesComponent implements OnInit {
       return null;
     });
   }
-
-
 
   loadJaliscoData(): void {
     this.homeService.getJaliscoData().subscribe((data: Jalisco) => {
@@ -167,9 +187,7 @@ export class DatosGeneralesComponent implements OnInit {
   onCurpChange(): void {
     const curp = this.myForm.controls['curp'].value;
 
-    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => {
-      console.log(data);
-    });
+    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => { });
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -204,32 +222,77 @@ export class DatosGeneralesComponent implements OnInit {
   municipios: any[] = [];
   municipio: string = '';
 
-
+  private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
 
   ngOnInit(): void {
     const online = this.networkStatusService.checkConnection();
     if (online) this.syncDataBase();
 
-    this.myForm.get('grado')?.disable();
-    this.myForm.get('tipo_carrera')?.disable();
-    this.myForm.get('carrera')?.disable();
-
-    this.consultarModuloActual();
-
-    this.loadAllCodigosPostales();
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
     this.getTiposCarreras();
-
+    this.getCarreras();
+    this.getColoniasByCP();
 
     // Llama al método para inhabilitar los inputs
-    this.disableInputs();
+    if (!this.router.url.includes('editar')) {
+      this.disableInputs();
+      return;
+    } else {
+      this.editar = true;
+      this.disabledInputsEdit();
+
+      this.activatedRoute.params
+        .pipe(
+          switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
+        ).subscribe(aspirante => {
+          this.editAspirante = aspirante.data;
+
+          if (!aspirante) {
+            return this.router.navigateByUrl('/');
+          }
+
+          console.log('Aspirante:', aspirante);
+
+          // Obtener los IDs correspondientes a los nombres
+          const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
+          const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.nombre === aspirante.data.tipo_carrera);
+          const selectedCarrera = this.carreras.find(carrera => carrera.nombre === aspirante.data.carrera);
+          const selectedModalidad = this.modalidades.find(modalidad => modalidad.id === parseInt(aspirante.data.id_modalidad, 10));
+          const selectedCP = this.allCodigosPostales.find(cp => cp.cp === aspirante.data.cp);
+
+          this.getCodigosPostales({ municipio: aspirante.data.municipio });
+
+          // Establecer los campos correspondientes en el formulario
+          this.myForm.reset({
+            ...aspirante.data,
+            grado: selectedGrado ? selectedGrado.id : '',
+            tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
+            carrera: selectedCarrera ? selectedCarrera.nombre : '',
+            id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
+            cp: selectedCP ? selectedCP.cp : ''
+          });
+
+          return;
+        });
+    }
   }
 
   disableInputs(): void {
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
     this.myForm.get('tipo_zona')?.disable();
     this.myForm.get('tipo_asentamiento')?.disable();
+  }
+
+  disabledInputsEdit(): void {
+    this.myForm.get('curp')?.disable();
+    this.myForm.get('grado')?.enable();
+    this.myForm.get('tipo_carrera')?.enable();
+    this.myForm.get('carrera')?.enable();
   }
 
   getGrados(): void {
@@ -248,7 +311,7 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener tipos carreras:', error));
   }
 
-  getCarreras(params: { id_grado?: number, id_tipo?: number }): void {
+  getCarreras(): void {
     this.carrerasService.consultarCarreras()
       .then((carreras) => {
         this.carreras = carreras;
@@ -300,17 +363,6 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
 
-  loadAllCodigosPostales(): void {
-    this.codigosPostalesService.getCodigosPostales().subscribe({
-      next: (response) => {
-        this.allCodigosPostales = response.data;
-      },
-      error: (error) => {
-        console.error('Error al cargar todos los códigos postales:', error);
-      }
-    });
-  }
-
   getCodigosPostales(params: { municipio?: string }): void {
     const { municipio } = params;
 
@@ -354,17 +406,21 @@ export class DatosGeneralesComponent implements OnInit {
 
   syncDataBase(): void {
     this.codigosPostalesService.getCodigosPostales().subscribe({
-      next: ((response) => {
-        this.codigosPostalesService.syncLocalDataBase(response.data)
-      }),
-      error: ((error) => { })
+      next: (response) => {
+        this.codigosPostalesService.syncLocalDataBase(response.data);
+        this.allCodigosPostales = response.data;
+      },
+      error: (error) => {
+        console.error('Error al cargar todos los códigos postales:', error);
+      }
     });
     this.modalidadesService.getModalidades().subscribe({
-      next: ((response) => {
-        this.modalidadesService.syncLocalDataBase(response.data)
+      next: (response) => {
+        this.modalidadesService.syncLocalDataBase(response.data);
+      },
+      error: (error) => {
+        console.error('Error al obtener modalidades:', error);
       }
-      ),
-      error: ((error) => { })
     });
   }
 
@@ -379,20 +435,19 @@ export class DatosGeneralesComponent implements OnInit {
 
   async getMyForm(): Promise<any> {
 
-    const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
-
+    const idApirante = (await this.aspirantesBeneficioService.getLastId() || 0) + 1;
     const now = new Date();
 
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
       nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
-      id: lastIdApirante + 1,
+      id: idApirante,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
       municipio: this.myForm.get('municipio')?.value,
       ciudad: this.myForm.get('municipio')?.value,
-      tipos_asentamiento: this.tipoAsentamiento,
+      tipo_asentamiento: this.tipoAsentamiento,
       tipo_zona: this.tipoZona,
       fecha_evento: formattedDate,
       created_id: 1,
@@ -403,15 +458,39 @@ export class DatosGeneralesComponent implements OnInit {
     };
   }
 
-  selectedValue2(){
-    console.log('selectedValue2', this.selectedValue);
+  getMyFormEdit(): any {
+    return {
+      ...this.myForm.value,
+      id: this.editAspirante.id,
+      curp: this.editAspirante.curp,
+      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      estado: 'Jalisco',
+      municipio: this.myForm.get('municipio')?.value,
+      ciudad: this.myForm.get('municipio')?.value,
+      tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
+      tipo_zona: this.myForm.get('tipo_zona')?.value,
+      grado: this.gradoNombre,
+      tipo_carrera: this.tipoCarreraNombre,
+    };
+  }
+
+  selectedValue2() {
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
-    if(this.selectedValue == '6'){
+    if (this.selectedValue == '6') {
       this.myForm.get('grado')?.enable();
-    }else{
+    } else {
       this.myForm.get('grado')?.disable();
     }
   }
+
+
+  disabledGradoCarrera(): void {
+    this.myForm.get('grado')?.disable();
+    this.myForm.get('tipo_carrera')?.disable();
+    this.myForm.get('carrera')?.disable();
+  }
+
 
   onSafe() {
     this.myForm.markAsUntouched();
@@ -438,13 +517,13 @@ export class DatosGeneralesComponent implements OnInit {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   }
 
-  consultarModuloActual(){
+  consultarModuloActual() {
     this.configuracionesService.consultarConfiguracionPorClave('modulo')
       .then((valor) => {
-        console.log(valor,'valor');
+        console.log(valor, 'valor');
         this.modulo_actual = valor[0]["valor"];
         console.log(this.modulo_actual, 'modulo_actual');
-        console.log(typeof(this.modulo_actual),'typeof');
+        console.log(typeof (this.modulo_actual), 'typeof');
       })
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
