@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 import { StorageService } from '../../../services/storage.service';
 import { environment } from '../../../../environments/environment';
 import { AspirantesBeneficioFotosService } from '../../../services/CRUD/aspirantes-beneficio-fotos.service';
@@ -14,10 +14,17 @@ export class FooterComponent implements OnInit {
   user: string = '';
   private intervalId: any;
   version: string = environment.gitversion;
+  syncStatus: boolean | null = null
 
+  aspirantesBeneficioFotosService = inject(AspirantesBeneficioFotosService);
   constructor(private storageService: StorageService
-    ,private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
-  ) { }
+  ) {
+
+    effect(() => {
+      console.log('Ruta de la imagen actualizada:', this.aspirantesBeneficioFotosService.syncStatusImage());
+    });
+
+  }
 
   ngOnInit(): void {
     this.actualizarUsuario();
@@ -33,8 +40,6 @@ export class FooterComponent implements OnInit {
       this.user = user.email;
     }
   }
-
-
 
   ngOnDestroy(): void {
     if (this.intervalId) clearInterval(this.intervalId);

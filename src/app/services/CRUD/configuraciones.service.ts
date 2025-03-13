@@ -107,6 +107,7 @@ export class ConfiguracionesService {
 
     // Agregar filtro por id_grado si se proporciona
     if (clave) {
+
       sql += ' WHERE clave = ?';
     }
 
