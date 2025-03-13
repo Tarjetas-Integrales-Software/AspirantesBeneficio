@@ -90,13 +90,13 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     if (this.storageService.exists("perfiles"))
       this.rolesUsuario = this.storageService.get("perfiles");
 
-    this.formConsulta = this.fb.group({
-      search: [''],
-      modulo: [''],
-      modalidad: [''],
-      fechaInicio: [new Date()],
-      fechaFin: [new Date()],
-      cajero: ['']
+    this.formConsulta = this.fb.nonNullable.group({
+      search: '',
+      modulo: '',
+      modalidad: '',
+      fechaInicio: new Date(),
+      fechaFin: new Date(),
+      cajero: ''
     });
   }
 
@@ -234,6 +234,10 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     );
   }
 
+  limpiarCampos() {
+
+  }
+
   downloadPdf() {
     const body = this.getBody();
 
@@ -241,29 +245,13 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
       if (response["response"]) {
         const prepare = response["data"].map((aspirante: any) => {
           return [
-            aspirante.id,
-            aspirante.id_modalidad,
             aspirante.curp,
             aspirante.nombre_completo,
             aspirante.nombre_modalidad,
+            aspirante.grado,
             aspirante.modulo,
             aspirante.fecha_evento,
-            aspirante.email_cajero,
-            aspirante.telefono,
-            aspirante.email,
-            aspirante.fecha_nacimiento,
-            aspirante.estado,
-            aspirante.municipio,
-            aspirante.ciudad,
-            aspirante.cp,
-            aspirante.colonia,
-            aspirante.tipo_asentamiento,
-            aspirante.tipo_zona,
-            aspirante.domicilio,
-            aspirante.grado,
-            aspirante.tipo_carrera,
-            aspirante.carrera,
-            aspirante.com_obs,
+            aspirante.email_cajero
           ];
         });
 
@@ -271,29 +259,13 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
         autoTable(doc, {
           theme: 'grid',
           head: [[
-            "ID",
-            "ID Modalidad",
             "CURP",
             "Nombre Completo",
             "Nombre Modalidad",
+            "Grado",
             "Módulo",
             "Fecha Evento",
-            "Email Cajero",
-            "Teléfono",
-            "Email",
-            "Fecha Nacimiento",
-            "Estado",
-            "Municipio",
-            "Ciudad",
-            "Código Postal",
-            "Colonia",
-            "Tipo Asentamiento",
-            "Tipo Zona",
-            "Domicilio",
-            "Grado",
-            "Tipo Carrera",
-            "Carrera",
-            "Comentarios / Observaciones"
+            "Email Cajero"
           ]],
           body: prepare,
           bodyStyles: { fontSize: 8 }
