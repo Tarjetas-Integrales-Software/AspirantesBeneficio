@@ -42,6 +42,41 @@ function createWindow() {
     mainWindow = null;
   });
 }
+
+function dropTablesIfExists() {
+  try {
+    // Ruta de la base de datos en la carpeta de datos del usuario
+    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
+
+    console.log('Database path:', dbPath);
+
+    db = new Database(dbPath);
+
+    // Verificar si la tabla existe antes de eliminarla
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';", (err, row) => {
+      if (err) {
+          console.error("Error al verificar la tabla:", err);
+          return;
+      }
+
+      if (row) {
+          db.exec("DROP TABLE cat_ct_configuraciones;", (err) => {
+              if (err) {
+                  console.error("Error al eliminar la tabla:", err);
+              } else {
+                  console.log("Tabla eliminada con éxito.");
+              }
+          });
+      } else {
+          console.log("La tabla no existe, no se eliminó.");
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en drop table:', error);
+  }
+
+}
 function addColumnIfNotExists() {
   try {
     // Ruta de la base de datos en la carpeta de datos del usuario
@@ -76,6 +111,10 @@ function initializeDatabase() {
 
   db = new Database(dbPath);
 
+  // Eliminacion de tablas en caso de ser requerido
+  dropTablesIfExists();
+
+  // Creacion de tablas en caso de no existir
   try {
     db.exec(`
       CREATE TABLE IF NOT EXISTS ct_aspirantes_beneficio (

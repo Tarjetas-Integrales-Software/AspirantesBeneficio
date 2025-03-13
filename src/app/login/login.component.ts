@@ -66,7 +66,7 @@ export class LoginComponent implements OnInit {
       const { email, password } = this.loginForm.value;
 
       this.loading = true;
-      this.loginService.login({ email: email, password: password }).subscribe(
+      this.loginService.login({ email: email.trim(), password: password.trim() }).subscribe(
         (response) => {
           if (response.response) {
             this.storageService.set("token", response.token);

@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { StorageService } from '../../../services/storage.service';
+import { environment } from '../../../../environments/environment';
+import { AspirantesBeneficioFotosService } from '../../../services/CRUD/aspirantes-beneficio-fotos.service';
 
 @Component({
   selector: 'footerComponent',
@@ -11,8 +13,11 @@ export class FooterComponent implements OnInit {
   currentYear: number = new Date().getFullYear();
   user: string = '';
   private intervalId: any;
+  version: string = environment.gitversion;
 
-  constructor(private storageService: StorageService) { }
+  constructor(private storageService: StorageService
+    ,private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
+  ) { }
 
   ngOnInit(): void {
     this.actualizarUsuario();
@@ -28,6 +33,8 @@ export class FooterComponent implements OnInit {
       this.user = user.email;
     }
   }
+
+
 
   ngOnDestroy(): void {
     if (this.intervalId) clearInterval(this.intervalId);
