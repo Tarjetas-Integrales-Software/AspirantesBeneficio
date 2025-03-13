@@ -6,6 +6,7 @@
         <mat-form-field>
           <mat-label>Módulo</mat-label>
           <mat-select formControlName="modulo">
+            <mat-option value="">- Selecciona una opción -</mat-option>
             @for (modulo of modulos; track modulo) {
             <mat-option [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
             }
@@ -15,6 +16,7 @@
         <mat-form-field>
           <mat-label>Modalidad</mat-label>
           <mat-select formControlName="modalidad">
+            <mat-option value="">- Selecciona una opción -</mat-option>
             @for (modalidad of modalidades; track modalidad) {
             <mat-option [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
             }
@@ -27,7 +29,7 @@
             <input matStartDate formControlName="fechaInicio" placeholder="Inicio">
             <input matEndDate formControlName="fechaFin" placeholder="Fin">
           </mat-date-range-input>
-          <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+          <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
           <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
           <mat-date-range-picker #picker></mat-date-range-picker>
         </mat-form-field>
@@ -35,6 +37,7 @@
         <mat-form-field>
           <mat-label>Cajero</mat-label>
           <mat-select formControlName="cajero">
+            <mat-option value="">- Selecciona una opción -</mat-option>
             @for (cajero of cajeros; track cajero) {
             <mat-option [value]="cajero.id">{{cajero.email}}</mat-option>
             }
@@ -61,6 +64,13 @@
       </div>
 
       <div class="flex justify-start items-center gap-5">
+        <button (click)="formConsulta.reset()"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded flex items-center justify-between gap-2"
+          [disabled]="!generado || loading">
+          <mat-icon matSuffix>clear_all</mat-icon>
+          <span>Limpiar campos</span>
+        </button>
+
         <button (click)="getAspirantesBeneficio()"
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-between items-center gap-2">
           <span>
