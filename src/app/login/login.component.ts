@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import { GradosService } from '../services/CRUD/grados.service';
 import { CarrerasService } from '../services/CRUD/carreras.service';
 import { TiposCarrerasService } from '../services/CRUD/tipos-carreras.service';
+import { ModulosService } from '../services/CRUD/modulos.service';
 
 declare const window: any;
 
@@ -35,6 +36,7 @@ export class LoginComponent implements OnInit {
     , private gradosService: GradosService
     , private tiposCarrerasService: TiposCarrerasService
     , private carrerasService: CarrerasService
+    , private modulosService: ModulosService
   ) {
 
     this.loginForm = this.fb.group({
@@ -127,6 +129,14 @@ export class LoginComponent implements OnInit {
     this.carrerasService.getCarreras().subscribe({
       next: ((response) => {
         this.carrerasService.syncLocalDataBase(response.data)
+      }
+      ),
+      error: ((error) => { })
+    });
+
+    this.modulosService.getModulos().subscribe({
+      next: ((response) => {
+        this.modulosService.syncLocalDataBase(response.data)
       }
       ),
       error: ((error) => { })

@@ -2,7 +2,7 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
-import { AspirantesBeneficioService } from "../../../../services/CRUD/aspirantes-beneficio.service";
+import { AspirantesBeneficioService, Aspirante } from "../../../../services/CRUD/aspirantes-beneficio.service";
 import { HttpClient } from '@angular/common/http';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
@@ -166,7 +166,7 @@ export class FotoComponent implements OnInit {
       try {
 
         if (this.capturedImage) {
-          const form = await this.datosGeneralesComponent.getMyForm();
+          const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
           console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
@@ -221,13 +221,35 @@ export class FotoComponent implements OnInit {
 
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
-      const form = await this.datosGeneralesComponent.getMyForm();
-          console.log("Formulario editar válido this is form:", form);
+      const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
+      console.log("Formulario editar válido this is form:", form);
 
       try {
-        await this.aspirantesBeneficioService.editarAspirante(form);
+        const response = await this.aspirantesBeneficioService.editarAspirante(form);
+        if (response.success) {
+          Swal.fire({
+            title: 'Actualización exitosa!',
+            text: response.message,
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            title: 'Error en la actualización',
+            text: response.message,
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+          });
+        }
       } catch (error) {
         console.error("Error en el proceso:", error);
+        Swal.fire({
+          title: 'Error en la actualización',
+          text: 'Ocurrió un error al intentar actualizar el aspirante',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
       }
     } else {
       // Marcar todos los campos como tocados para mostrar los errores
