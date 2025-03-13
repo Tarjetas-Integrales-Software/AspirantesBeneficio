@@ -110,7 +110,6 @@ export class DatosGeneralesComponent implements OnInit {
   };       // ID del registro a editar
   modulo_actual: string | null = null;
 
-
   @ViewChild('input') codigoPostal?: ElementRef<HTMLInputElement>;
   //options: string[] = [];
   filteredOptions: any[] = [];
@@ -411,6 +410,8 @@ export class DatosGeneralesComponent implements OnInit {
         return this.allCodigosPostales.find(item => item.cp === cp);
       });
     }
+    console.log('allcodigospostales',this.allCodigosPostales)
+    console.log('codigospostales',this.codigosPostales)
   }
 
   getColoniasByCP(): void {

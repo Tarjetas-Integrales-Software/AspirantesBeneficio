@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -9,8 +9,19 @@ import { DatabaseService } from './../database.service';
 })
 export class AspirantesBeneficioFotosService {
   private http = inject(HttpClient);
+  public syncStatusSignal = signal<boolean | null>(null);
 
   constructor(private databaseService: DatabaseService) { }
+
+  updateSyncStatus(value: boolean): void {
+    console.log('updateSyncStatus', value);
+    this.syncStatusSignal.set(value);
+    console.log('syncStatusSignal', this.syncStatusSignal());
+  }
+
+  getSyncStatus(): boolean | null {
+    return this.syncStatusSignal();
+  }
 
   // Crear una nueva relación aspirante-beneficio-foto
   async crearRelacion(relacion: {

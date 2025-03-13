@@ -82,14 +82,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncCurpInterval(): void {
-    this.syncSubscription = interval(environment.syncInterval).pipe(
+    this.syncSubscription = interval(10000).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarCurps();
 
-      //this.validarSincronizacionCompleta(); //EMD
+      this.validarSincronizacionCompleta(); //EMD
     });
   }
 
@@ -179,12 +179,14 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  async validarSincronizacionCompleta(): Promise<boolean>{
+  async validarSincronizacionCompleta(): Promise<void>{
     const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
     if(items.length > 0){
-      return false;
+      console.log("No se ha sincronizado todo");
+      return this.aspirantesBeneficioFotosService.updateSyncStatus(false);
     }else{
-      return true;
+      console.log("Se ha sincronizado");
+      return this.aspirantesBeneficioFotosService.updateSyncStatus(true);
     }
   }
 

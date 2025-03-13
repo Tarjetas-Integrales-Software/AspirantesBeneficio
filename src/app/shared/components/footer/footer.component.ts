@@ -14,6 +14,7 @@ export class FooterComponent implements OnInit {
   user: string = '';
   private intervalId: any;
   version: string = environment.gitversion;
+  syncStatus: boolean | null = null
 
   constructor(private storageService: StorageService
     ,private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
@@ -21,6 +22,9 @@ export class FooterComponent implements OnInit {
 
   ngOnInit(): void {
     this.actualizarUsuario();
+
+    this.syncStatus = this.aspirantesBeneficioFotosService.syncStatusSignal();
+    console.log('footer syncStatus', this.syncStatus)
 
     this.intervalId = setInterval(() => {
       this.actualizarUsuario();
@@ -33,8 +37,6 @@ export class FooterComponent implements OnInit {
       this.user = user.email;
     }
   }
-
-
 
   ngOnDestroy(): void {
     if (this.intervalId) clearInterval(this.intervalId);
