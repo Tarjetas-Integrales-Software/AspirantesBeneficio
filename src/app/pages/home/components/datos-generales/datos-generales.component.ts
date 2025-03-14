@@ -264,13 +264,6 @@ export class DatosGeneralesComponent implements OnInit {
     this.online = this.networkStatusService.checkConnection();
     console.log(this.online, 'estatus online')
     if (this.online) this.syncDataBase();
-    /* } else {
-      this.codigosPostalesService.consultarCodigosPostales({}).then(codigos => {
-        this.allCodigosPostales = codigos;
-      }).catch(error => {
-        console.error('Error al consultar códigos postales:', error);
-      });
-    } */
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
