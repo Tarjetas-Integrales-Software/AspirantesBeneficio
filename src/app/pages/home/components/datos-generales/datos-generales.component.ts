@@ -405,25 +405,10 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
 
-  getCodigosPostales(params: { municipio?: string }): void {
+  async getCodigosPostales(params: { municipio?: string }): Promise<void> {
     const { municipio } = params;
 
-    if (municipio) {
-      const filtered = this.allCodigosPostales.filter(cp => cp.municipio.includes(municipio));
-      this.codigosPostales = Array.from(new Set(filtered.map(cp => cp.cp))).map(cp => {
-        return filtered.find(item => item.cp === cp);
-      });
-    } else {
-      this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
-        return this.allCodigosPostales.find(item => item.cp === cp);
-      });
-    }
-  }
-
-  getCodigosPostalesOfline(params: { municipio?: string }): void {
-    const { municipio } = params;
-
-    this.codigosPostalesService.consultarCodigosPostales({municipio}).then(codigos => {
+    await this.codigosPostalesService.consultarCodigosPostales({municipio}).then(codigos => {
       console.log('Codigos postales:', codigos, 'Municipio:', municipio);
       this.allCodigosPostales = codigos;
     }).catch(error => {
@@ -441,6 +426,7 @@ export class DatosGeneralesComponent implements OnInit {
       });
     }
   }
+  
   getColoniasByCP(): void {
     const cp = this.myForm.get('cp')?.value;
 
