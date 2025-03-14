@@ -11,6 +11,7 @@ import { get } from "http";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
 import { ModulosService } from "../../services/CRUD/modulos.service";
 import Swal from 'sweetalert2';
+import { MatCardModule } from '@angular/material/card';
 
 
 @Component({
@@ -25,6 +26,7 @@ import Swal from 'sweetalert2';
         ReactiveFormsModule,
         MatIconModule,
         MatDatepickerModule,
+        MatCardModule,
   ],
   templateUrl: './configuraciones.component.html',
   styleUrl: './configuraciones.component.scss'
