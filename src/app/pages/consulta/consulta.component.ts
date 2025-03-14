@@ -53,7 +53,7 @@ export interface AspiranteBeneficio {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsultaComponent implements OnInit, AfterViewInit {
-  displayedColumns: string[] = ['curp', 'nombre_completo', 'nombre_modalidad', 'modulo', 'fecha_evento', 'email_cajero', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'grado', 'tipo_carrera', 'carrera', 'acciones'];
+  displayedColumns: string[] = ['credencializado', 'curp', 'nombre_completo', 'nombre_modalidad', 'modulo', 'fecha_evento', 'email_cajero', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'grado', 'tipo_carrera', 'carrera', 'acciones'];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
   modulos: any[] = [];
@@ -97,7 +97,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
       modalidad: '',
       fechaInicio: new Date(),
       fechaFin: new Date(),
-      cajero: ''
+      cajero: '',
+      credencializado: ''
     });
   }
 
@@ -361,6 +362,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
       _fechaInicio = this.formConsulta.get('fechaInicio')?.value,
       _fechaFin = this.formConsulta.get('fechaFin')?.value,
       _cajero = this.formConsulta.get('cajero')?.value,
+      _credencializado = this.formConsulta.get('credencializado')?.value,
       _search = this.formConsulta.get('search')?.value;
 
     const body: any = {}
@@ -375,6 +377,7 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     if (_fechaInicio !== null) body['fechaInicio'] = _fechaInicio.toISOString().substring(0, 10);
     if (_fechaFin !== null) body['fechaFin'] = _fechaFin.toISOString().substring(0, 10);
     if (_cajero !== "") body['cajero'] = _cajero;
+    if (_credencializado !== "") body['credencializado'] = _credencializado;
     if (_search !== "") body['search'] = _search;
 
     return body;
@@ -403,7 +406,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogContent,
     MatDialogActions,
     MatDialogClose,
-    MatSlideToggleModule],
+    MatSlideToggleModule,
+    MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogAspiranteBeneficio implements OnInit {
