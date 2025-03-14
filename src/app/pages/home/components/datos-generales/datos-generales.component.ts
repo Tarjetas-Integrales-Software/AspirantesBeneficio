@@ -408,7 +408,7 @@ export class DatosGeneralesComponent implements OnInit {
   async getCodigosPostales(params: { municipio?: string }): Promise<void> {
     const { municipio } = params;
 
-    await this.codigosPostalesService.consultarCodigosPostales({municipio}).then(codigos => {
+    await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
       console.log('Codigos postales:', codigos, 'Municipio:', municipio);
       this.allCodigosPostales = codigos;
     }).catch(error => {
@@ -416,7 +416,7 @@ export class DatosGeneralesComponent implements OnInit {
     });
 
     if (municipio) {
-      const filtered = this.allCodigosPostales.filter(cp => cp.municipio.includes(municipio));
+      const filtered = this.allCodigosPostales.filter(cp => cp.municipio && cp.municipio.includes(municipio));
       this.codigosPostales = Array.from(new Set(filtered.map(cp => cp.cp))).map(cp => {
         return filtered.find(item => item.cp === cp);
       });
@@ -426,7 +426,7 @@ export class DatosGeneralesComponent implements OnInit {
       });
     }
   }
-  
+
   getColoniasByCP(): void {
     const cp = this.myForm.get('cp')?.value;
 
