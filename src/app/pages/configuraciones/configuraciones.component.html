@@ -3,6 +3,18 @@
     <form [formGroup]="myForm" class="my-2 h-[100%]">
       <div class="flex flex-col justify-between items-center h-[95%] gap-2">
 
+
+        <mat-card appearance="outlined" class="h-[80px] flex items-center justify-center" >
+          <mat-card-content>
+            <table>
+              <tr>
+                <td><img src="./assets/img/settings.png" class="mb-2 h-[64px] w-[64px]" alt="Logo"></td>
+                <td><h1 class="text-3xl text-[#414141] mb-4">CONFIGURACIONES</h1></td>
+              </tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+
         <mat-form-field class="w-full" >
           <mat-label>Modulos</mat-label>
           <mat-select class="h-[30px] mat-mdc-select" formControlName="modulo" (selectionChange)="selectedValue_modulo()">
