@@ -221,55 +221,56 @@ export class DatosGeneralesComponent implements OnInit {
 
   municipios: any[] = [];
   municipio: string = '';
+  online: boolean = false;
 
   private router = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
 
   ngOnInit(): void {
     this.modulo_actual = this.configuracionesService.getSelectedValueModu();
-    if(!this.modulo_actual) {
+    if (!this.modulo_actual) {
       let timerInterval: NodeJS.Timeout;
-          Swal.fire({
-            icon: 'info',
-            title: 'Aún no seleccionás un módulo...',
-            html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            timer: 5000,
-            timerProgressBar: true,
-            didOpen: () => {
-              Swal.showLoading();
-              const container = Swal.getHtmlContainer();
-              if (!container) return; // Verifica que no sea null
-              const b = container.querySelector('b') as HTMLElement | null;
-              if (!b) return; // Verifica que 'b' exista
+      Swal.fire({
+        icon: 'info',
+        title: 'Aún no seleccionás un módulo...',
+        html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        timer: 5000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          const container = Swal.getHtmlContainer();
+          if (!container) return; // Verifica que no sea null
+          const b = container.querySelector('b') as HTMLElement | null;
+          if (!b) return; // Verifica que 'b' exista
 
-              timerInterval = setInterval(() => {
-                const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
-                if (typeof timerLeft === 'number') { // Verifica si es un número
-                  b.textContent = Math.ceil(timerLeft / 1000).toString();
-                }
-              }, 1000);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
+          timerInterval = setInterval(() => {
+            const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
+            if (typeof timerLeft === 'number') { // Verifica si es un número
+              b.textContent = Math.ceil(timerLeft / 1000).toString();
             }
-          }).then((result) => {
-            if (result.dismiss === Swal.DismissReason.timer) {
-              this.router.navigateByUrl('/inicio/configuraciones');
-            }
-          });
+          }, 1000);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
+        }
+      }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.timer) {
+          this.router.navigateByUrl('/inicio/configuraciones');
+        }
+      });
     }
-    const online = this.networkStatusService.checkConnection();
-    if (online) {
-      this.syncDataBase();
-    } else {
+    this.online = this.networkStatusService.checkConnection();
+    console.log(this.online, 'estatus online')
+    if (this.online) this.syncDataBase();
+    /* } else {
       this.codigosPostalesService.consultarCodigosPostales({}).then(codigos => {
         this.allCodigosPostales = codigos;
       }).catch(error => {
         console.error('Error al consultar códigos postales:', error);
       });
-    }
+    } */
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
@@ -419,6 +420,27 @@ export class DatosGeneralesComponent implements OnInit {
     }
   }
 
+  getCodigosPostalesOfline(params: { municipio?: string }): void {
+    const { municipio } = params;
+
+    this.codigosPostalesService.consultarCodigosPostales({municipio}).then(codigos => {
+      console.log('Codigos postales:', codigos, 'Municipio:', municipio);
+      this.allCodigosPostales = codigos;
+    }).catch(error => {
+      console.error('Error al consultar códigos postales:', error);
+    });
+
+    if (municipio) {
+      const filtered = this.allCodigosPostales.filter(cp => cp.municipio.includes(municipio));
+      this.codigosPostales = Array.from(new Set(filtered.map(cp => cp.cp))).map(cp => {
+        return filtered.find(item => item.cp === cp);
+      });
+    } else {
+      this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
+        return this.allCodigosPostales.find(item => item.cp === cp);
+      });
+    }
+  }
   getColoniasByCP(): void {
     const cp = this.myForm.get('cp')?.value;
 
