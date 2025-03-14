@@ -413,6 +413,8 @@ export class DialogAspiranteBeneficio implements OnInit {
   aspiranteBeneficio: any = {};
   aspiranteBeneficioFoto: string = "";
 
+  loadingStatusCredencializado: boolean = false;
+
   constructor(
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
@@ -453,9 +455,13 @@ export class DialogAspiranteBeneficio implements OnInit {
   }
 
   editAspiranteCredencializado(event: MatSlideToggleChange): void {
+    this.loadingStatusCredencializado = true;
+
     this.aspirantesBeneficioService.editAspiranteCredencializado(this.aspiranteBeneficio, event.checked).subscribe({
       next: (response) => {
         this.aspiranteBeneficio = response.data;
+        this.loadingStatusCredencializado = false;
+
         this.cdr.detectChanges();
       },
       error: (error) => {

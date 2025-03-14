@@ -18,7 +18,7 @@
         <tr class="border-b">
           <td class="py-2 px-4 font-semibold">Credencializado</td>
           <td class="py-2 px-4">
-            <mat-slide-toggle class="example-margin" [checked]="aspiranteBeneficio?.credencializado == 1" [disabled]="false" (change)="editAspiranteCredencializado($event)">
+            <mat-slide-toggle class="example-margin" [checked]="aspiranteBeneficio?.credencializado == 1" [disabled]="loadingStatusCredencializado" (change)="editAspiranteCredencializado($event)">
             </mat-slide-toggle>
           </td>
         </tr>
