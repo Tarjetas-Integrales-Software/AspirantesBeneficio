@@ -19,6 +19,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatSlideToggleModule, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
@@ -401,7 +402,8 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatDialogClose],
+    MatDialogClose,
+    MatSlideToggleModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogAspiranteBeneficio implements OnInit {
@@ -442,6 +444,18 @@ export class DialogAspiranteBeneficio implements OnInit {
       next: (response) => {
         if (response.response)
           this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error al obtener los datos del aspirante:', error);
+      }
+    });
+  }
+
+  editAspiranteCredencializado(event: MatSlideToggleChange): void {
+    this.aspirantesBeneficioService.editAspiranteCredencializado(this.aspiranteBeneficio, event.checked).subscribe({
+      next: (response) => {
+        this.aspiranteBeneficio = response.data;
         this.cdr.detectChanges();
       },
       error: (error) => {
