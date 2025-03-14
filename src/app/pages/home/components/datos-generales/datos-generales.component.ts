@@ -261,8 +261,15 @@ export class DatosGeneralesComponent implements OnInit {
           });
     }
     const online = this.networkStatusService.checkConnection();
-    if (online) this.syncDataBase();
-
+    if (online) {
+      this.syncDataBase();
+    } else {
+      this.codigosPostalesService.consultarCodigosPostales({}).then(codigos => {
+        this.allCodigosPostales = codigos;
+      }).catch(error => {
+        console.error('Error al consultar códigos postales:', error);
+      });
+    }
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
