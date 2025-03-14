@@ -7,11 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CommonModule } from "@angular/common"
 import { Validators,FormsModule,ReactiveFormsModule,FormGroup,FormBuilder, } from "@angular/forms"
-import { get } from "http";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
 import { ModulosService } from "../../services/CRUD/modulos.service";
 import Swal from 'sweetalert2';
 import { MatCardModule } from '@angular/material/card';
+import { Router } from "@angular/router";
 
 
 @Component({
@@ -35,11 +35,13 @@ export class ConfiguracionesComponent implements OnInit
 {
   @Output() submitForm = new EventEmitter<void>();
   private fb = inject(FormBuilder);
+  private router = inject(Router);
   modulos: any[] = [];
   selectedValue_modu: string = '';
 
   constructor(private modulosService: ModulosService
     , private configuracionesService: ConfiguracionesService
+    , private routerService: Router
   ) { }
 
     myForm: FormGroup = this.fb.group({
@@ -94,10 +96,14 @@ export class ConfiguracionesComponent implements OnInit
       this.selectedValue_modu = this.myForm.get('modulo')?.value;
       await this.configuracionesService.insertOrUpdateConfiguracion('modulo', this.selectedValue_modu);
       Swal.fire({
-        title: 'Actualizacion exitosa!',
+        title: 'Actualización exitosa!',
         icon: 'success',
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+      }).then(() => {
+        setTimeout(() => {
+          this.router.navigate(['/inicio/registro']);
+        }, 2000);
       });
     } catch (error) {
       console.error('Error al guardar la configuracion en la base de datos local:', error);

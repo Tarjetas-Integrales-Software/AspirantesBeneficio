@@ -410,8 +410,6 @@ export class DatosGeneralesComponent implements OnInit {
         return this.allCodigosPostales.find(item => item.cp === cp);
       });
     }
-    console.log('allcodigospostales',this.allCodigosPostales)
-    console.log('codigospostales',this.codigosPostales)
   }
 
   getColoniasByCP(): void {
