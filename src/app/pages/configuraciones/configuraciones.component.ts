@@ -101,9 +101,7 @@ export class ConfiguracionesComponent implements OnInit
         timer: 2000,
         showConfirmButton: false,
       }).then(() => {
-        setTimeout(() => {
           this.router.navigate(['/inicio/registro']);
-        }, 2000);
       });
     } catch (error) {
       console.error('Error al guardar la configuracion en la base de datos local:', error);
