@@ -10,7 +10,9 @@ import { Validators,FormsModule,ReactiveFormsModule,FormGroup,FormBuilder, } fro
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
 import { ModulosService } from "../../services/CRUD/modulos.service";
 import Swal from 'sweetalert2';
+import { MatCardModule } from '@angular/material/card';
 import { Router } from "@angular/router";
+
 
 @Component({
   selector: 'app-configuraciones',
@@ -24,7 +26,7 @@ import { Router } from "@angular/router";
         ReactiveFormsModule,
         MatIconModule,
         MatDatepickerModule,
-        
+        MatCardModule,
   ],
   templateUrl: './configuraciones.component.html',
   styleUrl: './configuraciones.component.scss'
@@ -39,6 +41,7 @@ export class ConfiguracionesComponent implements OnInit
 
   constructor(private modulosService: ModulosService
     , private configuracionesService: ConfiguracionesService
+    , private routerService: Router
   ) { }
 
     myForm: FormGroup = this.fb.group({
