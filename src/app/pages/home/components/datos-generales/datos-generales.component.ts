@@ -411,20 +411,14 @@ export class DatosGeneralesComponent implements OnInit {
     await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
       console.log('Codigos postales:', codigos, 'Municipio:', municipio);
       this.allCodigosPostales = codigos;
+      console.log('All codigos postales:', this.allCodigosPostales);
     }).catch(error => {
       console.error('Error al consultar códigos postales:', error);
     });
 
-    if (municipio) {
-      const filtered = this.allCodigosPostales.filter(cp => cp.municipio && cp.municipio.includes(municipio));
-      this.codigosPostales = Array.from(new Set(filtered.map(cp => cp.cp))).map(cp => {
-        return filtered.find(item => item.cp === cp);
-      });
-    } else {
-      this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
-        return this.allCodigosPostales.find(item => item.cp === cp);
-      });
-    }
+    this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
+      return this.allCodigosPostales.find(item => item.cp === cp);
+    });
   }
 
   getColoniasByCP(): void {
