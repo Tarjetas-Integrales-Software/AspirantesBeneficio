@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -10,6 +10,11 @@ import { DatabaseService } from './../database.service';
 export class AspirantesBeneficioFotosService {
   private http = inject(HttpClient);
   public syncStatusSignal = signal<boolean | null>(null);
+
+  // Señal computada para la ruta de la imagen
+  public syncStatusImage = computed(() => {
+    return this.syncStatusSignal() ? './assets/img/sync_ok.png' : './assets/img/sync_warning.png';
+  });
 
   constructor(private databaseService: DatabaseService) { }
 
