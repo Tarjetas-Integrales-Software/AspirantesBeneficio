@@ -8,6 +8,7 @@ import { CurpsRegistradasService } from './curps-registradas.service';
 export interface Aspirante {
   id: number;
   id_modalidad: number;
+  id_foto?: string;
   curp: string;
   nombre_completo: string;
   telefono: string;
@@ -231,7 +232,7 @@ export class AspirantesBeneficioService {
   async editarAspirante(aspirante: Aspirante): Promise<any> {
     try {
       const response = await this.editAspirante(aspirante).toPromise();
-      if (response.success) {
+      if ( response ) {
         return { success: true, message: 'Aspirante actualizado correctamente' };
       } else {
         console.warn('No se encontró el aspirante para actualizar:', aspirante);

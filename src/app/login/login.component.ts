@@ -89,7 +89,7 @@ export class LoginComponent implements OnInit {
       this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
         .then(existe => {
           if (existe == true) {
-            this.router.navigate(['/inicio/registro']);
+            this.router.navigate(['/inicio/configuraciones']);
           } else {
             Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
           }
