@@ -59,6 +59,7 @@ export class FotoComponent implements OnInit {
 
               this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
                 next: (response) => {
+                  console.log("Foto del aspirante:", response);
                   this.imgFoto.set(environment.baseUrl + '/' + response.data);
                 },
                 error: (err) => {

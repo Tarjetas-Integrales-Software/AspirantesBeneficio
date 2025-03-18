@@ -5,7 +5,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface';
 import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
 import { NetworkStatusService } from '../../../../services/network-status.service';
 import { provideNativeDateAdapter } from '@angular/material/core';
@@ -468,6 +467,9 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   getMyFormEdit(): any {
+    const now = new Date();
+    const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
+
     return {
       ...this.myForm.value,
       id: this.editAspirante.id,
@@ -479,6 +481,7 @@ export class DatosGeneralesComponent implements OnInit {
       ciudad: this.myForm.get('municipio')?.value,
       tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
       tipo_zona: this.myForm.get('tipo_zona')?.value,
+      fecha_evento: formattedDate,
       grado: this.gradoNombre,
       tipo_carrera: this.tipoCarreraNombre,
     };
