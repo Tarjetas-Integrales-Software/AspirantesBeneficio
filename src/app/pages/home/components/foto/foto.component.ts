@@ -313,9 +313,13 @@ export class FotoComponent implements OnInit {
               id_aspirante_beneficio: form.id,
               id_foto: newPhotoId
             });
+
+            // Subir la foto al servidor
+            await this.fotosService.registerPhoto(form, nuevaFoto);
+            console.log("Foto subida exitosamente al servidor.");
           }
         } catch (error) {
-          console.error("Error al registrar la nueva foto o actualizar la relación:", error);
+          console.error("Error al registrar la nueva foto, actualizar la relación o subir la foto:", error);
         }
       }
 
