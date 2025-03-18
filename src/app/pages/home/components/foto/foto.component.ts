@@ -303,7 +303,7 @@ export class FotoComponent implements OnInit {
 
           const responseFoto = await this.fotosService.createFoto(nuevaFoto).toPromise();
           console.log("Respuesta de la creación de la nueva foto:", responseFoto);
-          const newPhotoId = responseFoto?.id;
+          const newPhotoId = responseFoto?.data.id;
 
           if (newPhotoId) {
             console.log("Nuevo ID de la foto registrada:", newPhotoId);
@@ -313,6 +313,9 @@ export class FotoComponent implements OnInit {
               id_aspirante_beneficio: form.id,
               id_foto: newPhotoId
             });
+
+            // Guardar la foto en el directorio local
+            this.savePhoto(curp);
 
             // Subir la foto al servidor
             await this.fotosService.registerPhoto(form, nuevaFoto);
