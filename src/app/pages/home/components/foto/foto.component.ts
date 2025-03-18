@@ -253,24 +253,8 @@ export class FotoComponent implements OnInit {
 
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
+      // obtengo la informacion del formulario a editar
       const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
-      console.log("Formulario editar válido this is form:", form);
-
-      if (this.capturedImage && this.imgFoto()) {
-        await this.uploadFile();
-        this.savePhoto(form.curp);
-
-        // Obtener el nuevo ID de la foto
-        const newPhotoId = await this.fotosService.getLastId();
-        console.log("Nuevo ID de la foto:", newPhotoId);
-        if (newPhotoId) {
-          // Actualizar la relación con el nuevo ID de la foto
-          await this.aspirantesBeneficioFotosService.actualizarRelacion(form.id, {
-            id_foto: newPhotoId,
-            updated_at: new Date().toISOString()
-          });
-        }
-      }
 
       try {
         const response = await this.aspirantesBeneficioService.editarAspirante(form);
@@ -299,6 +283,24 @@ export class FotoComponent implements OnInit {
           confirmButtonText: 'Aceptar'
         });
       }
+
+      if (this.capturedImage && this.imgFoto()) {
+        // await this.uploadFile();
+
+        this.savePhoto(form.curp);
+
+        // Obtener el nuevo ID de la foto
+        const newPhotoId = await this.fotosService.getLastId();
+        console.log("Nuevo ID de la foto:", newPhotoId);
+        if (newPhotoId) {
+          // Actualizar la relación con el nuevo ID de la foto
+          await this.aspirantesBeneficioFotosService.actualizarRelacion(form.id, {
+            id_foto: newPhotoId,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+
     } else {
       // Marcar todos los campos como tocados para mostrar los errores
       this.datosGeneralesComponent.myForm.markAllAsTouched();

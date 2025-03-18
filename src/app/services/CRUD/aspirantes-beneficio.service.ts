@@ -232,7 +232,8 @@ export class AspirantesBeneficioService {
   async editarAspirante(aspirante: Aspirante): Promise<any> {
     try {
       const response = await this.editAspirante(aspirante).toPromise();
-      if (response.success) {
+      console.log('Respuesta de editar aspirante service:', response);
+      if ( response ) {
         return { success: true, message: 'Aspirante actualizado correctamente' };
       } else {
         console.warn('No se encontró el aspirante para actualizar:', aspirante);
