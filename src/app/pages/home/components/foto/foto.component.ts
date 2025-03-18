@@ -55,11 +55,9 @@ export class FotoComponent implements OnInit {
                 return;
               }
               const imgfoto = aspirante.data;
-              console.log("Aspirante   a editar:", imgfoto.id_foto);
 
               this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
                 next: (response) => {
-                  console.log("Foto del aspirante:", response);
                   this.imgFoto.set(environment.baseUrl + '/' + response.data);
                 },
                 error: (err) => {
@@ -174,7 +172,6 @@ export class FotoComponent implements OnInit {
         id_status: 1, // Asignar el estado adecuado
         fecha: formattedFecha,
         tipo: 'foto_aspben',
-        // archivo: this.capturedImage!,
         archivo: curp + '.webp',
         path: 'docsaspirantesbeneficio/' + curp + '.webp', // Asignar el path adecuado si es necesario
         archivoOriginal: `captured_photo.${this.imageFormat}`,
@@ -199,7 +196,6 @@ export class FotoComponent implements OnInit {
 
         if (this.capturedImage) {
           const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
-          console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
@@ -302,11 +298,9 @@ export class FotoComponent implements OnInit {
           };
 
           const responseFoto = await this.fotosService.createFoto(nuevaFoto).toPromise();
-          console.log("Respuesta de la creación de la nueva foto:", responseFoto);
           const newPhotoId = responseFoto?.data.id;
 
           if (newPhotoId) {
-            console.log("Nuevo ID de la foto registrada:", newPhotoId);
 
             // Actualizar la relación con el nuevo ID de la foto
             await this.aspirantesBeneficioFotosService.editRelacion({
@@ -319,7 +313,6 @@ export class FotoComponent implements OnInit {
 
             // Subir la foto al servidor
             await this.fotosService.registerPhoto(form, nuevaFoto);
-            console.log("Foto subida exitosamente al servidor.");
           }
         } catch (error) {
           console.error("Error al registrar la nueva foto, actualizar la relación o subir la foto:", error);

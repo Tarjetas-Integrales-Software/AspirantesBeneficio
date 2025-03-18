@@ -31,7 +31,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
-import { Console } from 'console';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -277,6 +276,7 @@ export class DatosGeneralesComponent implements OnInit {
           // Establecer los campos correspondientes en el formulario
           this.myForm.reset({
             ...aspirante.data,
+            fecha_nacimiento: aspirante.data.fecha_nacimiento ? new Date(aspirante.data.fecha_nacimiento + 'T00:00:00') : '',
             grado: selectedGrado ? selectedGrado.id : '',
             tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
             carrera: selectedCarrera ? selectedCarrera.nombre : '',
@@ -467,25 +467,26 @@ export class DatosGeneralesComponent implements OnInit {
   }
 
   getMyFormEdit(): any {
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
+    const selectedGrado = this.grados.find(grado => grado.id === this.myForm.get('grado')?.value);
+    const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.id === this.myForm.get('tipo_carrera')?.value);
 
     return {
-      ...this.myForm.value,
-      id: this.editAspirante.id,
-      curp: this.editAspirante.curp,
-      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
-      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
-      estado: 'Jalisco',
-      municipio: this.myForm.get('municipio')?.value,
-      ciudad: this.myForm.get('municipio')?.value,
-      tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
-      tipo_zona: this.myForm.get('tipo_zona')?.value,
-      fecha_evento: formattedDate,
-      grado: this.gradoNombre,
-      tipo_carrera: this.tipoCarreraNombre,
+        ...this.myForm.value,
+        id: this.editAspirante.id,
+        curp: this.editAspirante.curp,
+        nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+        fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+        fecha_evento: this.editAspirante.fecha_evento,
+        estado: 'Jalisco',
+        municipio: this.myForm.get('municipio')?.value,
+        ciudad: this.myForm.get('municipio')?.value,
+        tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
+        tipo_zona: this.myForm.get('tipo_zona')?.value,
+        grado: selectedGrado ? selectedGrado.nombre : '',
+        tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.nombre : '',
+        modulo: this.modulo_actual
     };
-  }
+}
 
   selectedValue2() {
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
