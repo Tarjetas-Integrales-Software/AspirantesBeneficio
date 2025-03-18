@@ -49,11 +49,6 @@ export class FotoComponent implements OnInit {
   }
 
   async startStream() {
-    // if (this.datosGeneralesComponent.myForm.invalid) {
-    //   console.log("Formulario no válido, no se puede iniciar el video.");
-    //   return;
-    // }
-
     if (this.stream) {
       this.stopStream()
     }
@@ -116,7 +111,6 @@ export class FotoComponent implements OnInit {
       if (controlErrors != null) {
         Object.keys(controlErrors).forEach(keyError => {
           const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
-          console.log(errorMessage);
           errorMessages += `${errorMessage}\n`;
         });
       }
@@ -167,7 +161,6 @@ export class FotoComponent implements OnInit {
 
         if (this.capturedImage) {
           const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
-          console.log("Formulario válido this is form:", form);
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
@@ -222,8 +215,6 @@ export class FotoComponent implements OnInit {
     // Verificamos si el formulario es válido
     if (this.datosGeneralesComponent.myForm.valid) {
       const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
-      console.log("Formulario editar válido this is form:", form);
-
       try {
         const response = await this.aspirantesBeneficioService.editarAspirante(form);
         if (response.success) {

@@ -182,10 +182,8 @@ export class AppComponent implements OnInit, OnDestroy {
   async validarSincronizacionCompleta(): Promise<void>{
     const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
     if(items.length > 0){
-      console.log("No se ha sincronizado todo");
       return this.aspirantesBeneficioFotosService.updateSyncStatus(false);
     }else{
-      console.log("Se ha sincronizado");
       return this.aspirantesBeneficioFotosService.updateSyncStatus(true);
     }
   }

@@ -4,7 +4,7 @@ import { ConsultaComponent } from "./consulta/consulta.component";
 import { PagesComponent } from "./pages.component";
 import { ReportesComponent } from "./reportes/reportes.component";
 import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
-import { ChecadorAsistenciaComponent } from "./checador-asistencia/checador-asistencia.component";
+import { AsistenciaComponent } from "./asistencia/asistencia.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -37,9 +37,9 @@ export const pagesRoutes: Routes = [
               component: ReportesComponent
             },
             {
-              path: 'checador-asistencia',
-              title: 'Checador Asistencia',
-              component: ChecadorAsistenciaComponent
+              path: 'asistencia',
+              title: 'Asistencia',
+              component: AsistenciaComponent
             },
             {
                 path: '**',

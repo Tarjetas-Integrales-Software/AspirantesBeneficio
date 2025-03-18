@@ -19,9 +19,7 @@ export class AspirantesBeneficioFotosService {
   constructor(private databaseService: DatabaseService) { }
 
   updateSyncStatus(value: boolean): void {
-    console.log('updateSyncStatus', value);
     this.syncStatusSignal.set(value);
-    console.log('syncStatusSignal', this.syncStatusSignal());
   }
 
   getSyncStatus(): boolean | null {
@@ -149,5 +147,9 @@ export class AspirantesBeneficioFotosService {
 
   createRelacion(relacion: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/register', { ...relacion });
+  }
+
+  editRelacion(relacion: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/edit', { ...relacion });
   }
 }

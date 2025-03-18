@@ -262,7 +262,6 @@ export class DatosGeneralesComponent implements OnInit {
       });
     }
     this.online = this.networkStatusService.checkConnection();
-    console.log(this.online, 'estatus online')
     if (this.online) this.syncDataBase();
     this.getMunicipios();
     this.getModalidades();
@@ -288,8 +287,6 @@ export class DatosGeneralesComponent implements OnInit {
           if (!aspirante) {
             return this.router.navigateByUrl('/');
           }
-
-          console.log('Aspirante:', aspirante);
 
           // Obtener los IDs correspondientes a los nombres
           const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
@@ -402,9 +399,7 @@ export class DatosGeneralesComponent implements OnInit {
     const { municipio } = params;
 
     await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
-      console.log('Codigos postales:', codigos, 'Municipio:', municipio);
       this.allCodigosPostales = codigos;
-      console.log('All codigos postales:', this.allCodigosPostales);
     }).catch(error => {
       console.error('Error al consultar códigos postales:', error);
     });
