@@ -150,4 +150,8 @@ export class AspirantesBeneficioFotosService {
   createRelacion(relacion: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/register', { ...relacion });
   }
+
+  editRelacion(relacion: { id_aspirante_beneficio: number; id_foto: number }): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/edit', { ...relacion });
+  }
 }

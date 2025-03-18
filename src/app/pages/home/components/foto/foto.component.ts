@@ -285,19 +285,37 @@ export class FotoComponent implements OnInit {
       }
 
       if (this.capturedImage && this.imgFoto()) {
-        // await this.uploadFile();
+        try {
+          // Crear la nueva foto en la base de datos
+          const formattedFecha = new Date().toISOString();
+          const curp = form.curp;
+          const nuevaFoto = {
+            id_status: 1,
+            fecha: formattedFecha,
+            tipo: 'foto_aspben',
+            archivo: curp + '.webp',
+            path: 'docsaspirantesbeneficio/' + curp + '.webp',
+            archivoOriginal: `captured_photo.${this.imageFormat}`,
+            extension: this.imageFormat,
+            created_id: 0,
+            created_at: formattedFecha
+          };
 
-        this.savePhoto(form.curp);
+          const responseFoto = await this.fotosService.createFoto(nuevaFoto).toPromise();
+          console.log("Respuesta de la creación de la nueva foto:", responseFoto);
+          const newPhotoId = responseFoto?.id;
 
-        // Obtener el nuevo ID de la foto
-        const newPhotoId = await this.fotosService.getLastId();
-        console.log("Nuevo ID de la foto:", newPhotoId);
-        if (newPhotoId) {
-          // Actualizar la relación con el nuevo ID de la foto
-          await this.aspirantesBeneficioFotosService.actualizarRelacion(form.id, {
-            id_foto: newPhotoId,
-            updated_at: new Date().toISOString()
-          });
+          if (newPhotoId) {
+            console.log("Nuevo ID de la foto registrada:", newPhotoId);
+
+            // Actualizar la relación con el nuevo ID de la foto
+            await this.aspirantesBeneficioFotosService.editRelacion({
+              id_aspirante_beneficio: form.id,
+              id_foto: newPhotoId
+            });
+          }
+        } catch (error) {
+          console.error("Error al registrar la nueva foto o actualizar la relación:", error);
         }
       }
 
