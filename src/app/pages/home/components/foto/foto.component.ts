@@ -1,4 +1,4 @@
-import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, inject, signal } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { DatosGeneralesComponent } from '../datos-generales/datos-generales.component';
@@ -7,6 +7,9 @@ import { HttpClient } from '@angular/common/http';
 import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
 import Swal from 'sweetalert2';
+import { ActivatedRoute, Router } from "@angular/router";
+import { switchMap } from "rxjs";
+import { environment } from "../../../../../environments/environment";
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
@@ -28,15 +31,43 @@ export class FotoComponent implements OnInit {
     private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
   ) { }
 
+  private activatedRoute = inject(ActivatedRoute);
+  private router = inject(Router);
+
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
   capturedImage: string | null = null
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
   downloadPath = "C:/Users/DELL 540/AppData/Roaming/Aspirantes Beneficio/imagenesBeneficiarios"
+  editFoto: Aspirante | null = null
+  imgFoto = signal<string | null>(null);
 
   ngOnInit() {
     this.getAvailableCameras()
+
+    this.activatedRoute.params
+            .pipe(
+              switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
+            ).subscribe(aspirante => {
+              if (!aspirante) {
+                this.router.navigateByUrl('/');
+                return;
+              }
+              const imgfoto = aspirante.data;
+              console.log("Aspirante   a editar:", imgfoto.id_foto);
+
+              this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
+                next: (response) => {
+                  this.imgFoto.set(environment.baseUrl + '/' + response.data);
+                },
+                error: (err) => {
+                  console.error('Error fetching photo:', err);
+                }
+                });
+
+            });
+
   }
 
   async getAvailableCameras() {
@@ -223,6 +254,22 @@ export class FotoComponent implements OnInit {
     if (this.datosGeneralesComponent.myForm.valid) {
       const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
       console.log("Formulario editar válido this is form:", form);
+
+      if (this.capturedImage && this.imgFoto()) {
+        await this.uploadFile();
+        this.savePhoto(form.curp);
+
+        // Obtener el nuevo ID de la foto
+        const newPhotoId = await this.fotosService.getLastId();
+        console.log("Nuevo ID de la foto:", newPhotoId);
+        if (newPhotoId) {
+          // Actualizar la relación con el nuevo ID de la foto
+          await this.aspirantesBeneficioFotosService.actualizarRelacion(form.id, {
+            id_foto: newPhotoId,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
 
       try {
         const response = await this.aspirantesBeneficioService.editarAspirante(form);

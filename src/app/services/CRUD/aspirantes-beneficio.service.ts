@@ -8,6 +8,7 @@ import { CurpsRegistradasService } from './curps-registradas.service';
 export interface Aspirante {
   id: number;
   id_modalidad: number;
+  id_foto?: string;
   curp: string;
   nombre_completo: string;
   telefono: string;

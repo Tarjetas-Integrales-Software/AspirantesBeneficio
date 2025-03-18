@@ -6,7 +6,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Jalisco } from '../../../../../../public/assets/data/jalisco.interface';
-import { HomeService } from '../../home.service';
 import { CodigosPostalesService } from '../../../../services/CRUD/codigos-postales.service';
 import { NetworkStatusService } from '../../../../services/network-status.service';
 import { provideNativeDateAdapter } from '@angular/material/core';
@@ -33,6 +32,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
+import { Console } from 'console';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -58,10 +58,6 @@ import { ConfiguracionesService } from '../../../../services/CRUD/configuracione
 export class DatosGeneralesComponent implements OnInit {
 
   private fb = inject(FormBuilder);
-  estados: string[] = [];
-  ciudades: string[] = [];
-  tiposAsentamiento: string[] = [];
-  tiposZona: string[] = [];
   colonias: any[] = [];
   modalidades: any[] = [];
 
@@ -114,8 +110,7 @@ export class DatosGeneralesComponent implements OnInit {
   //options: string[] = [];
   filteredOptions: any[] = [];
 
-  constructor(private homeService: HomeService
-    , private networkStatusService: NetworkStatusService
+  constructor( private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
     , private modalidadesService: ModalidadesService
     , private aspirantesBeneficioService: AspirantesBeneficioService
@@ -173,23 +168,6 @@ export class DatosGeneralesComponent implements OnInit {
     });
   }
 
-  loadJaliscoData(): void {
-    this.homeService.getJaliscoData().subscribe((data: Jalisco) => {
-      this.estados = data.data.map(item => item.estado);
-      this.municipios = data.data.map(item => item.municipio);
-      this.ciudades = data.data.map(item => item.ciudad);
-      this.tiposAsentamiento = data.data.map(item => item.tipo_asentamiento);
-      this.tiposZona = data.data.map(item => item.tipo_zona);
-      this.colonias = data.data.map(item => item.colonia);
-    });
-  }
-
-  onCurpChange(): void {
-    const curp = this.myForm.controls['curp'].value;
-
-    this.homeService.getJaliscoByCP(curp).subscribe((data: Jalisco) => { });
-  }
-
   isValidField(fieldName: string): boolean | null {
     return (this.myForm.controls[fieldName].errors && this.myForm.controls[fieldName].touched);
   }
@@ -221,7 +199,6 @@ export class DatosGeneralesComponent implements OnInit {
 
   municipios: any[] = [];
   municipio: string = '';
-  online: boolean = false;
 
   private router = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
@@ -261,9 +238,9 @@ export class DatosGeneralesComponent implements OnInit {
         }
       });
     }
-    this.online = this.networkStatusService.checkConnection();
-    console.log(this.online, 'estatus online')
-    if (this.online) this.syncDataBase();
+    const online = this.networkStatusService.checkConnection();
+
+    if (online) this.syncDataBase();
     this.getMunicipios();
     this.getModalidades();
     this.getGrados();
@@ -288,8 +265,6 @@ export class DatosGeneralesComponent implements OnInit {
           if (!aspirante) {
             return this.router.navigateByUrl('/');
           }
-
-          console.log('Aspirante:', aspirante);
 
           // Obtener los IDs correspondientes a los nombres
           const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
@@ -402,9 +377,7 @@ export class DatosGeneralesComponent implements OnInit {
     const { municipio } = params;
 
     await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
-      console.log('Codigos postales:', codigos, 'Municipio:', municipio);
       this.allCodigosPostales = codigos;
-      console.log('All codigos postales:', this.allCodigosPostales);
     }).catch(error => {
       console.error('Error al consultar códigos postales:', error);
     });
