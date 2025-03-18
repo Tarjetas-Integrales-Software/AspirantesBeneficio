@@ -13,8 +13,7 @@ export class ModulosService {
   constructor(private databaseService: DatabaseService) {}
 
   getModulos(): Observable<any> {
-    return this.http.get('http://127.0.0.1:8000/api/v1/lic/aspben/modulos_all');
-    // return this.http.get(environment.apiUrl + '/lic/aspben/modulos_all');
+    return this.http.get(environment.apiUrl + '/lic/aspben/modulos_all');
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
