@@ -5,6 +5,13 @@ const path = require('path');
 const url = require('url');
 const fs = require("fs");
 
+//Impresion de Credencial
+const { exec } = require('child_process');
+const PDFDocument = require('pdfkit');
+const printer = require('pdf-to-printer');
+const axios = require('axios');
+
+
 let mainWindow;
 let db; // Declare db as a global variable
 
@@ -25,7 +32,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+   mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -343,6 +350,87 @@ app.whenReady().then(() => {
     }
   });
 });
+
+// Obtener la lista de impresoras en Windows
+ipcMain.handle('get-printers', async () => {
+  return new Promise((resolve, reject) => {
+    exec('wmic printer get name', (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error al obtener impresoras:', error);
+        reject(error);
+        return;
+      }
+
+      // Convertir la salida en una lista de impresoras
+      const printers = stdout.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && line !== 'Name') // Filtrar líneas vacías y encabezado
+        .map(name => ({ name }));
+
+      resolve(printers);
+    });
+  });
+});
+
+
+
+
+ipcMain.on('print-id-card', async (event, data, name) => {
+
+  /*
+  Los tamaños en PDFKit se expresan en puntos (1 punto = 1/72 pulgadas). Para convertir centímetros a puntos, usamos la fórmula:
+  puntos=centimetros×28.346
+    Conversión de 8.5 cm × 5.4 cm a puntos
+    Ancho: 8.5 × 28.346 ≈ 240.94 puntos
+    Altura: 5.4 × 28.346 ≈ 153.07 puntos
+  */
+  const doc = new PDFDocument({ size: [241, 153] });
+
+  name = data.curp; //VARIABLE PARA EL NOMBRE DEL ARCHIVO PDF
+
+  const dirPath = path.join(app.getPath("userData"), "credencialesgeneradas");
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath); // Crear carpeta si no existe
+  }
+  const savePath = path.join(dirPath, name + ".pdf");
+
+  // Crear un archivo usando fs.createWriteStream
+  const writeStream = fs.createWriteStream(savePath);
+  doc.pipe(writeStream);
+
+  // Descargar la imagen desde la URL
+  const imageUrl = data.photoPath; // URL pública de la imagen
+  try {
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    // Insertar la imagen en el PDF
+    doc.image(imageBuffer, 15, 33, { width: 70, height: 77 }); // Ajusta la posición y tamaño
+  } catch (error) {
+    console.error("Error al descargar la imagen:", error);
+  }
+
+  // Agregar datos a la credencial
+  doc.fontSize(8).text(`${data.cardNumber}`, 150, 20, {maxWidth: 70, align: 'center', lineBreak: false});  // Numero de tarjeta
+  doc.fontSize(8).text(`${data.name}`, 95, 45, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
+  doc.fontSize(8).text(`${data.curp}`, 95, 65, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
+  doc.fontSize(8).text(`${data.issueDate}`, 95, 85, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
+  doc.fontSize(8).text(`${data.phone}`, 160, 85, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
+
+  doc.end();
+
+  writeStream.on('finish', () => {
+    // Enviar el archivo a imprimir
+    printer.print(savePath, { printer: data.printer })
+      .then(() => console.log('Impresion completada'))
+      .catch(err => console.error('Error al imprimir', err));
+  });
+
+  writeStream.on('error', (err) => {
+    console.error('Error al escribir el archivo PDF', err);
+  });
+});
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
