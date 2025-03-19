@@ -9,6 +9,7 @@ const fs = require("fs");
 const { exec } = require('child_process');
 const PDFDocument = require('pdfkit');
 const printer = require('pdf-to-printer');
+const axios = require('axios');
 
 let mainWindow;
 let db; // Declare db as a global variable
@@ -398,14 +399,19 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
   // Descargar la imagen desde la URL
   try {
-    console.log(data.photoPath);
-    
-    const response = await fetch(data.photoPath);
-    const arrayBuffer = await response.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
+      console.log(data.photoPath);
 
-    // Insertar la imagen en el PDF
-    doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
+      /*
+      const response = await fetch(data.photoPath);
+      const arrayBuffer = await response.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
+      */
+
+      const response = await axios.get(data.photoPath, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data, 'binary');
+
+      // Insertar la imagen en el PDF
+      doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
   } catch (error) {
     console.error("Error al descargar la imagen:", error);
   }
