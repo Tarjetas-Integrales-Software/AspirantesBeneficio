@@ -1,7 +1,10 @@
 <div class="container py-5 mx-auto">
   <div class="px-6 pt-4 mb-5 bg-white border-0 shadow-lg sm:rounded-3xl">
     <div class="flex items-center justify-between">
-      <form [formGroup]="formImpresion" class="flex items-center justify-between flex-wrap gap-2">
+      <form
+        [formGroup]="formImpresion"
+        class="flex items-center justify-between flex-wrap gap-2"
+      >
         <mat-form-field class="w-100">
           <mat-label>Impresoras</mat-label>
           <mat-select formControlName="impresora">
@@ -9,7 +12,7 @@
             @for (impresora of printers; track impresora) {
             <mat-option [value]="impresora.name">{{
               impresora.name
-              }}</mat-option>
+            }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -17,18 +20,38 @@
         <mat-form-field>
           <mat-label>Fecha de registro</mat-label>
           <mat-date-range-input [rangePicker]="picker">
-            <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
+            <input
+              matStartDate
+              formControlName="fechaInicio"
+              placeholder="Inicio"
+            />
             <input matEndDate formControlName="fechaFin" placeholder="Fin" />
           </mat-date-range-input>
           <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
-          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
           <mat-date-range-picker #picker></mat-date-range-picker>
         </mat-form-field>
 
         <mat-form-field class="w-100">
           <mat-label>Buscar</mat-label>
-          <input matInput formControlName="search" placeholder="Buscar..." (keyup.enter)="getAspirantesBeneficio()" />
+          <input
+            matInput
+            formControlName="search"
+            placeholder="Buscar..."
+            (keyup.enter)="getAspirantesBeneficio()"
+          />
         </mat-form-field>
+
+        <input
+          type="file"
+          (change)="cargarArchivo($event)"
+          accept=".xlsx, .xls"
+        />
+        <button (click)="subirDatos()">Enviar Datos al Servidor</button>
+        <p>{{ mensaje }}</p>
       </form>
     </div>
   </div>
@@ -43,19 +66,32 @@
       </div>
 
       <div class="flex justify-start items-center gap-5">
-        <button (click)="formImpresion.reset()"
+        <button
+          (click)="formImpresion.reset()"
           class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded flex items-center justify-between gap-2"
-          [disabled]="!generado || loading">
+          [disabled]="!generado || loading"
+        >
           <mat-icon matSuffix>clear_all</mat-icon>
           <span>Limpiar campos</span>
         </button>
 
-        <button (click)="getAspirantesBeneficio()"
-          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-between items-center gap-2">
+        <button
+          (click)="getAspirantesBeneficio()"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-between items-center gap-2"
+        >
           <span> Consultar </span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right-to-arc">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right-to-arc"
+          >
             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
             <path d="M3 12h12" />
             <path d="M11 8l4 4l-4 4" />
@@ -70,22 +106,39 @@
     </div>
 
     <ng-template #loaded>
-      <div class="table-container mat-elevation-z8" style="background-color: white">
+      <div
+        class="table-container mat-elevation-z8"
+        style="background-color: white"
+      >
         <table mat-table [dataSource]="dataSource" matSort>
           <!-- Impreso -->
           <ng-container matColumnDef="impreso">
             <th mat-header-cell *matHeaderCellDef mat-sort-header>
-              <mat-icon aria-hidden="false" aria-label="Impreso"
-                fontIcon="print">Impreso</mat-icon>
+              <mat-icon
+                aria-hidden="false"
+                aria-label="Impreso"
+                fontIcon="print"
+                >Impreso</mat-icon
+              >
             </th>
             <td mat-cell *matCellDef="let row">
               <ng-container *ngIf="row.impreso == 1; else pendiente">
-                <mat-icon aria-hidden="false" aria-label="Impreso" style="color: orange;"
-                  fontIcon="print_connect">Impreso</mat-icon>
+                <mat-icon
+                  aria-hidden="false"
+                  aria-label="Impreso"
+                  style="color: orange"
+                  fontIcon="print_connect"
+                  >Impreso</mat-icon
+                >
               </ng-container>
               <ng-template #pendiente>
-                <mat-icon aria-hidden="false" aria-label="Pendiente de credencializar" style="color: darkslategrey;"
-                  fontIcon="print_error">Pendiente</mat-icon>
+                <mat-icon
+                  aria-hidden="false"
+                  aria-label="Pendiente de credencializar"
+                  style="color: darkslategrey"
+                  fontIcon="print_error"
+                  >Pendiente</mat-icon
+                >
               </ng-template>
             </td>
           </ng-container>
@@ -143,9 +196,15 @@
             </th>
             <td mat-cell *matCellDef="let row" class="action-cell">
               <div
-                class="flex justify-end items-center gap-2 *:flex *:justify-center *:items-center *:rounded-full *:p-2">
+                class="flex justify-end items-center gap-2 *:flex *:justify-center *:items-center *:rounded-full *:p-2"
+              >
                 @if (true) {
-                <button (click)="print(row)" mat-button color="accent" class="flex gap-2">
+                <button
+                  (click)="print(row)"
+                  mat-button
+                  color="accent"
+                  class="flex gap-2"
+                >
                   <!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
@@ -162,18 +221,27 @@
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class=""></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            class=""
+          ></tr>
 
           <!-- Row shown when there is no matching data. -->
           <tr class="mat-row" *matNoDataRow>
             <td class="mat-cell p-5" colspan="4">No hay coincidencias</td>
           </tr>
-
         </table>
       </div>
 
-      <mat-paginator [length]="total" [pageSize]="perPage" [pageIndex]="currentPage" [pageSizeOptions]="[5, 10, 20]"
-        showFirstLastButtons (page)="onPaginateChange($event)">
+      <mat-paginator
+        [length]="total"
+        [pageSize]="perPage"
+        [pageIndex]="currentPage"
+        [pageSizeOptions]="[5, 10, 20]"
+        showFirstLastButtons
+        (page)="onPaginateChange($event)"
+      >
       </mat-paginator>
     </ng-template>
   </div>

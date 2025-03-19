@@ -38,6 +38,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FotosService } from '../../services/CRUD/fotos.service';
 import { StorageService } from '../../services/storage.service';
+import { UtilService } from '../../services/util.service';
 
 export interface AspiranteBeneficio {
   id: number;
@@ -105,13 +106,17 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  datosExcel: any[] = [];
+  mensaje: string = '';
+
   constructor(
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
     private networkStatusService: NetworkStatusService,
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private utilService: UtilService
   ) {
     this.dataSource = new MatTableDataSource();
 
@@ -269,4 +274,32 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       }
     });
   }
+
+  async cargarArchivo(event: any) {
+    const archivo = event.target.files[0];
+    if (archivo) {
+      this.datosExcel = await this.utilService.leerExcel(archivo);
+      console.log('Datos Cargados:', this.datosExcel);
+    }
+  }
+
+  subirDatos() {
+    if (this.datosExcel.length === 0) {
+      this.mensaje = 'No hay datos para enviar.';
+      return;
+    }
+
+    this.utilService.enviarDatosAlServidor(this.datosExcel).subscribe({
+      next: (res) => {
+        console.log('Respuesta del servidor:', res);
+        this.mensaje = 'Datos importados exitosamente.';
+      },
+      error: (err) => {
+        console.error('Error al enviar los datos:', err);
+        this.mensaje = 'Hubo un error al importar los datos.';
+      }
+    });
+  }
+
+
 }
