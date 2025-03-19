@@ -9,8 +9,6 @@ const fs = require("fs");
 const { exec } = require('child_process');
 const PDFDocument = require('pdfkit');
 const printer = require('pdf-to-printer');
-const axios = require('axios');
-
 
 let mainWindow;
 let db; // Declare db as a global variable
@@ -32,7 +30,7 @@ function createWindow() {
   });
 
   // Abre consola
-   mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -63,10 +61,10 @@ function dropTablesIfExists() {
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
-        db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-        console.log("Tabla eliminada con éxito.");
+      db.prepare("DROP TABLE cat_ct_configuraciones;").run();
+      console.log("Tabla eliminada con éxito.");
     } else {
-        console.log("La tabla no existe, no se elimino.");
+      console.log("La tabla no existe, no se elimino.");
     }
 
   } catch (error) {
@@ -85,15 +83,15 @@ function addColumnIfNotExists() {
 
     const rows = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
 
-      // Verificar si la columna 'modulo' ya existe
-      const columnExists_modulo = rows.some(row => row.name === 'modulo');
-      if (!columnExists_modulo) {
-        console.log("Agregando la columna 'modulo'...");
-        db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
-        console.log("Columna 'modulo' agregada con éxito.");
-      } else {
-          console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
-      }
+    // Verificar si la columna 'modulo' ya existe
+    const columnExists_modulo = rows.some(row => row.name === 'modulo');
+    if (!columnExists_modulo) {
+      console.log("Agregando la columna 'modulo'...");
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
+      console.log("Columna 'modulo' agregada con éxito.");
+    } else {
+      console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
+    }
   } catch (error) {
     console.error('Error altering table:', error);
   }
@@ -399,10 +397,12 @@ ipcMain.on('print-id-card', async (event, data, name) => {
   doc.pipe(writeStream);
 
   // Descargar la imagen desde la URL
-  const imageUrl = data.photoPath; // URL pública de la imagen
   try {
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(response.data, 'binary');
+    console.log(data.photoPath);
+    
+    const response = await fetch(data.photoPath);
+    const arrayBuffer = await response.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
 
     // Insertar la imagen en el PDF
     doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
@@ -412,10 +412,10 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
   // Agregar datos a la credencial
   // doc.fontSize(8).text(`${data.cardNumber}`, 167, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
-  doc.fontSize(6).text(`${data.nombre_completo}`, 99, 40, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
-  doc.fontSize(8).text(`${data.curp}`, 99, 60, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
-  doc.fontSize(8).text(`${new Date().toISOString().substring(0, 10)}`, 99, 82, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
-  doc.fontSize(8).text(`${data.telefono}`, 169, 82, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
+  doc.fontSize(6).text(`${data.nombre_completo}`, 99, 40, { maxWidth: 120, align: 'center', lineBreak: false });         // Nombre
+  doc.fontSize(8).text(`${data.curp}`, 99, 60, { maxWidth: 120, align: 'center', lineBreak: false });         // CURP
+  doc.fontSize(8).text(`${new Date().toISOString().substring(0, 10)}`, 99, 82, { maxWidth: 70, align: 'center', lineBreak: false });    // Fecha Expedicion
+  doc.fontSize(8).text(`${data.telefono}`, 169, 82, { maxWidth: 70, align: 'center', lineBreak: false });      // Telefono
 
   doc.end();
 
