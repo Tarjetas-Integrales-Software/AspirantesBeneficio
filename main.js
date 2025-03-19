@@ -405,17 +405,17 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     const imageBuffer = Buffer.from(response.data, 'binary');
 
     // Insertar la imagen en el PDF
-    doc.image(imageBuffer, 15, 33, { width: 70, height: 77 }); // Ajusta la posición y tamaño
+    doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
   } catch (error) {
     console.error("Error al descargar la imagen:", error);
   }
 
   // Agregar datos a la credencial
-  doc.fontSize(8).text(`${data.cardNumber}`, 150, 20, {maxWidth: 70, align: 'center', lineBreak: false});  // Numero de tarjeta
-  doc.fontSize(8).text(`${data.name}`, 95, 45, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
-  doc.fontSize(8).text(`${data.curp}`, 95, 65, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
-  doc.fontSize(8).text(`${data.issueDate}`, 95, 85, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
-  doc.fontSize(8).text(`${data.phone}`, 160, 85, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
+  doc.fontSize(8).text(`${data.cardNumber}`, 170, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
+  doc.fontSize(8).text(`${data.name}`, 97, 40, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
+  doc.fontSize(8).text(`${data.curp}`, 97, 60, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
+  doc.fontSize(8).text(`${data.issueDate}`, 97, 82, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
+  doc.fontSize(8).text(`${data.phone}`, 167, 82, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
 
   doc.end();
 
