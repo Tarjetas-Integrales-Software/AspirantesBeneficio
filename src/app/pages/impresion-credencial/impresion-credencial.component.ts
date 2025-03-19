@@ -289,16 +289,17 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.utilService.enviarDatosAlServidor(this.datosExcel).subscribe({
-      next: (res) => {
-        console.log('Respuesta del servidor:', res);
-        this.mensaje = 'Datos importados exitosamente.';
-      },
-      error: (err) => {
-        console.error('Error al enviar los datos:', err);
-        this.mensaje = 'Hubo un error al importar los datos.';
-      }
-    });
+    // this.utilService.enviarDatosAlServidor(this.datosExcel).subscribe({
+    //   next: (res) => {
+    //     console.log('Respuesta del servidor:', res);
+    //     this.mensaje = 'Datos importados exitosamente.';
+    //     this.datosExcel = [];
+    //   },
+    //   error: (err) => {
+    //     console.error('Error al enviar los datos:', err);
+    //     this.mensaje = 'Hubo un error al importar los datos.';
+    //   }
+    // });
   }
 
 

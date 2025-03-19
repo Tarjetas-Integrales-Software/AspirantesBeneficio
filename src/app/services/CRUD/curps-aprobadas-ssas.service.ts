@@ -25,7 +25,7 @@ export class CurpsAprobadasSsasService {
   private http = inject(HttpClient);
   constructor(private databaseService: DatabaseService) { }
 
-  createCurpAprobadaSsas(curpAprobadaSsas: any): Observable<any> {
-      return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/importar_excel', { ...curpAprobadaSsas });
+  createCurpAprobadaSsas(curpAprobadaSsas: CurpAprobadaSsas): Observable<any> {
+      return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...curpAprobadaSsas });
     }
 }
