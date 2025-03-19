@@ -156,7 +156,7 @@ export class FotosService {
     }
   }
 
-  getAspiranteFotoId(id: number): Observable<any> {
+  getAspiranteFotoId(id: string): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
   }
 

@@ -10,6 +10,7 @@ import {
 const { ipcRenderer } = (window as any).require('electron');
 import { FormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { DatePipe, CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
@@ -35,10 +36,12 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
+import { FotosService } from '../../services/CRUD/fotos.service';
 import { StorageService } from '../../services/storage.service';
 
 export interface AspiranteBeneficio {
-  id: string;
+  id: number;
+  id_foto: string;
   name: string;
   progress: string;
   fruit: string;
@@ -68,6 +71,7 @@ export interface AspiranteBeneficio {
 })
 export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = [
+    'impreso',
     'curp',
     'nombre_completo',
     'nombre_modalidad',
@@ -87,6 +91,8 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   rolesConPermiso: number[] = [103, 104];
   rolesUsuario: Array<{ fkRole: number }> = [];
 
+  aspiranteBeneficioFoto: string = "";
+
   currentPage: number = 0;
   lastPage: number = 1;
   perPage: number = 5;
@@ -104,6 +110,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private networkStatusService: NetworkStatusService,
     private aspirantesBeneficioService: AspirantesBeneficioService,
+    private fotosService: FotosService,
     private storageService: StorageService
   ) {
     this.dataSource = new MatTableDataSource();
@@ -159,7 +166,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
 
           this.cdr.detectChanges();
         },
-        error: (error) => {},
+        error: (error) => { },
       });
   }
 
@@ -171,7 +178,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     );
   }
 
-  limpiarCampos() {}
+  limpiarCampos() { }
 
   getBody(paginated: boolean = false): {
     search?: string;
@@ -216,19 +223,48 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     }
   }
 
-  userData = {
-    name: 'NESTOR DANIEL BASAVE DAVALOS',
-    curp: 'BADN980406HJCSVS00',
-    phone: '3323724897',
-    issueDate: '2025-09-18',
-    cardNumber: '1234567890',
-    photoPath: 'https://backmibeneficio.tisaweb.mx/storage/tmp/docsaspben/tmp_67b7e7d4dcd2a.webp'
-  };
+  async print(aspirante: AspiranteBeneficio) {
+    const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
 
-  print(id: number) {
-    ipcRenderer.send('print-id-card', {
-      ...this.userData
-      ,printer: this.selectedPrinter
+    console.log(photoPath);
+
+    try {
+      ipcRenderer.send('print-id-card', {
+        ...aspirante,
+        photoPath: photoPath,
+        printer: this.selectedPrinter
+      });
+    } catch (error) {
+      console.error('Ocurrió un error:', error);
+    }
+  }
+
+  async getAspiranteFotoId(id: string): Promise<string> {
+    this.aspiranteBeneficioFoto = 'assets/default-profile.png';
+
+    try {
+      const response = await this.fotosService.getAspiranteFotoId(id).toPromise();
+
+      if (response && response.response) {
+        this.aspiranteBeneficioFoto = environment.baseUrl + '/' + response.data;
+      }
+
+      this.cdr.detectChanges();
+      return this.aspiranteBeneficioFoto;
+    } catch (error) {
+      console.error('Error al obtener los datos del aspirante:', error);
+      throw error;
+    }
+  }
+
+  editAspiranteCredencializado(aspiranteBeneficio: AspiranteBeneficio): void {
+    this.aspirantesBeneficioService.editAspiranteCredencializado(aspiranteBeneficio, true).subscribe({
+      next: (response) => {
+        this.getAspirantesBeneficio();
+      },
+      error: (error) => {
+        console.error('Error al obtener los datos del aspirante:', error);
+      }
     });
   }
 }

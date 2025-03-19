@@ -411,11 +411,11 @@ ipcMain.on('print-id-card', async (event, data, name) => {
   }
 
   // Agregar datos a la credencial
-  doc.fontSize(8).text(`${data.cardNumber}`, 170, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
-  doc.fontSize(8).text(`${data.name}`, 97, 40, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
-  doc.fontSize(8).text(`${data.curp}`, 97, 60, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
-  doc.fontSize(8).text(`${data.issueDate}`, 97, 82, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
-  doc.fontSize(8).text(`${data.phone}`, 167, 82, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
+  // doc.fontSize(8).text(`${data.cardNumber}`, 167, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
+  doc.fontSize(8).text(`${data.nombre_completo}`, 99, 40, {maxWidth: 120, align: 'center', lineBreak: false});         // Nombre
+  doc.fontSize(8).text(`${data.curp}`, 98, 60, {maxWidth: 120, align: 'center', lineBreak: false});         // CURP
+  doc.fontSize(8).text(`${new Date().toISOString().substring(0, 10)}`, 99, 82, {maxWidth: 70, align: 'center', lineBreak: false});    // Fecha Expedicion
+  doc.fontSize(8).text(`${data.telefono}`, 169, 82, {maxWidth: 70, align: 'center', lineBreak: false});      // Telefono
 
   doc.end();
 

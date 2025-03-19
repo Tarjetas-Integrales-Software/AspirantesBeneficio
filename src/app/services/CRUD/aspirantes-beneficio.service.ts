@@ -77,6 +77,9 @@ export class AspirantesBeneficioService {
   editAspiranteCredencializado(aspirante: Object, status: boolean): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit/credencializado', { ...aspirante, credencializado: status ? 1 : 0 });
   }
+  editAspiranteImpreso(aspirante: Object, status: boolean): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit/impreso', { ...aspirante, impreso: status ? 1 : 0 });
+  }
 
   deleteAspiranteBeneficio(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/delete', { id: id });
