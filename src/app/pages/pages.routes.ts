@@ -39,7 +39,7 @@ export const pagesRoutes: Routes = [
             },
             {
               path: 'impresion-credencial',
-              title: 'Impresion Crendencial',
+              title: 'Impresion Credencial',
               component: ImpresionCredencialComponent
             },
             {
