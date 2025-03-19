@@ -145,7 +145,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     this.loading = true;
 
     this.aspirantesBeneficioService
-      .getAspirantesBeneficioPaginated(body)
+      .getAspirantesBeneficioAprobadosPaginated(body)
       .subscribe({
         next: (response) => {
           if (response.response) {
@@ -224,8 +224,8 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   }
 
   async print(aspirante: AspiranteBeneficio) {
+    console.log(aspirante,'aspirante');
     const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
-
     console.log(photoPath);
 
     try {
