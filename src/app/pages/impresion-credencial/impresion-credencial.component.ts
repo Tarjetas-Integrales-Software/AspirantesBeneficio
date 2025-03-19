@@ -234,6 +234,8 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         photoPath: photoPath,
         printer: this.selectedPrinter
       });
+
+      this.editAspiranteCredencializado(aspirante);
     } catch (error) {
       console.error('Ocurrió un error:', error);
     }
