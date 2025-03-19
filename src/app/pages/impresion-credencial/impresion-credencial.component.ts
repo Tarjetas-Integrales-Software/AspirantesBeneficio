@@ -224,9 +224,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   }
 
   async print(aspirante: AspiranteBeneficio) {
-    console.log(aspirante,'aspirante');
     const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
-    console.log(photoPath);
 
     try {
       ipcRenderer.send('print-id-card', {
@@ -235,7 +233,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         printer: this.selectedPrinter
       });
 
-      this.editAspiranteCredencializado(aspirante);
+      this.editAspiranteImpreso(aspirante);
     } catch (error) {
       console.error('Ocurrió un error:', error);
     }
@@ -259,8 +257,8 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     }
   }
 
-  editAspiranteCredencializado(aspiranteBeneficio: AspiranteBeneficio): void {
-    this.aspirantesBeneficioService.editAspiranteCredencializado(aspiranteBeneficio, true).subscribe({
+  editAspiranteImpreso(aspiranteBeneficio: AspiranteBeneficio): void {
+    this.aspirantesBeneficioService.editAspiranteImpreso(aspiranteBeneficio, true).subscribe({
       next: (response) => {
         this.getAspirantesBeneficio();
       },
