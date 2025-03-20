@@ -64,7 +64,7 @@ function dropTablesIfExists() {
 
     if (row) {
       db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-      console.log("Tabla eliminada con éxito.");
+      console.log("Tabla eliminada con exito.");
     } else {
       console.log("La tabla no existe, no se elimino.");
     }
@@ -413,19 +413,19 @@ ipcMain.on('print-id-card', async (event, data, name) => {
       `data:image/${imageFormat};base64,${imageBase64}`, // URL base64 de la imagen
       imageFormat,  // Formato de la imagen (JPEG, PNG, WEBP, etc.)
       7,           // Posición x en milímetros
-      8,           // Posición y en milímetros
+      8.5,           // Posición y en milímetros
       25,           // Ancho de la imagen en milímetros
       30            // Alto de la imagen en milímetros
     );
 
     // Agregar datos a la credencial
     doc.setFontSize(6);
-    doc.text(`${data.nombre_completo}`, 30, 8, { maxWidth: 120, align: 'center', lineBreak: false });         // Nombre
+    doc.text(`${data.nombre_completo}`, 40, 16.5, { maxWidth: 120, lineBreak: false });         // Nombre
 
     doc.setFontSize(8);
-    doc.text(`${data.curp}`, 30, 11, { maxWidth: 120, align: 'center', lineBreak: false });         // CURP
-    doc.text(`${new Date().toISOString().substring(0, 10)}`, 30, 15, { maxWidth: 70, align: 'center', lineBreak: false });    // Fecha Expedicion
-    doc.text(`${data.telefono}`, 50, 20, { maxWidth: 70, align: 'center', lineBreak: false });      // Telefono
+    doc.text(`${data.curp}`, 40, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
+    doc.text(`${new Date().toISOString().substring(0, 10)}`, 40, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
+    doc.text(`${data.telefono}`, 62, 31, { maxWidth: 70, lineBreak: false });      // Telefono
 
     doc.save(savePath_pdf) ;
 
