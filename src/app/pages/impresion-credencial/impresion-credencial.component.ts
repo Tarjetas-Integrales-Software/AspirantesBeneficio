@@ -239,6 +239,13 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       });
 
       this.editAspiranteImpreso(aspirante);
+
+      Swal.fire({
+        title: 'Impresion Generada con Éxito !!!',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
     } catch (error) {
       console.error('Ocurrió un error:', error);
     }
