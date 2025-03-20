@@ -5,6 +5,13 @@ const path = require('path');
 const url = require('url');
 const fs = require("fs");
 
+//Impresion de Credencial
+const { exec } = require('child_process');
+const PDFDocument = require('pdfkit');
+// import { print } from "pdf-to-printer";
+const axios = require('axios');
+const { jsPDF } = require("jspdf");
+
 let mainWindow;
 let db; // Declare db as a global variable
 
@@ -56,10 +63,10 @@ function dropTablesIfExists() {
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
-        db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-        console.log("Tabla eliminada con éxito.");
+      db.prepare("DROP TABLE cat_ct_configuraciones;").run();
+      console.log("Tabla eliminada con exito.");
     } else {
-        console.log("La tabla no existe, no se elimino.");
+      console.log("La tabla no existe, no se elimino.");
     }
 
   } catch (error) {
@@ -78,15 +85,15 @@ function addColumnIfNotExists() {
 
     const rows = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
 
-      // Verificar si la columna 'modulo' ya existe
-      const columnExists_modulo = rows.some(row => row.name === 'modulo');
-      if (!columnExists_modulo) {
-        console.log("Agregando la columna 'modulo'...");
-        db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
-        console.log("Columna 'modulo' agregada con éxito.");
-      } else {
-          console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
-      }
+    // Verificar si la columna 'modulo' ya existe
+    const columnExists_modulo = rows.some(row => row.name === 'modulo');
+    if (!columnExists_modulo) {
+      console.log("Agregando la columna 'modulo'...");
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
+      console.log("Columna 'modulo' agregada con éxito.");
+    } else {
+      console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
+    }
   } catch (error) {
     console.error('Error altering table:', error);
   }
@@ -343,6 +350,222 @@ app.whenReady().then(() => {
     }
   });
 });
+
+// Obtener la lista de impresoras en Windows
+ipcMain.handle('get-printers', async () => {
+  return new Promise((resolve, reject) => {
+    exec('wmic printer get name', (error, stdout, stderr) => {
+      if (error) {
+        console.error('Error al obtener impresoras:', error);
+        reject(error);
+        return;
+      }
+
+      // Convertir la salida en una lista de impresoras
+      const printers = stdout.split('\n')
+        .map(line => line.trim())
+        .filter(line => line && line !== 'Name') // Filtrar líneas vacías y encabezado
+        .map(name => ({ name }));
+
+      resolve(printers);
+    });
+  });
+});
+
+
+ipcMain.on('print-id-card', async (event, data, name) => {
+  try {
+
+    //se crea el archivo pdf
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: [85, 54] // Ancho x Alto en mm
+    });
+
+    name = data.curp; //VARIABLE PARA EL NOMBRE DEL ARCHIVO PDF
+    const dirPath = path.join(app.getPath("userData"), "credencialesgeneradas");
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath); // Crear carpeta si no existe
+    }
+    const savePath_pdf = path.join(dirPath, name + ".pdf");
+
+    const imageUrl = data.photoPath;
+    const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
+    console.log(imagePath, 'imagePath');
+
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    fs.writeFileSync(imagePath, response.data);
+
+
+    /*----------------------------------------------*/
+
+
+    // Convertir imagen a Base64
+    const imageBase64 = fs.readFileSync(imagePath, { encoding: "base64" });
+    const imageFormat = path.extname(imagePath).toUpperCase().replace(".", ""); // Detectar formato (PNG/JPG)
+
+    // Agregar imagen al PDF
+    //doc.addImage(`data:image/${imageFormat};base64,${imageBase64}`, imageFormat, 20, 27, 70, 77);
+
+    // Agregar la imagen (especificando en milímetros: x, y, ancho, alto)
+    doc.addImage(
+      `data:image/${imageFormat};base64,${imageBase64}`, // URL base64 de la imagen
+      imageFormat,  // Formato de la imagen (JPEG, PNG, WEBP, etc.)
+      3,           // Posición x en milímetros
+      10,           // Posición y en milímetros
+      24,           // Ancho de la imagen en milímetros
+      28            // Alto de la imagen en milímetros
+    );
+
+    // Agregar datos a la credencial
+    doc.setFontSize(6);
+    doc.text(`${data.nombre_completo}`, 30.5, 16, { maxWidth: 120, lineBreak: false });         // Nombre
+
+    doc.setFontSize(8);
+    doc.text(`${data.curp}`, 30.5, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
+    doc.text(`${new Date().toISOString().substring(0, 10)}`, 30.5, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
+    doc.text(`${data.telefono}`, 55, 31, { maxWidth: 70, lineBreak: false });      // Telefono
+
+    doc.save(savePath_pdf);
+
+    event.reply("pdf-generado", `PDF guardado en: ${savePath_pdf}`);
+
+
+    // CODIGO DAVID INICIO
+
+    win = new BrowserWindow({ width: 200, height: 200, show: false });
+    // win.once('ready-to-show', () => win.hide())
+    win.loadFile(savePath_pdf);
+    // if pdf is loaded start printing.
+    win.webContents.on('did-finish-load', () => {
+      setTimeout(() => {
+        win.webContents.print({
+          silent: true,
+          deviceName: data.printer,
+          pageSize: { width: 54000, height: 85000 },
+          landscape: true,
+          margins: {
+            marginType: 'none',
+          },
+        }, (success, errorType) => {
+          if (success)
+            win.close();
+          else {
+            console.log(errorType);
+            win.close();
+          }
+        });
+      }, 1000); // Espera 1 segundo antes de imprimir
+    });
+
+    // CODIGO DAVID FIN
+
+    // Enviar el PDF a la impresora
+    /*
+    print(savePath_pdf, { printer: data.printer })
+      .then(() => console.log("Impresion completada"))
+      .catch((err) => console.error("Error al imprimir", err));
+    */
+
+    // Verificar si el archivo existe antes de intentar eliminarlo
+    try {
+      setTimeout(() => {
+        if (fs.existsSync(imagePath)) {
+          // El archivo existe, proceder a eliminarlo
+          fs.unlinkSync(imagePath);
+          console.log('El archivo ha sido eliminado exitosamente');
+        } else {
+          console.log('El archivo no existe, no se puede eliminar.');
+        }
+      }, 5000); // 5000 milisegundos = 5 segundos
+
+    } catch (err) {
+      console.error('Error al eliminar el archivo:', err);
+    }
+
+
+  } catch (error) {
+    console.error("Error al generar el PDF:", error);
+    event.reply("pdf-error", "Error al generar el PDF");
+  }
+
+
+
+
+});
+
+ipcMain.on('print-id-card_v2', async (event, data, name) => {
+  const doc = new PDFDocument({ size: [241, 153] });
+  name = data.curp; //VARIABLE PARA EL NOMBRE DEL ARCHIVO PDF
+  const dirPath = path.join(app.getPath("userData"), "credencialesgeneradas");
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath); // Crear carpeta si no existe
+  }
+  const savePath = path.join(dirPath, name + ".pdf");
+
+  // Crear un archivo usando fs.createWriteStream
+  const writeStream = fs.createWriteStream(savePath);
+  doc.pipe(writeStream);
+
+  // Descargar la imagen desde la URL
+  try {
+    console.log(data.photoPath);
+    /*
+    const response = await fetch(data.photoPath);
+    const arrayBuffer = await response.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    */
+
+    const imageUrl = data.photoPath;
+    const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
+    console.log(imagePath, 'imagePath');
+
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    //console.log(response,'response');
+    fs.writeFileSync(imagePath, response.data);
+
+    //const imageBuffer = Buffer.from(imagePath, 'binary');
+
+    // Insertar la imagen en el PDF
+    //doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
+
+    const imagePath2 = "C:\\Users\\Juan Pablo\\AppData\\Roaming\\Electron\\credencialesgeneradas\\AAAC031029HJCLLRA4.png";
+
+    if (!fs.existsSync(imagePath2)) {
+      console.error(`Error: La imagen no se encuentra en la ruta: ${imagePath2}`);
+    } else {
+      doc.image(imagePath2, 20, 27, { width: 70, height: 77 });
+    }
+
+
+  } catch (error) {
+    console.error("Error al descargar la imagen:", error);
+  }
+
+  // Agregar datos a la credencial
+  // doc.fontSize(8).text(`${data.cardNumber}`, 167, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
+  doc.fontSize(6).text(`${data.nombre_completo}`, 99, 40, { maxWidth: 120, align: 'center', lineBreak: false });         // Nombre
+  doc.fontSize(8).text(`${data.curp}`, 99, 60, { maxWidth: 120, align: 'center', lineBreak: false });         // CURP
+  doc.fontSize(8).text(`${new Date().toISOString().substring(0, 10)}`, 99, 82, { maxWidth: 70, align: 'center', lineBreak: false });    // Fecha Expedicion
+  doc.fontSize(8).text(`${data.telefono}`, 169, 82, { maxWidth: 70, align: 'center', lineBreak: false });      // Telefono
+
+  doc.end();
+
+  writeStream.on('finish', () => {
+    // Enviar el archivo a imprimir
+    /* 
+    print(savePath, { printer: data.printer })
+    .then(() => console.log('Impresion completada'))
+    .catch(err => console.error('Error al imprimir', err));
+    */
+  });
+
+  writeStream.on('error', (err) => {
+    console.error('Error al escribir el archivo PDF', err);
+  });
+});
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

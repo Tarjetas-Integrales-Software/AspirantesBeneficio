@@ -65,6 +65,9 @@ export class AspirantesBeneficioService {
   getAspirantesBeneficioPaginated(body: any): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_paginated', { ...body });
   }
+  getAspirantesBeneficioAprobadosPaginated(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_aprobados_paginated', { ...body });
+  }
 
   getAspiranteBeneficioId(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_with_joins_por_id', { id: id });
@@ -76,6 +79,9 @@ export class AspirantesBeneficioService {
 
   editAspiranteCredencializado(aspirante: Object, status: boolean): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit/credencializado', { ...aspirante, credencializado: status ? 1 : 0 });
+  }
+  editAspiranteImpreso(aspirante: Object, status: boolean): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/edit/impreso', { ...aspirante, impreso: status ? 1 : 0 });
   }
 
   deleteAspiranteBeneficio(id: number): Observable<any> {
