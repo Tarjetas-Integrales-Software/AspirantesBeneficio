@@ -8,7 +8,7 @@ const fs = require("fs");
 //Impresion de Credencial
 const { exec } = require('child_process');
 const PDFDocument = require('pdfkit');
-const printer = require('pdf-to-printer');
+// import { print } from "pdf-to-printer";
 const axios = require('axios');
 const { jsPDF } = require("jspdf");
 
@@ -32,7 +32,7 @@ function createWindow() {
   });
 
   // Abre consola
-  //mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -392,7 +392,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     const imageUrl = data.photoPath;
     const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
-    console.log(imagePath,'imagePath');
+    console.log(imagePath, 'imagePath');
 
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     fs.writeFileSync(imagePath, response.data);
@@ -412,30 +412,61 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     doc.addImage(
       `data:image/${imageFormat};base64,${imageBase64}`, // URL base64 de la imagen
       imageFormat,  // Formato de la imagen (JPEG, PNG, WEBP, etc.)
-      7,           // Posición x en milímetros
-      8.5,           // Posición y en milímetros
-      25,           // Ancho de la imagen en milímetros
-      30            // Alto de la imagen en milímetros
+      3,           // Posición x en milímetros
+      10,           // Posición y en milímetros
+      24,           // Ancho de la imagen en milímetros
+      28            // Alto de la imagen en milímetros
     );
 
     // Agregar datos a la credencial
     doc.setFontSize(6);
-    doc.text(`${data.nombre_completo}`, 40, 16.5, { maxWidth: 120, lineBreak: false });         // Nombre
+    doc.text(`${data.nombre_completo}`, 30.5, 16, { maxWidth: 120, lineBreak: false });         // Nombre
 
     doc.setFontSize(8);
-    doc.text(`${data.curp}`, 40, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
-    doc.text(`${new Date().toISOString().substring(0, 10)}`, 40, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
-    doc.text(`${data.telefono}`, 62, 31, { maxWidth: 70, lineBreak: false });      // Telefono
+    doc.text(`${data.curp}`, 30.5, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
+    doc.text(`${new Date().toISOString().substring(0, 10)}`, 30.5, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
+    doc.text(`${data.telefono}`, 55, 31, { maxWidth: 70, lineBreak: false });      // Telefono
 
-    doc.save(savePath_pdf) ;
+    doc.save(savePath_pdf);
 
     event.reply("pdf-generado", `PDF guardado en: ${savePath_pdf}`);
 
+
+    // CODIGO DAVID INICIO
+
+    win = new BrowserWindow({ width: 200, height: 200, show: false });
+    // win.once('ready-to-show', () => win.hide())
+    win.loadFile(savePath_pdf);
+    // if pdf is loaded start printing.
+    win.webContents.on('did-finish-load', () => {
+      setTimeout(() => {
+        win.webContents.print({
+          silent: true,
+          deviceName: data.printer,
+          pageSize: { width: 54000, height: 85000 },
+          landscape: true,
+          margins: {
+            marginType: 'none',
+          },
+        }, (success, errorType) => {
+          if (success)
+            win.close();
+          else {
+            console.log(errorType);
+            win.close();
+          }
+        });
+      }, 1000); // Espera 1 segundo antes de imprimir
+    });
+
+    // CODIGO DAVID FIN
+
     // Enviar el PDF a la impresora
-    printer.print(savePath_pdf, { printer: data.printer })
+    /*
+    print(savePath_pdf, { printer: data.printer })
       .then(() => console.log("Impresion completada"))
       .catch((err) => console.error("Error al imprimir", err));
-
+    */
 
     // Verificar si el archivo existe antes de intentar eliminarlo
     try {
@@ -454,7 +485,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     }
 
 
-  }catch (error) {
+  } catch (error) {
     console.error("Error al generar el PDF:", error);
     event.reply("pdf-error", "Error al generar el PDF");
   }
@@ -479,33 +510,33 @@ ipcMain.on('print-id-card_v2', async (event, data, name) => {
 
   // Descargar la imagen desde la URL
   try {
-      console.log(data.photoPath);
-      /*
-      const response = await fetch(data.photoPath);
-      const arrayBuffer = await response.arrayBuffer();
-      const imageBuffer = Buffer.from(arrayBuffer);
-      */
+    console.log(data.photoPath);
+    /*
+    const response = await fetch(data.photoPath);
+    const arrayBuffer = await response.arrayBuffer();
+    const imageBuffer = Buffer.from(arrayBuffer);
+    */
 
-      const imageUrl = data.photoPath;
-      const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
-      console.log(imagePath,'imagePath');
+    const imageUrl = data.photoPath;
+    const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
+    console.log(imagePath, 'imagePath');
 
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      //console.log(response,'response');
-      fs.writeFileSync(imagePath, response.data);
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    //console.log(response,'response');
+    fs.writeFileSync(imagePath, response.data);
 
-      //const imageBuffer = Buffer.from(imagePath, 'binary');
+    //const imageBuffer = Buffer.from(imagePath, 'binary');
 
-      // Insertar la imagen en el PDF
-      //doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
+    // Insertar la imagen en el PDF
+    //doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
 
-      const imagePath2 = "C:\\Users\\Juan Pablo\\AppData\\Roaming\\Electron\\credencialesgeneradas\\AAAC031029HJCLLRA4.png";
+    const imagePath2 = "C:\\Users\\Juan Pablo\\AppData\\Roaming\\Electron\\credencialesgeneradas\\AAAC031029HJCLLRA4.png";
 
-      if (!fs.existsSync(imagePath2)) {
-        console.error(`Error: La imagen no se encuentra en la ruta: ${imagePath2}`);
-      } else {
-        doc.image(imagePath2, 20, 27, { width: 70, height: 77 });
-      }
+    if (!fs.existsSync(imagePath2)) {
+      console.error(`Error: La imagen no se encuentra en la ruta: ${imagePath2}`);
+    } else {
+      doc.image(imagePath2, 20, 27, { width: 70, height: 77 });
+    }
 
 
   } catch (error) {
@@ -523,9 +554,11 @@ ipcMain.on('print-id-card_v2', async (event, data, name) => {
 
   writeStream.on('finish', () => {
     // Enviar el archivo a imprimir
-    printer.print(savePath, { printer: data.printer })
-      .then(() => console.log('Impresion completada'))
-      .catch(err => console.error('Error al imprimir', err));
+    /* 
+    print(savePath, { printer: data.printer })
+    .then(() => console.log('Impresion completada'))
+    .catch(err => console.error('Error al imprimir', err));
+    */
   });
 
   writeStream.on('error', (err) => {
