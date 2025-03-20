@@ -32,7 +32,7 @@ function createWindow() {
   });
 
   // Abre consola
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
