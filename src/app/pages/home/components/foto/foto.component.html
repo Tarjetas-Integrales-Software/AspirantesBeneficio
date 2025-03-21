@@ -58,21 +58,6 @@
         <span class="sr-only">Capture photo</span>
       </button>
 
-      <!-- Image format toggle -->
-      <!-- <button (click)="toggleImageFormat()"
-        class="w-[60px] h-[60px]  flex flex-col items-center justify-center bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 xl:mb-4">
-        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-switch-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 17h5l1.67 -2.386m3.66 -5.227l1.67 -2.387h6" /><path d="M18 4l3 3l-3 3" /><path d="M3 7h5l7 10h6" /><path d="M18 20l3 -3l-3 -3" /></svg>
-        {{ imageFormat.toUpperCase() }}
-      </button> -->
-
-      <!-- Download button -->
-      <!-- <button (click)="downloadPhoto()" [disabled]="!capturedImage"
-        class="rounded-full w-[60px] h-[60px] flex flex-col items-center justify-center bg-green-500 hover:bg-green-600 text-xs text-white font-bold p-2 focus:outline-none focus:ring-2 focus:ring-green-500 xl:mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
-        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="#ffffff"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-download"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
-        Descargar
-        ({{ imageFormat.toUpperCase() }})
-      </button> -->
-
       <!-- Register button -->
       @if(!datosGeneralesComponent.editar) {
       <button (click)="onSubmit()" [disabled]="!capturedImage"
@@ -104,4 +89,33 @@
 
     </div>
   </div>
+
+  <div class="basis-full bg-gray-100">
+    <div class="py-2 flex gap-2 items-center flex-row justify-left  bg-white border-0 shadow-lg sm:rounded-3xl px-2">
+      <div class="">
+        <mat-checkbox class="example-margin">Validado por SSAS</mat-checkbox>
+      </div>
+      <div class="w-full p-3">
+        <div
+          class="relative border-dotted h-10 rounded-lg border-dashed border-2 border-blue-700 bg-gray-100 flex justify-center items-center">
+
+          <div class="absolute">
+            <div class="flex gap-2 items-center text-gray-400">
+              <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-folder-open"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" /></svg>
+                <span class="block text-gray-400 " id="fileName">{{ lblUploadingFile ? lblUploadingFile : 'Adjunte sus archivos aquí' }}</span>
+            </div>
+          </div>
+
+          <input type="file" class="h-full w-full opacity-0" name="" (change)="onFileSelected($event)">
+
+        </div>
+      </div>
+      <!-- <div class="">
+          <input type="file" id="txtFile" accept=".pdf">
+          <label style="font-weight: 500;">documentos subido</label> -->
+      <!-- <label style="font-weight: 500;">{{lblUploadingFile}}</label> -->
+      <!-- </div> -->
+    </div>
+  </div>
+
 </div>

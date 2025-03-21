@@ -10,11 +10,12 @@ import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from "@angular/router";
 import { switchMap } from "rxjs";
 import { environment } from "../../../../../environments/environment";
+import {MatCheckboxModule} from '@angular/material/checkbox';
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'fotoComponent',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatCheckboxModule],
   templateUrl: './foto.component.html',
   styleUrl: './foto.component.scss'
 })
@@ -43,32 +44,57 @@ export class FotoComponent implements OnInit {
   editFoto: Aspirante | null = null
   imgFoto = signal<string | null>(null);
 
+  documentFileLoaded: boolean = false;
+  lblUploadingFile: string = '';
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
+
   ngOnInit() {
     this.getAvailableCameras()
 
     this.activatedRoute.params
-            .pipe(
-              switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
-            ).subscribe(aspirante => {
-              if (!aspirante) {
-                this.router.navigateByUrl('/');
-                return;
-              }
-              const imgfoto = aspirante.data;
-              console.log("Aspirante   a editar:", imgfoto.id_foto);
+      .pipe(
+        switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
+      ).subscribe(aspirante => {
+        if (!aspirante) {
+          this.router.navigateByUrl('/');
+          return;
+        }
+        const imgfoto = aspirante.data;
+        console.log("Aspirante   a editar:", imgfoto.id_foto);
 
-              this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
-                next: (response) => {
-                  console.log("Foto del aspirante:", response);
-                  this.imgFoto.set(environment.baseUrl + '/' + response.data);
-                },
-                error: (err) => {
-                  console.error('Error fetching photo:', err);
-                }
-                });
+        this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
+          next: (response) => {
+            console.log("Foto del aspirante:", response);
+            this.imgFoto.set(environment.baseUrl + '/' + response.data);
+          },
+          error: (err) => {
+            console.error('Error fetching photo:', err);
+          }
+        });
 
-            });
+      });
 
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos PDF', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+    }
   }
 
   async getAvailableCameras() {
