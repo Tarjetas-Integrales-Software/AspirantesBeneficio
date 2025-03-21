@@ -153,6 +153,22 @@ function initializeDatabase() {
         updated_at TEXT,
         deleted_at TEXT
     );
+    CREATE TABLE IF NOT EXISTS ct_fotos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        archivo TEXT NOT NULL,
+        path TEXT NOT NULL,
+        archivoOriginal TEXT NOT NULL,
+        extension TEXT NOT NULL,
+        created_id INTEGER NOT NULL,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
 
     CREATE TABLE IF NOT EXISTS sy_aspirantes_beneficio_fotos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -383,5 +399,24 @@ ipcMain.on("get-image", (event, name) => {
       return;
     }
     event.reply("image-read-success", data);
+  });
+});
+
+ipcMain.on("save-pdf", (event, pdfData, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const savePath = path.join(dirPath, name + ".pdf");
+
+  // Crear la carpeta si no existe
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  // Guardar el archivo PDF
+  fs.writeFile(savePath, pdfData, (err) => {
+    if (err) {
+      console.error("Error al guardar el PDF:", err);
+      return;
+    }
+    console.log("PDF guardado en:", savePath);
   });
 });

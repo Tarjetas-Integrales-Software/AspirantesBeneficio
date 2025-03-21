@@ -43,6 +43,7 @@ export class FotoComponent implements OnInit {
   downloadPath = "C:/Users/DELL 540/AppData/Roaming/Aspirantes Beneficio/imagenesBeneficiarios"
   editFoto: Aspirante | null = null
   imgFoto = signal<string | null>(null);
+  isCheckboxChecked: boolean = false;
 
   documentFileLoaded: boolean = false;
   lblUploadingFile: string = '';
@@ -157,6 +158,17 @@ export class FotoComponent implements OnInit {
     }
   }
 
+  savePdf(name: string) {
+    if (this.documentFile.file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        ipcRenderer.send("save-pdf", Buffer.from(arrayBuffer), name);
+      };
+      reader.readAsArrayBuffer(this.documentFile.file);
+    }
+  }
+
   toggleImageFormat() {
     this.imageFormat = this.imageFormat === "webp" ? "jpeg" : "webp"
     if (this.capturedImage) {
@@ -219,7 +231,6 @@ export class FotoComponent implements OnInit {
       this.datosGeneralesComponent.onSafe();
 
       try {
-
         if (this.capturedImage) {
           const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
           // Obtenemos los datos del formulario
@@ -229,6 +240,12 @@ export class FotoComponent implements OnInit {
           await this.uploadFile(); // Subir la foto después de crear el aspirante
 
           this.savePhoto(form.curp);
+
+          // Guardar el archivo PDF si se ha cargado
+          if (this.documentFile.file) {
+            this.savePdf(form.curp);
+          }
+
           // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
           const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
           const lastIdFoto = await this.fotosService.getLastId() || 0;
@@ -241,6 +258,7 @@ export class FotoComponent implements OnInit {
             created_id: 0,
             created_at: ""
           });
+
           Swal.fire({
             title: 'Registro exitoso!',
             icon: 'success',
@@ -248,8 +266,10 @@ export class FotoComponent implements OnInit {
             showConfirmButton: false
           });
 
-          //borramos la foto y datos del formulario
+          // Borramos la foto, el archivo PDF y los datos del formulario
           this.capturedImage = null;
+          this.documentFile.file = null;
+          this.lblUploadingFile = '';
           this.datosGeneralesComponent.myForm.reset();
           this.datosGeneralesComponent.myForm.markAsPristine();
           this.datosGeneralesComponent.disabledGradoCarrera();
