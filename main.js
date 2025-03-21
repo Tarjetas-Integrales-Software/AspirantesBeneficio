@@ -32,7 +32,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -554,7 +554,7 @@ ipcMain.on('print-id-card_v2', async (event, data, name) => {
 
   writeStream.on('finish', () => {
     // Enviar el archivo a imprimir
-    /* 
+    /*
     print(savePath, { printer: data.printer })
     .then(() => console.log('Impresion completada'))
     .catch(err => console.error('Error al imprimir', err));

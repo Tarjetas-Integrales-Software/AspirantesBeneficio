@@ -26,9 +26,9 @@ export class UtilService {
     });
   }
 
-  enviarDatosAlServidor(datos: any[]) {
-    // this.curpsAprobadasSsasService.createCurpAprobadaSsas(datos);
-  }
+  // enviarDatosAlServidor(datos: any[]) {
+  //    this.curpsAprobadasSsasService.createCurpAprobadaSsas(datos);
+  // }
 
 
 }

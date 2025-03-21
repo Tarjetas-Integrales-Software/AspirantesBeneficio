@@ -6,6 +6,7 @@ import {
   ViewChild,
   inject,
   ChangeDetectorRef,
+  ElementRef,
 } from '@angular/core';
 const { ipcRenderer } = (window as any).require('electron');
 import { FormsModule, FormGroup, FormBuilder } from '@angular/forms';
@@ -39,6 +40,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { FotosService } from '../../services/CRUD/fotos.service';
 import { StorageService } from '../../services/storage.service';
 import { UtilService } from '../../services/util.service';
+import { AspirantesAprobadosService } from '../../services/CRUD/aspirantes-aprobados.service';
+import { CurpAprobadaSsas, CurpsAprobadasSsasService } from '../../services/CRUD/curps-aprobadas-ssas.service';
 
 export interface AspiranteBeneficio {
   id: number;
@@ -89,7 +92,8 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
 
   formImpresion: FormGroup;
 
-  rolesConPermiso: number[] = [103, 104];
+  rolesConPermisoAdmin: number[] = [104];
+  rolesConPermisoOperador: number[] = [103, 104];
   rolesUsuario: Array<{ fkRole: number }> = [];
 
   aspiranteBeneficioFoto: string = "";
@@ -116,7 +120,10 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
     private storageService: StorageService,
-    private utilService: UtilService
+    private utilService: UtilService,
+    private aspirantesAprobadosService: AspirantesAprobadosService,
+    private curpsAprobadasSsasService: CurpsAprobadasSsasService
+
   ) {
     this.dataSource = new MatTableDataSource();
 
@@ -128,6 +135,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       search: '',
       fechaInicio: new Date(),
       fechaFin: new Date(),
+      file: ''
     });
   }
 
@@ -175,11 +183,19 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       });
   }
 
-  get permisoAcciones(): boolean {
+  get permisoAccionesOperador(): boolean {
     // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
     return this.rolesUsuario.some(
       (perfil) =>
-        perfil.fkRole && this.rolesConPermiso.includes(Number(perfil.fkRole))
+        perfil.fkRole && this.rolesConPermisoOperador.includes(Number(perfil.fkRole))
+    );
+  }
+
+  get permisoAccionesAdmin(): boolean {
+    // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
+    return this.rolesUsuario.some(
+      (perfil) =>
+        perfil.fkRole && this.rolesConPermisoAdmin.includes(Number(perfil.fkRole))
     );
   }
 
@@ -280,12 +296,163 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     });
   }
 
-  async cargarArchivo(event: any) {
-    const archivo = event.target.files[0];
+  // EXPORTAR A EXCEL Y PDF
+
+  getFileName(): string {
+    return "AspirantesAprobados";
+  }
+
+  downloadPdf() {
+    const body = this.getBody();
+
+    this.aspirantesAprobadosService.getAspirantesAprobadosAll(body).subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.nombre_modalidad,
+            aspirante.grado,
+            aspirante.modulo,
+            aspirante.fecha_evento,
+            aspirante.email_cajero
+          ];
+        });
+
+        const doc = new jsPDF({ orientation: 'landscape' });
+        autoTable(doc, {
+          theme: 'grid',
+          head: [[
+            "CURP",
+            "Nombre Completo",
+            "Nombre Modalidad",
+            "Grado",
+            "Módulo",
+            "Fecha Evento",
+            "Email Cajero"
+          ]],
+          body: prepare,
+          bodyStyles: { fontSize: 8 }
+        });
+        doc.save(`${this.getFileName()}`);
+      }
+    });
+  }
+
+  downloadExcel() {
+    const body = this.getBody();
+
+    this.aspirantesAprobadosService.getAspirantesAprobadosAll(body).subscribe(response => {
+      if (response["response"]) {
+        const prepare = response["data"].map((aspirante: any) => {
+          return [
+            aspirante.id,
+            aspirante.id_modalidad,
+            aspirante.curp,
+            aspirante.nombre_completo,
+            aspirante.nombre_modalidad,
+            aspirante.modulo,
+            aspirante.fecha_evento,
+            aspirante.email_cajero,
+            aspirante.telefono,
+            aspirante.email,
+            aspirante.fecha_nacimiento,
+            aspirante.estado,
+            aspirante.municipio,
+            aspirante.ciudad,
+            aspirante.cp,
+            aspirante.colonia,
+            aspirante.tipo_asentamiento,
+            aspirante.tipo_zona,
+            aspirante.domicilio,
+            aspirante.grado,
+            aspirante.tipo_carrera,
+            aspirante.carrera,
+            aspirante.com_obs,
+          ];
+        });
+
+        prepare.unshift([
+          "ID",
+          "ID Modalidad",
+          "CURP",
+          "Nombre Completo",
+          "Nombre Modalidad",
+          "Módulo",
+          "Fecha Evento",
+          "Email Cajero",
+          "Teléfono",
+          "Email",
+          "Fecha Nacimiento",
+          "Estado",
+          "Municipio",
+          "Ciudad",
+          "Código Postal",
+          "Colonia",
+          "Tipo Asentamiento",
+          "Tipo Zona",
+          "Domicilio",
+          "Grado",
+          "Tipo Carrera",
+          "Carrera",
+          "Comentarios / Observaciones"
+        ]);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(prepare);
+
+        // Crea un libro de trabajo y agrega la hoja
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Aspirantes');
+
+        // Genera el archivo y lo descarga
+        XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
+      }
+    });
+  }
+
+
+
+  //IMPORTAR EXCEL
+  lblUploadingFile: string = '';
+  documentFileLoaded: boolean = false;
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    console.log(file,'file');
+    if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+
+      console.log(this.documentFile,'this.documentFile');
+      console.log(this.documentFile.file,'this.documentFile.file');
+
+      this.importarExcel(this.documentFile.file);
+
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+    }
+  }
+
+  async importarExcel(file: any) {
+    const archivo = file; //event.target.files[0];
     if (archivo) {
       this.datosExcel = await this.utilService.leerExcel(archivo);
       console.log('Datos Cargados:', this.datosExcel);
     }
+
+    this.subirDatos();
   }
 
   subirDatos() {
@@ -294,18 +461,66 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    // this.utilService.enviarDatosAlServidor(this.datosExcel).subscribe({
-    //   next: (res) => {
-    //     console.log('Respuesta del servidor:', res);
-    //     this.mensaje = 'Datos importados exitosamente.';
-    //     this.datosExcel = [];
-    //   },
-    //   error: (err) => {
-    //     console.error('Error al enviar los datos:', err);
-    //     this.mensaje = 'Hubo un error al importar los datos.';
-    //   }
-    // });
+    this.curpsAprobadasSsasService.BulkInsertCurpAprobadaSsas (this.datosExcel).subscribe({
+      next: (res) => {
+        console.log('Respuesta del servidor:', res);
+        this.mensaje = 'Datos importados exitosamente.';
+
+        this.datosExcel = [];
+        this.resetForm();
+
+        Swal.fire({
+          title: 'Importacion Generada con Éxito !!!',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+
+
+
+      },
+      error: (err) => {
+        console.error('Error al enviar los datos:', err);
+        this.mensaje = 'Hubo un error al importar los datos.';
+        Swal.fire({
+          title: 'Ocurrio un Error en la Importacion',
+          icon: 'error',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    });
   }
+
+  @ViewChild('fileInput') fileInput!: ElementRef;
+
+  resetForm() {
+    this.formImpresion.reset();
+    this.lblUploadingFile = '';
+    this.fileInput.nativeElement.value = ''; // Resetear solo el input file
+  }
+
+  deleteCurpAprobada(id: number): void {
+      Swal.fire({
+        icon: 'warning',
+        title: '¿Estas seguro de eliminar el registro?',
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed)
+          this.curpsAprobadasSsasService.deleteCurpAprobada(id).subscribe({
+            next: ((response) => {
+              Swal.fire('Eliminado con éxito!', '', 'success')
+              this.getAspirantesBeneficio();
+            }),
+            error: ((error) => { })
+          });
+      })
+
+    }
 
 
 }
