@@ -443,7 +443,7 @@ export class DialogAspiranteBeneficio implements OnInit {
     });
   }
 
-  getAspiranteFotoId(id: number): void {
+  getAspiranteFotoId(id: string): void {
     this.aspiranteBeneficioFoto = 'assets/default-profile.png';
 
     this.fotosService.getAspiranteFotoId(id).subscribe({

@@ -27,16 +27,16 @@ export class LoginComponent implements OnInit {
 
   loading: boolean = false;
 
-  constructor(private fb: FormBuilder
-    , private router: Router
-    , private loginService: LoginService
-    , private storageService: StorageService
-    , private usersService: UsersService
-    , private networkStatusService: NetworkStatusService
-    , private gradosService: GradosService
-    , private tiposCarrerasService: TiposCarrerasService
-    , private carrerasService: CarrerasService
-    , private modulosService: ModulosService
+  constructor(private fb: FormBuilder,
+    private router: Router,
+    private loginService: LoginService,
+    private storageService: StorageService,
+    private usersService: UsersService,
+    private networkStatusService: NetworkStatusService,
+    private gradosService: GradosService,
+    private tiposCarrerasService: TiposCarrerasService,
+    private carrerasService: CarrerasService,
+    private modulosService: ModulosService
   ) {
 
     this.loginForm = this.fb.group({
@@ -89,7 +89,7 @@ export class LoginComponent implements OnInit {
       this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
         .then(existe => {
           if (existe == true) {
-            this.router.navigate(['/inicio/registro']);
+            this.router.navigate(['/inicio/configuraciones']);
           } else {
             Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
           }
