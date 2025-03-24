@@ -2,12 +2,15 @@ import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, Even
 import { CommonModule } from "@angular/common"
 import { FormGroup, FormsModule } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'app-camara',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
   templateUrl: './camara.component.html',
   styleUrl: './camara.component.scss'
 })
@@ -118,5 +121,5 @@ export class CamaraComponent implements OnInit {
     }
   }
 
-  async onSubmit(): Promise<void> {}
+  async onSubmit(): Promise<void> { }
 }
