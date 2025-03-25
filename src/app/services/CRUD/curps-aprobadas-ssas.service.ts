@@ -24,13 +24,26 @@ export class CurpsAprobadasSsasService {
   constructor(private databaseService: DatabaseService) { }
 
   BulkInsertCurpAprobadaSsas(curpAprobadaSsas: CurpAprobadaSsas[]): Observable<any> {
-
-  // for (let index = 0; index < curpAprobadaSsas.length; index++) {
-  //     const element = curpAprobadaSsas[index];
-      return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/bulk-insert', { registros : curpAprobadaSsas });
-    // }
-    // return of(true);
+    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/bulk-insert', { registros : curpAprobadaSsas });
   }
+
+
+  BulkInsertCurpAprobadaSsas_InBatches(data: any[], batchSize: number = 250): Observable<any> {
+    const batches = [];
+    for (let i = 0; i < data.length; i += batchSize) {
+      batches.push(data.slice(i, i + batchSize));
+    }
+
+    batches.forEach((batch, index) => {
+      this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/bulk-insert', { registros: batch }).subscribe(response => {
+        console.log(`Lote ${index + 1} enviado correctamente`, response);
+      });
+    });
+
+    return of(null);
+  }
+
+
 
   deleteCurpAprobada(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/delete', { id: id });

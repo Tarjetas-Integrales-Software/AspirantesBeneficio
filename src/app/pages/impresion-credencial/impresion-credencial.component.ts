@@ -461,7 +461,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.curpsAprobadasSsasService.BulkInsertCurpAprobadaSsas (this.datosExcel).subscribe({
+    this.curpsAprobadasSsasService.BulkInsertCurpAprobadaSsas_InBatches(this.datosExcel).subscribe({
       next: (res) => {
         console.log('Respuesta del servidor:', res);
         this.mensaje = 'Datos importados exitosamente.';
