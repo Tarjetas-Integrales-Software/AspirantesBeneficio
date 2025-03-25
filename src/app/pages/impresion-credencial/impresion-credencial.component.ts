@@ -42,6 +42,9 @@ import { StorageService } from '../../services/storage.service';
 import { UtilService } from '../../services/util.service';
 import { AspirantesAprobadosService } from '../../services/CRUD/aspirantes-aprobados.service';
 import { CurpAprobadaSsas, CurpsAprobadasSsasService } from '../../services/CRUD/curps-aprobadas-ssas.service';
+import { ModulosService } from '../../services/CRUD/modulos.service';
+import { ModalidadesService } from '../../services/CRUD/modalidades.service';
+import { UsersService } from '../../services/CRUD/users.service';
 
 export interface AspiranteBeneficio {
   id: number;
@@ -87,6 +90,10 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
   ];
   dataSource: MatTableDataSource<AspiranteBeneficio>;
 
+  modulos: any[] = [];
+  modalidades: any[] = [];
+  cajeros: any[] = [];
+
   printers: any[] = [];
   selectedPrinter: string = '';
 
@@ -122,7 +129,10 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     private storageService: StorageService,
     private utilService: UtilService,
     private aspirantesAprobadosService: AspirantesAprobadosService,
-    private curpsAprobadasSsasService: CurpsAprobadasSsasService
+    private curpsAprobadasSsasService: CurpsAprobadasSsasService,
+    private modulosService: ModulosService,
+    private modalidadesService: ModalidadesService,
+    private usersService: UsersService,
 
   ) {
     this.dataSource = new MatTableDataSource();
@@ -133,8 +143,11 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     this.formImpresion = this.fb.nonNullable.group({
       impresora: '',
       search: '',
+      modulo: '',
+      modalidad: '',
       fechaInicio: new Date(),
       fechaFin: new Date(),
+      cajero: '',
       file: ''
     });
   }
@@ -145,6 +158,9 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     }
     this.getAspirantesBeneficio();
     this.getPrinters();
+    this.getModulos();
+    this.getModalidades();
+    this.getCajeros();
   }
 
   ngAfterViewInit() {
@@ -183,6 +199,49 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       });
   }
 
+  getModulos(): void {
+    this.modulosService.getModulos().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.modulos = response.data;
+        }
+      }),
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
+  }
+  getModalidades(): void {
+    this.modalidadesService.getModalidades().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.modalidades = response.data.filter((modalidad: { id_tipo_beneficio: string }) => modalidad.id_tipo_beneficio == "2");
+        }
+      }),
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
+  }
+  getCajeros(): void {
+    this.usersService.getUsers().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.cajeros = response.data["usuarios_aspben"];
+        }
+      }),
+      complete: () => {
+        this.cdr.detectChanges();
+      },
+      error: ((error) => {
+      })
+    });
+  }
+
   get permisoAccionesOperador(): boolean {
     // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
     return this.rolesUsuario.some(
@@ -206,8 +265,11 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     page?: number;
     per_page?: number;
   } {
-    const _fechaInicio = this.formImpresion.get('fechaInicio')?.value,
+    const _modulo = this.formImpresion.get('modulo')?.value,
+      _modalidad = this.formImpresion.get('modalidad')?.value,
+      _fechaInicio = this.formImpresion.get('fechaInicio')?.value,
       _fechaFin = this.formImpresion.get('fechaFin')?.value,
+      _cajero = this.formImpresion.get('cajero')?.value,
       _search = this.formImpresion.get('search')?.value;
 
     const body: any = {};
@@ -217,10 +279,11 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       body['page'] = this.currentPage + 1;
     }
 
-    if (_fechaInicio !== null)
-      body['fechaInicio'] = _fechaInicio.toISOString().substring(0, 10);
-    if (_fechaFin !== null)
-      body['fechaFin'] = _fechaFin.toISOString().substring(0, 10);
+    if (_modulo !== "") body['modulo'] = _modulo;
+    if (_modalidad !== "") body['modalidad'] = _modalidad;
+    if (_fechaInicio !== null) body['fechaInicio'] = _fechaInicio.toISOString().substring(0, 10);
+    if (_fechaFin !== null) body['fechaFin'] = _fechaFin.toISOString().substring(0, 10);
+    if (_cajero !== "") body['cajero'] = _cajero;
     if (_search !== '') body['search'] = _search;
 
     return body;

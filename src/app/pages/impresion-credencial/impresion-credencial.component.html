@@ -18,6 +18,36 @@
         </mat-form-field>
 
         <mat-form-field>
+          <mat-label>Módulo</mat-label>
+          <mat-select formControlName="modulo">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (modulo of modulos; track modulo) {
+            <mat-option [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Modalidad</mat-label>
+          <mat-select formControlName="modalidad">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (modalidad of modalidades; track modalidad) {
+            <mat-option [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Cajero</mat-label>
+          <mat-select formControlName="cajero">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (cajero of cajeros; track cajero) {
+            <mat-option [value]="cajero.id">{{cajero.email}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
           <mat-label>Fecha de registro</mat-label>
           <mat-date-range-input [rangePicker]="picker">
             <input
