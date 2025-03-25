@@ -25,10 +25,4 @@ export class UtilService {
       reader.readAsBinaryString(archivo);
     });
   }
-
-  enviarDatosAlServidor(datos: any[]) {
-    // this.curpsAprobadasSsasService.createCurpAprobadaSsas(datos);
-  }
-
-
 }
