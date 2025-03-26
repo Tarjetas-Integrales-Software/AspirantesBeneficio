@@ -25,7 +25,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -56,10 +56,10 @@ function dropTablesIfExists() {
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
-        db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-        console.log("Tabla eliminada con éxito.");
+      db.prepare("DROP TABLE cat_ct_configuraciones;").run();
+      console.log("Tabla eliminada con éxito.");
     } else {
-        console.log("La tabla no existe, no se elimino.");
+      console.log("La tabla no existe, no se elimino.");
     }
 
   } catch (error) {
@@ -78,15 +78,15 @@ function addColumnIfNotExists() {
 
     const rows = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
 
-      // Verificar si la columna 'modulo' ya existe
-      const columnExists_modulo = rows.some(row => row.name === 'modulo');
-      if (!columnExists_modulo) {
-        console.log("Agregando la columna 'modulo'...");
-        db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
-        console.log("Columna 'modulo' agregada con éxito.");
-      } else {
-          console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
-      }
+    // Verificar si la columna 'modulo' ya existe
+    const columnExists_modulo = rows.some(row => row.name === 'modulo');
+    if (!columnExists_modulo) {
+      console.log("Agregando la columna 'modulo'...");
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
+      console.log("Columna 'modulo' agregada con éxito.");
+    } else {
+      console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
+    }
   } catch (error) {
     console.error('Error altering table:', error);
   }
@@ -137,22 +137,6 @@ function initializeDatabase() {
         deleted_at TEXT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS ct_fotos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_status INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        tipo TEXT NOT NULL,
-        archivo TEXT NOT NULL,
-        path TEXT NOT NULL,
-        archivoOriginal TEXT NOT NULL,
-        extension TEXT NOT NULL,
-        created_id INTEGER NOT NULL,
-        updated_id INTEGER,
-        deleted_id INTEGER,
-        created_at TEXT NOT NULL,
-        updated_at TEXT,
-        deleted_at TEXT
-    );
     CREATE TABLE IF NOT EXISTS ct_fotos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_status INTEGER NOT NULL,
@@ -327,6 +311,38 @@ function initializeDatabase() {
         deleted_at TEXT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS ct_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        archivo TEXT NOT NULL,
+        path TEXT NOT NULL,
+        archivoOriginal TEXT NOT NULL,
+        extension TEXT NOT NULL,
+        created_id INTEGER NOT NULL,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS sy_aspirantes_beneficio_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_aspirante_beneficio INTEGER,
+        id_documento INTEGER,
+        id_status INTEGER,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -418,5 +434,19 @@ ipcMain.on("save-pdf", (event, pdfData, name) => {
       return;
     }
     console.log("PDF guardado en:", savePath);
+  });
+});
+
+ipcMain.on("get-pdf", (event, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const filePath = path.join(dirPath+'', name + ".pdf");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer la pdf:", err);
+      event.reply("pdf-read-error", err);
+      return;
+    }
+    event.reply("pdf-read-success", data);
   });
 });
