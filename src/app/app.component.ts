@@ -12,6 +12,8 @@ import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
 import { environment } from '../environments/environment';
+import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes-beneficio-documentos.service';
+import { DocumentosService } from './services/CRUD/documentos.service';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +36,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
     private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
-    private curpsRegistradasService: CurpsRegistradasService
+    private curpsRegistradasService: CurpsRegistradasService,
+    private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
+    private documentosService: DocumentosService
   ) { }
 
   ngOnInit(): void {
@@ -42,6 +46,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncCurps();
 
     this.startSyncInterval();
+    this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
   }
 
@@ -81,6 +86,16 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  private startSyncDocumentosInterval(): void {
+    this.syncSubscription = interval(60000).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.syncAspirantesBeneficioDocumento();
+    });
+  }
+
   private startSyncCurpInterval(): void {
     this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
@@ -91,6 +106,85 @@ export class AppComponent implements OnInit, OnDestroy {
 
       this.validarSincronizacionCompleta(); //EMD
     });
+  }
+
+  async syncAspirantesBeneficioDocumento(): Promise<void> {
+    try {
+      const items = await this.aspirantesBeneficioDocumentosService.consultarRelacionesDesincronizadas();
+
+      for (const relacion of items) {
+        const { id_aspirante_beneficio, id_documento } = relacion;
+
+        try {
+
+          const documento = await this.documentosService.consultarDocumentoPorId(id_documento);
+          // Obtener la curp del aspirante
+          const { curp } = await this.aspirantesBeneficioService.consultarAspirantePorId(id_aspirante_beneficio);
+
+          const nuevoAspiranteResponse = await this.aspirantesBeneficioService.consultarAspirantePorCurp(curp).toPromise();
+
+          const nuevoAspirante = nuevoAspiranteResponse!.data[0] || {};
+          
+          let nuevoDocumento = {};
+          let nuevoIdDocumento: number | null = null;
+          
+          // Crear documento y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.documentosService.createDocumento(documento).subscribe({ // falta crear la base de datos de documentos en el backend
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdDocumento = response.data.id;
+                  nuevoDocumento = response.data;
+                  console.log("Documento creado:");
+                }
+                
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear documento:", error);
+                reject(error);
+              }
+            });
+          });
+
+          console.log("Nuevo id Aspirante:", nuevoAspirante.id, "Nuevo id Documento:", nuevoIdDocumento);
+        
+          // Verificamos que los IDs sean números válidos antes de crear la relación 
+          if (typeof nuevoAspirante.id === "number" && typeof nuevoIdDocumento === "number") {
+            const nuevaRelacion = {
+              id_aspirante_beneficio: nuevoAspirante!.id,
+              id_documento: nuevoIdDocumento
+            };
+
+            this.aspirantesBeneficioDocumentosService.createRelacion(nuevaRelacion).subscribe({ // falta crear la base de datos de la relación de documentos con aspirantes en el backend
+              next: (response) => {
+                if (response.response) {
+                  this.aspirantesBeneficioDocumentosService.eliminarRelacion(relacion.id);
+
+                  console.log("Relación creada y archivo subido:");
+
+                  this.documentosService.registerDocumento(nuevoAspirante, nuevoDocumento)
+                }
+              },
+              error: (error) => {
+                this.eliminarRelacionadosDocumento(nuevoAspirante.id, nuevoIdDocumento);
+
+                console.error("Error al crear relación:", error);
+              }
+            });
+          } else {
+            console.error("No se pudo crear la relación porque faltan IDs válidos");
+
+            this.eliminarRelacionadosDocumento(nuevoAspirante.id, nuevoIdDocumento);
+          }
+
+        } catch (error) {
+          console.error("Error obteniendo aspirante o documento:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
   }
 
   async syncAspirantesBeneficio(): Promise<void> {
@@ -179,12 +273,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  async validarSincronizacionCompleta(): Promise<void>{
+  async validarSincronizacionCompleta(): Promise<void> {
     const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
-    if(items.length > 0){
+    if (items.length > 0) {
       console.log("No se ha sincronizado todo");
       return this.aspirantesBeneficioFotosService.updateSyncStatus(false);
-    }else{
+    } else {
       console.log("Se ha sincronizado");
       return this.aspirantesBeneficioFotosService.updateSyncStatus(true);
     }
@@ -212,6 +306,26 @@ export class AppComponent implements OnInit, OnDestroy {
     if (typeof nuevoIdFoto === "number") this.fotosService.deleteFoto(nuevoIdFoto).subscribe({
       next: async (response) => {
         if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
+  }
+
+  eliminarRelacionadosDocumento(nuevoIdAspirante: null | number, nuevoIdDocumento: null | number): void {
+    if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
+
+    if (typeof nuevoIdDocumento === "number") this.documentosService.deleteDocumento(nuevoIdDocumento).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdDocumento = null;
       },
       error: (error) => {
         console.error("Error al crear aspirante:", error);
