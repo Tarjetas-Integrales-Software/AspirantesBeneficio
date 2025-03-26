@@ -17,7 +17,7 @@ export class DocumentosService {
 
   createDocumento(documento: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/documentos/register', { ...documento });
-  } 
+  }
 
   // Crear un nuevo documento
   async crearDocumento(documento: {
@@ -80,28 +80,32 @@ export class DocumentosService {
     const { archivo, fecha, tipo } = documento;
     const { id, curp } = aspirante;
 
-    debugger;
-    const fileData = await this.getFileFromMainProcess(curp);
+    try {
+        // Leer el archivo PDF desde el proceso principal
+        const fileData = await this.getFileFromMainProcess(curp);
 
-    
-    // Crear el FormData
-    const formData = new FormData();
-    formData.append('fecha', fecha);
-    formData.append('tipo', tipo);
-    formData.append('curp', curp);
-    formData.append('id_aspirante_beneficio', id.toString());
+        // Crear el FormData
+        const formData = new FormData();
+        formData.append('fecha', fecha);
+        formData.append('tipo', tipo);
+        formData.append('curp', curp);
+        formData.append('id_aspirante_beneficio', id.toString());
 
-    // Convertir el buffer a un archivo Blob
-    const blob = new Blob([fileData], { type: 'application/pdf' });
-    formData.append('file', blob, archivo);
+        // Convertir el buffer a un archivo Blob con el tipo correcto
+        const blob = new Blob([fileData], { type: 'application/pdf' });
+        formData.append('file', blob, archivo);
 
-    // Enviar la petición POST
-    return this.http.post(environment.apiUrl + '/lic/aspben/registrar-documentos', formData, {
-      headers: new HttpHeaders({
-        'Accept': 'application/json'
-      })
-    }).toPromise();
-  }
+        // Enviar la petición POST al backend
+        return await this.http.post(environment.apiUrl + '/lic/aspben/registrar-documentos', formData, {
+            headers: new HttpHeaders({
+                'Accept': 'application/json'
+            })
+        }).toPromise();
+    } catch (error) {
+        console.error("Error al registrar el documento:", error);
+        throw error;
+    }
+}
 
   private getFileFromMainProcess(fileName: string): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {

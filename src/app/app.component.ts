@@ -124,10 +124,10 @@ export class AppComponent implements OnInit, OnDestroy {
           const nuevoAspiranteResponse = await this.aspirantesBeneficioService.consultarAspirantePorCurp(curp).toPromise();
 
           const nuevoAspirante = nuevoAspiranteResponse!.data[0] || {};
-          
+
           let nuevoDocumento = {};
           let nuevoIdDocumento: number | null = null;
-          
+
           // Crear documento y obtener su ID
           await new Promise<void>((resolve, reject) => {
             this.documentosService.createDocumento(documento).subscribe({ // falta crear la base de datos de documentos en el backend
@@ -137,7 +137,7 @@ export class AppComponent implements OnInit, OnDestroy {
                   nuevoDocumento = response.data;
                   console.log("Documento creado:");
                 }
-                
+
                 resolve();
               },
               error: (error) => {
@@ -148,15 +148,15 @@ export class AppComponent implements OnInit, OnDestroy {
           });
 
           console.log("Nuevo id Aspirante:", nuevoAspirante.id, "Nuevo id Documento:", nuevoIdDocumento);
-        
-          // Verificamos que los IDs sean números válidos antes de crear la relación 
+
+          // Verificamos que los IDs sean números válidos antes de crear la relación
           if (typeof nuevoAspirante.id === "number" && typeof nuevoIdDocumento === "number") {
             const nuevaRelacion = {
               id_aspirante_beneficio: nuevoAspirante!.id,
               id_documento: nuevoIdDocumento
             };
 
-            this.aspirantesBeneficioDocumentosService.createRelacion(nuevaRelacion).subscribe({ // falta crear la base de datos de la relación de documentos con aspirantes en el backend
+            this.aspirantesBeneficioDocumentosService.createRelacion(nuevaRelacion).subscribe({
               next: (response) => {
                 if (response.response) {
                   this.aspirantesBeneficioDocumentosService.eliminarRelacion(relacion.id);

@@ -439,11 +439,11 @@ ipcMain.on("save-pdf", (event, pdfData, name) => {
 
 ipcMain.on("get-pdf", (event, name) => {
   const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
-  const filePath = path.join(dirPath+'', name + ".pdf");
+  const filePath = path.join(dirPath, name + ".pdf");
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      console.error("Error al leer la pdf:", err);
+      console.error("Error al leer el archivo PDF:", err);
       event.reply("pdf-read-error", err);
       return;
     }
