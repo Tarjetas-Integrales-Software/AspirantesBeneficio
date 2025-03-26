@@ -44,6 +44,10 @@ export class AspirantesBeneficioService {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
   }
 
+  consultarAspirantePorCurp(curp: string): Observable<{data: Aspirante[]}> {
+    return this.http.post<{data: Aspirante[]}>(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_por_curp', { curp: curp });
+  }
+
   async deleteAspirante(id: number): Promise<any> {
     const sql = 'UPDATE ct_aspirantes_beneficio SET confirmado = ? WHERE id = ?;';
 

@@ -11,6 +11,8 @@ import { ActivatedRoute, Router } from "@angular/router";
 import { switchMap } from "rxjs";
 import { environment } from "../../../../../environments/environment";
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import { DocumentosService } from "../../../../services/CRUD/documentos.service";
+import { AspirantesBeneficioDocumentosService } from "../../../../services/CRUD/aspirantes-beneficio-documentos.service";
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
@@ -29,7 +31,9 @@ export class FotoComponent implements OnInit {
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private http: HttpClient,
     private fotosService: FotosService,
-    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
+    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
+    private documentosService: DocumentosService,
+    private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService
   ) { }
 
   private activatedRoute = inject(ActivatedRoute);
@@ -200,7 +204,7 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  async uploadFile(): Promise<void> {
+  async uploadFoto(): Promise<void> {
     const formattedFecha = new Date().toISOString();
     const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
@@ -222,6 +226,28 @@ export class FotoComponent implements OnInit {
     }
   }
 
+  async uploadDocs(): Promise<void> {
+    const formattedFecha = new Date().toISOString();
+    const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
+
+    try {
+      // Crear foto en la base de datos local
+      await this.documentosService.crearDocumento({
+        id_status: 1, // Asignar el estado adecuado
+        fecha: formattedFecha,
+        tipo: 'doc_aspben',
+        archivo: curp + '.pdf',
+        path: 'docsaspirantesbeneficio/' + curp + '.pdf', // Asignar el path adecuado si es necesario
+        archivoOriginal: `captured_file.pdf`,
+        extension: 'pdf',
+        created_id: 0, // Asignar el ID adecuado si es necesario
+        created_at: formattedFecha
+      });
+    } catch (error) {
+      console.error('Error al guardar el documento en la base de datos local:', error);
+    }
+  }
+
   async onSubmit(): Promise<void> {
     // Detener el video de la cámara
     this.stopStream();
@@ -237,18 +263,36 @@ export class FotoComponent implements OnInit {
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
           // Subimos la foto del aspirante
-          await this.uploadFile(); // Subir la foto después de crear el aspirante
+          await this.uploadFoto(); // Subir la foto después de crear el aspirante
 
           this.savePhoto(form.curp);
-
-          // Guardar el archivo PDF si se ha cargado
-          if (this.documentFile.file) {
-            this.savePdf(form.curp);
-          }
 
           // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
           const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
           const lastIdFoto = await this.fotosService.getLastId() || 0;
+          
+          // Guardar el archivo PDF si se ha cargadoI
+          if (this.documentFile.file) {
+            
+            // Subir el documento a la base de datos
+            await this.uploadDocs();
+            
+            // Guardar el documento en el directorio local
+            this.savePdf(form.curp);
+            
+            // Obtenemos el último ID de la tabla de documentos
+            const lastIdDocumento = await this.documentosService.getLastId() || 0;
+            
+            // Creamos la relación entre el aspirante y el documento
+            await this.aspirantesBeneficioDocumentosService.crearRelacion({
+              id_aspirante_beneficio: lastIdApirante,
+              id_documento: lastIdDocumento,
+              id_status: 1,
+              created_id: 0,
+              created_at: ""
+            });
+          }
+
 
           // Creamos la relación entre el aspirante y la foto
           await this.aspirantesBeneficioFotosService.crearRelacion({
