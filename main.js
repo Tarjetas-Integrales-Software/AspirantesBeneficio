@@ -336,6 +336,7 @@ function initializeDatabase() {
         id_user INTEGER,
         fecha_hora TEXT,
         id_tipo INTEGER,
+        id_modulo INTEGER,
         created_id INTEGER NULL,
         updated_id INTEGER NULL,
         deleted_id INTEGER NULL,

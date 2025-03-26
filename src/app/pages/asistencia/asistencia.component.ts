@@ -13,6 +13,11 @@ import { AsistenciaService } from '../../services/CRUD/asistencia.service';
 import { CajerosFotosService } from '../../services/CRUD/cajeros-fotos.service';
 import { RelacionAsistenciaFotosService } from '../../services/CRUD/relacion-asistencia-fotos.service';
 import { ModulosService } from '../../services/CRUD/modulos.service';
+import { LoginService } from '../../login/login.service';
+import { NetworkStatusService } from '../../services/network-status.service';
+import { UsersService } from '../../services/CRUD/users.service';
+
+import Swal from 'sweetalert2';
 
 export interface Asistencia {
   id: number;
@@ -49,6 +54,9 @@ export class AsistenciaComponent implements OnInit {
   displayedColumns: string[] = ['usuario', 'fecha_hora_entrada', 'fecha_hora_salida'];
   dataSource = new MatTableDataSource<Asistencia>([]);
 
+  loading: boolean = false;
+  errorMessage: string = '';
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild('camaraComponent') camaraComponent!: CamaraComponent;
 
@@ -57,7 +65,10 @@ export class AsistenciaComponent implements OnInit {
     private asistenciaService: AsistenciaService,
     private cajerosFotosService: CajerosFotosService,
     private relacionAsistenciaFotosService: RelacionAsistenciaFotosService,
-    private modulosService: ModulosService) {
+    private modulosService: ModulosService,
+    private loginService: LoginService,
+    private networkStatusService: NetworkStatusService,
+    private usersService: UsersService) {
     this.myForm = this.fb.group({
       modulo: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(5)]]
@@ -109,26 +120,32 @@ export class AsistenciaComponent implements OnInit {
   async registrar(): Promise<void> {
     if (!this.storageService.exists("user")) return;
 
+    const idModulo = this.myForm.get('modulo')?.value;
+
+    if (!idModulo) return;
+
     const user = this.storageService.get("user");
     const currentDate = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
     const fileName = user.email + '-' + currentDate.substring(0, 19).replaceAll(':', '').replace(' ', '_');
 
     const [nuevaAsistencia, nuevaFoto] = await Promise.all([
-      this.registrarAsistencia(currentDate, user),
+      this.registrarAsistencia(currentDate, user, idModulo),
       this.registrarFoto(currentDate, fileName)
     ]);
 
     await this.registrarRelacionAsistenciaFoto(nuevaAsistencia, nuevaFoto);
 
     this.camaraComponent.savePhoto(fileName, 'imagenesAsistencia');
+    Swal.fire('Asistencia registrada!', '', 'success');
   }
 
-  async registrarAsistencia(currentDate: string, user: { iduser: number }): Promise<any> {
+  async registrarAsistencia(currentDate: string, user: { iduser: number }, idModulo: number): Promise<any> {
     try {
       return await this.asistenciaService.localCreateAsistencia({
         id_user: user.iduser,
+        id_modulo: idModulo,
+        id_tipo: 1,
         fecha_hora: currentDate,
-        id_tipo: 1
       });
     } catch (error) {
       console.error('Error al guardar la asistencia en la base de datos local:', error);
@@ -168,5 +185,40 @@ export class AsistenciaComponent implements OnInit {
 
   isValidField(fieldName: string): boolean | null {
     return (this.myForm.controls[fieldName].errors && this.myForm.controls[fieldName].touched);
+  }
+
+  comprobarClave(): void {
+    if (this.networkStatusService.checkConnection()) {
+      if (this.myForm.invalid || this.loading) return;
+      if (!this.storageService.exists("user")) return;
+
+      const user = this.storageService.get("user");
+      const { password } = this.myForm.value;
+
+      this.loading = true;
+      this.loginService.login({ email: user.email, password: password.trim() }).subscribe(
+        async (response) => {
+          if (response.response) {
+            await this.registrar();
+          } else Swal.fire(response.message, '', 'warning');
+          this.loading = false;
+        },
+        (error) => {
+          this.loading = false;
+          Swal.fire('Clave incorrecta. Por favor, inténtelo de nuevo.', '', 'warning');
+        }
+      );
+    } else {
+      // aqui entra en caso de no haber conexion para validar el user y password en la db local
+      const { email, password } = this.myForm.value;
+      this.usersService.ValidaUsuarioPorEmailyPassEnLocal(email, password)
+        .then(async (existe: boolean) => {
+          if (existe) {
+            await this.registrar();
+          } else {
+            Swal.fire('Clave incorrecta. Por favor, inténtelo de nuevo.', '', 'warning');
+          }
+        })
+    }
   }
 }

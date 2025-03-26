@@ -14,11 +14,11 @@
             </mat-form-field>
             <mat-form-field class="form__item">
                 <mat-label>Clave</mat-label>
-                <input matInput placeholder="Clave..." formControlName="modulo" type="password">
+                <input matInput placeholder="Clave..." formControlName="password" type="password">
             </mat-form-field>
 
         </form>
-        <app-camara #camaraComponent (buttonClicked)="registrar()"></app-camara>
+        <app-camara #camaraComponent (buttonClicked)="comprobarClave()"></app-camara>
     </section>
     <section class="bg-white border-0 shadow-lg rounded p-4 w-full">
         <h2>Histórico de asistencia</h2>

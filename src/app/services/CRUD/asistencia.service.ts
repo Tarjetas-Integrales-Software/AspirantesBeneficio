@@ -41,6 +41,7 @@ export class AsistenciaService {
   async localCreateAsistencia(foto: {
     id_user: number;
     id_tipo: number;
+    id_modulo: number;
     fecha_hora: string;
     created_id?: number;
     created_at?: string;
