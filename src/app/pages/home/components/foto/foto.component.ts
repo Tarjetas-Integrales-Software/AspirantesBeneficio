@@ -272,7 +272,7 @@ export class FotoComponent implements OnInit {
           const lastIdFoto = await this.fotosService.getLastId() || 0;
 
           // Guardar el archivo PDF si se ha cargadoI
-          if (this.documentFile.file) {
+          if (this.documentFile.file && this.isCheckboxChecked) {
 
             // Subir el documento a la base de datos
             await this.uploadDocs();
