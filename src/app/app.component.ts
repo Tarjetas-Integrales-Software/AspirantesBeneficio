@@ -46,6 +46,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncCurps();
 
     this.startSyncInterval();
+    this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
   }
 
@@ -82,6 +83,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.syncAspirantesBeneficio();
+    });
+  }
+
+  private startSyncDocumentosInterval(): void {
+    this.syncSubscription = interval(60000).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.syncAspirantesBeneficioDocumento();
     });
   }
 
