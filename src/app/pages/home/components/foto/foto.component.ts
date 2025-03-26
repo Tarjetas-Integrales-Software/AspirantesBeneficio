@@ -270,19 +270,19 @@ export class FotoComponent implements OnInit {
           // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
           const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
           const lastIdFoto = await this.fotosService.getLastId() || 0;
-          
+
           // Guardar el archivo PDF si se ha cargadoI
           if (this.documentFile.file) {
-            
+
             // Subir el documento a la base de datos
             await this.uploadDocs();
-            
+
             // Guardar el documento en el directorio local
             this.savePdf(form.curp);
-            
+
             // Obtenemos el último ID de la tabla de documentos
             const lastIdDocumento = await this.documentosService.getLastId() || 0;
-            
+
             // Creamos la relación entre el aspirante y el documento
             await this.aspirantesBeneficioDocumentosService.crearRelacion({
               id_aspirante_beneficio: lastIdApirante,

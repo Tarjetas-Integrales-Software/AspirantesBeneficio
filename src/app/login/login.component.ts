@@ -27,16 +27,16 @@ export class LoginComponent implements OnInit {
 
   loading: boolean = false;
 
-  constructor(private fb: FormBuilder
-    , private router: Router
-    , private loginService: LoginService
-    , private storageService: StorageService
-    , private usersService: UsersService
-    , private networkStatusService: NetworkStatusService
-    , private gradosService: GradosService
-    , private tiposCarrerasService: TiposCarrerasService
-    , private carrerasService: CarrerasService
-    , private modulosService: ModulosService
+  constructor(private fb: FormBuilder,
+    private router: Router,
+    private loginService: LoginService,
+    private storageService: StorageService,
+    private usersService: UsersService,
+    private networkStatusService: NetworkStatusService,
+    private gradosService: GradosService,
+    private tiposCarrerasService: TiposCarrerasService,
+    private carrerasService: CarrerasService,
+    private modulosService: ModulosService
   ) {
 
     this.loginForm = this.fb.group({
