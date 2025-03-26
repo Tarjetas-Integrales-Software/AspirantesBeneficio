@@ -1,7 +1,6 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
-import { ModulosService } from '../../services/CRUD/modulos.service';
 import { CamaraComponent } from '../../components/camara/camara.component';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,7 +8,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 
-export interface PeriodicElement {
+import { StorageService } from '../../services/storage.service';
+import { AsistenciaService } from '../../services/CRUD/asistencia.service';
+import { CajerosFotosService } from '../../services/CRUD/cajeros-fotos.service';
+import { RelacionAsistenciaFotosService } from '../../services/CRUD/relacion-asistencia-fotos.service';
+import { ModulosService } from '../../services/CRUD/modulos.service';
+
+export interface Asistencia {
   id: number;
   usuario: string;
   fecha_hora_entrada: string;
@@ -17,19 +22,6 @@ export interface PeriodicElement {
   id_foto_entrada: number;
   id_foto_salida: number;
 }
-
-const ELEMENT_DATA: PeriodicElement[] = [
-  { id: 1, usuario: 'Hydrogen', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 11, id_foto_salida: 21 },
-  { id: 2, usuario: 'Helium', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 12, id_foto_salida: 22 },
-  { id: 3, usuario: 'Lithium', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 13, id_foto_salida: 23 },
-  { id: 4, usuario: 'Beryllium', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 14, id_foto_salida: 24 },
-  { id: 5, usuario: 'Boron', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 15, id_foto_salida: 25 },
-  { id: 6, usuario: 'Carbon', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 16, id_foto_salida: 26 },
-  { id: 7, usuario: 'Nitrogen', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 17, id_foto_salida: 27 },
-  { id: 8, usuario: 'Oxygen', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 18, id_foto_salida: 28 },
-  { id: 9, usuario: 'Fluorine', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 19, id_foto_salida: 29 },
-  { id: 10, usuario: 'Neon', fecha_hora_entrada: "09:00", fecha_hora_salida: "09:00", id_foto_entrada: 20, id_foto_salida: 30 },
-];
 
 @Component({
   selector: 'app-asistencia',
@@ -55,11 +47,17 @@ export class AsistenciaComponent implements OnInit {
   modulos: any[] = [];
 
   displayedColumns: string[] = ['usuario', 'fecha_hora_entrada', 'fecha_hora_salida'];
-  dataSource = new MatTableDataSource<PeriodicElement>(ELEMENT_DATA);
+  dataSource = new MatTableDataSource<Asistencia>([]);
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild('camaraComponent') camaraComponent!: CamaraComponent;
 
-  constructor(private fb: FormBuilder, private modulosService: ModulosService) {
+  constructor(private fb: FormBuilder,
+    private storageService: StorageService,
+    private asistenciaService: AsistenciaService,
+    private cajerosFotosService: CajerosFotosService,
+    private relacionAsistenciaFotosService: RelacionAsistenciaFotosService,
+    private modulosService: ModulosService) {
     this.myForm = this.fb.group({
       modulo: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(5)]]
@@ -67,11 +65,31 @@ export class AsistenciaComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.getAsistencias();
     this.getModulos();
   }
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
+  }
+
+  getAsistencias(): void {
+    if (!this.storageService.exists("user")) return;
+
+    const user = this.storageService.get("user");
+
+    this.asistenciaService.getAsistenciasUsuario(user.iduser).subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.dataSource.data = response.data;
+        }
+      }),
+      complete: () => {
+      },
+      error: ((error) => {
+      })
+    })
+
   }
 
   getModulos(): void {
@@ -86,6 +104,66 @@ export class AsistenciaComponent implements OnInit {
       error: ((error) => {
       })
     });
+  }
+
+  async registrar(): Promise<void> {
+    if (!this.storageService.exists("user")) return;
+
+    const user = this.storageService.get("user");
+    const currentDate = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+    const fileName = user.email + '-' + currentDate.substring(0, 19).replaceAll(':', '').replace(' ', '_');
+
+    const [nuevaAsistencia, nuevaFoto] = await Promise.all([
+      this.registrarAsistencia(currentDate, user),
+      this.registrarFoto(currentDate, fileName)
+    ]);
+
+    await this.registrarRelacionAsistenciaFoto(nuevaAsistencia, nuevaFoto);
+
+    this.camaraComponent.savePhoto(fileName, 'imagenesAsistencia');
+  }
+
+  async registrarAsistencia(currentDate: string, user: { iduser: number }): Promise<any> {
+    try {
+      return await this.asistenciaService.localCreateAsistencia({
+        id_user: user.iduser,
+        fecha_hora: currentDate,
+        id_tipo: 1
+      });
+    } catch (error) {
+      console.error('Error al guardar la asistencia en la base de datos local:', error);
+      return null;
+    }
+  }
+
+  async registrarFoto(currentDate: string, fileName: string): Promise<any> {
+    try {
+      return await this.cajerosFotosService.localCreateFoto({
+        id_status: 1,
+        fecha: currentDate,
+        tipo: 'asistencia',
+        archivo: fileName,
+        path: 'fotoscajerosaspirantesbeneficio/' + fileName + '.webp',
+        archivoOriginal: 'captured_photo.webp',
+        extension: 'webp'
+      });
+    } catch (error) {
+      console.error('Error al guardar la foto en la base de datos local:', error);
+      return null;
+    }
+  }
+
+  async registrarRelacionAsistenciaFoto(asistencia: { lastInsertRowid: number }, cajero_foto: { lastInsertRowid: number }): Promise<any> {
+    try {
+      return await this.relacionAsistenciaFotosService.localCreateRelacion({
+        id_asistencia: asistencia.lastInsertRowid,
+        id_cajero_foto: cajero_foto.lastInsertRowid,
+        id_status: 1,
+      });
+    } catch (error) {
+      console.error('Error al guardar la relación en la base de datos local:', error);
+      return null;
+    }
   }
 
   isValidField(fieldName: string): boolean | null {

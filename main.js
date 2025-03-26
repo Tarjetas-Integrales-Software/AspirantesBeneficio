@@ -318,6 +318,48 @@ function initializeDatabase() {
         deleted_at TEXT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS relacion_asistencia_fotos (
+        id INTEGER PRIMARY KEY,
+        id_asistencia INTEGER NULL,
+        id_cajero_foto INTEGER NULL,
+        id_status INTEGER NULL,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cajeros_asistencia (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_user INTEGER,
+        fecha_hora TEXT,
+        id_tipo INTEGER,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cajeros_fotos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER,
+        fecha TEXT,
+        tipo TEXT,
+        archivo TEXT,
+        path TEXT,
+        archivoOriginal TEXT,
+        extension TEXT,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -573,11 +615,11 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.on("save-image", (event, imageData, name) => {
+ipcMain.on("save-image", (event, imageData, name, customPath) => {
   const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(base64Data, "base64");
 
-  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+  const dirPath = path.join(app.getPath("userData"), customPath);
   const savePath = path.join(dirPath, name + ".webp");
 
   // Crear la carpeta si no existe
@@ -595,8 +637,8 @@ ipcMain.on("save-image", (event, imageData, name) => {
   });
 });
 
-ipcMain.on("get-image", (event, name) => {
-  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+ipcMain.on("get-image", (event, name, customPath) => {
+  const dirPath = path.join(app.getPath("userData"), customPath);
   const filePath = path.join(dirPath, name + ".webp");
 
   fs.readFile(filePath, (err, data) => {

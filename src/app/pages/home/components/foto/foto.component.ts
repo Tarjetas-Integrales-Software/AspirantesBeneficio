@@ -122,7 +122,7 @@ export class FotoComponent implements OnInit {
 
   savePhoto(name: string) {
     if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name);
+      ipcRenderer.send("save-image", this.capturedImage, name, 'imagenesBeneficiarios');
     }
   }
 

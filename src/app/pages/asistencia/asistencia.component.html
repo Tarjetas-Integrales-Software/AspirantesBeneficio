@@ -1,8 +1,8 @@
 <main class="asistencia">
     <section class="bg-white border-0 shadow-lg rounded p-4">
-        <form [formGroup]="myGroup" class="form" action="">
+        <form [formGroup]="myForm" class="form" action="">
             <mat-form-field class="form__item">
-                <mat-label>Módulos</mat-label>
+                <mat-label>Módulo</mat-label>
                 <mat-select formControlName="modulo">
                     <mat-option *ngFor="let modulo of modulos" [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
                 </mat-select>
@@ -18,7 +18,7 @@
             </mat-form-field>
 
         </form>
-        <app-camara />
+        <app-camara #camaraComponent (buttonClicked)="registrar()"></app-camara>
     </section>
     <section class="bg-white border-0 shadow-lg rounded p-4 w-full">
         <h2>Histórico de asistencia</h2>

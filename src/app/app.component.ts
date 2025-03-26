@@ -40,9 +40,11 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.checkAndSync();
     this.checkAndSyncCurps();
+    this.checkAndSyncAsistencias();
 
     this.startSyncInterval();
     this.startSyncCurpInterval();
+    this.startSyncAsistenciaInterval();
   }
 
   ngOnDestroy(): void {
@@ -71,6 +73,16 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  private checkAndSyncAsistencias(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarAsistencias();
+    });
+  }
+
   private startSyncInterval(): void {
     this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
@@ -82,7 +94,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startSyncCurpInterval(): void {
-    this.syncSubscription = interval(environment.syncInterval).pipe(
+    this.syncSubscription = interval(environment.syncCurpInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -90,6 +102,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.actualizarCurps();
 
       this.validarSincronizacionCompleta(); //EMD
+    });
+  }
+
+  private startSyncAsistenciaInterval(): void {
+    this.syncSubscription = interval(environment.syncAsistenciaInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarAsistencias();
     });
   }
 
@@ -179,11 +201,11 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  async validarSincronizacionCompleta(): Promise<void>{
+  async validarSincronizacionCompleta(): Promise<void> {
     const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
-    if(items.length > 0){
+    if (items.length > 0) {
       return this.aspirantesBeneficioFotosService.updateSyncStatus(false);
-    }else{
+    } else {
       return this.aspirantesBeneficioFotosService.updateSyncStatus(true);
     }
   }
@@ -195,6 +217,10 @@ export class AppComponent implements OnInit, OnDestroy {
       }),
       error: ((error) => { })
     });
+  }
+
+  actualizarAsistencias(): void {
+
   }
 
   eliminarRelacionados(nuevoIdAspirante: null | number, nuevoIdFoto: null | number): void {

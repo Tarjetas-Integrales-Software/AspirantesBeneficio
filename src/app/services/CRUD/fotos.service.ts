@@ -188,7 +188,7 @@ export class FotosService {
 
   private getImageFromMainProcess(imageName: string): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
-      ipcRenderer.send('get-image', imageName);
+      ipcRenderer.send('get-image', imageName, 'imagenesBeneficiarios');
       ipcRenderer.once('image-read-success', (event: any, data: any) => {
         resolve(data);
       });

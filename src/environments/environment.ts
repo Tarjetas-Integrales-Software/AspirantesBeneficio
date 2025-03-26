@@ -7,5 +7,6 @@ export const environment = {
     cryptoKey: 'Tisa.2025',
     syncInterval: 600000,
     syncCurpInterval: 300000,
+    syncAsistenciaInterval: 1000000,
     gitversion: APP_VERSION
 };

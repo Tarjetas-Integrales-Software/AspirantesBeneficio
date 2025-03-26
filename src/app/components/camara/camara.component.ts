@@ -17,11 +17,12 @@ const { ipcRenderer } = (window as any).require("electron");
 export class CamaraComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
+
+  @Input() buttonTitle: string = "Capturar";
+
   @Output() submitForm = new EventEmitter<void>();
 
-  constructor(
-    private http: HttpClient,
-  ) { }
+  @Output() buttonClicked = new EventEmitter<void>();
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -29,8 +30,14 @@ export class CamaraComponent implements OnInit {
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
 
+  constructor(private http: HttpClient) { }
+
   ngOnInit() {
     this.getAvailableCameras()
+  }
+
+  notifyParent() {
+    this.buttonClicked.emit();
   }
 
   async getAvailableCameras() {
@@ -84,16 +91,16 @@ export class CamaraComponent implements OnInit {
     }
   }
 
-  savePhoto(name: string) {
+  savePhoto(name: string, path: string) {
     if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name);
+      ipcRenderer.send("save-image", this.capturedImage, name, path);
     }
   }
 
   toggleImageFormat() {
     this.imageFormat = this.imageFormat === "webp" ? "jpeg" : "webp"
     if (this.capturedImage) {
-      this.capturePhoto() // Re-capture with new format
+      this.capturePhoto() // Re-capture with new format-
     }
   }
 
