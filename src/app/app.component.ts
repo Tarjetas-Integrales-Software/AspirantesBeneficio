@@ -12,6 +12,15 @@ import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
 import { environment } from '../environments/environment';
+import { GeolocationService } from './services/geolocation.service';
+import { MonitorEquiposService } from './services/CRUD/monitor-equipos.service';
+const { ipcRenderer } = (window as any).require("electron");
+import { cs_monitor_equipos } from './services/CRUD/monitor-equipos.service';
+
+interface Location {
+  lat: number;
+  lng: number;
+}
 
 @Component({
   selector: 'app-root',
@@ -28,13 +37,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private syncSubscription: Subscription | undefined;
 
+  user: string = '';
+  currentLocation: Location = { lat: 0, lng: 0 }; // Inicializamos con valores por defecto
+
   constructor(
     private storageService: StorageService,
     private networkStatusService: NetworkStatusService,
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
     private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
-    private curpsRegistradasService: CurpsRegistradasService
+    private curpsRegistradasService: CurpsRegistradasService,
+    private geoService: GeolocationService,
+    private monitorEquipoService: MonitorEquiposService
   ) { }
 
   ngOnInit(): void {
@@ -43,6 +57,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.startSyncInterval();
     this.startSyncCurpInterval();
+
+    this.sendInfo_MonitorEquipo();
   }
 
   ngOnDestroy(): void {
@@ -218,4 +234,72 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  //PROCESO DE MONITOR EQUIPO
+
+  async sendInfo_MonitorEquipo(): Promise<void>{
+
+    try {
+
+      // obtener la version de la aplicacion desde enviroment
+      const app_version_actual = environment.gitversion;
+
+      // obtener el serial number desde un metodo en main.js
+      const serial_number = await ipcRenderer.send("get-serial-number");
+
+      // obtener el usuario logueado desde el storage
+      let usuario = '';
+      let usuario_activo = '';
+
+      if (this.storageService.exists("user")) {
+        const user = this.storageService.get("user");
+        this.user = user.email; //nombre del usuario
+
+        usuario = this.user;
+        usuario_activo = '1';
+      }else{
+        usuario = '';
+        usuario_activo = '0';
+      }
+
+      // Obtener la geo localizacion actual
+      this.geoService.getCurrentLocation().then(location => {
+        this.currentLocation = location; // Asignamos la ubicación obtenida
+        console.log('Ubicación obtenida:', this.currentLocation);
+      }).catch(error => console.error('Error obteniendo ubicación:', error));
+
+      const {lat: latitud,lng: longitud} = this.currentLocation;
+
+      let fecha_actual = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+
+
+      //construir el objeto
+      const obj_monitor_equipos: cs_monitor_equipos = {
+        numero_serial: serial_number,
+        version_instalada: app_version_actual,
+        app_en_ejecucion: usuario_activo,
+        usuario_ejecutando_app: usuario,
+        lat: latitud.toString(),
+        lng: longitud.toString(),
+        fecha_evento: fecha_actual
+
+      }
+
+      // enviar todo por medio de un servicio a TISA
+      this.monitorEquipoService.registrarMonitorEquipo(obj_monitor_equipos).subscribe({
+        next: ((response) => {
+          console.log("Se sincronizo la informacion de monitor equipos");
+        }),
+        error: ((error) => { })
+      });
+
+
+    } catch (error) {
+      console.error("Error en sendInfo_MonitorEquipo: ", error);
+    }
+  }
+
+
+
+
 }

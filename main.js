@@ -12,6 +12,9 @@ const PDFDocument = require('pdfkit');
 const axios = require('axios');
 const { jsPDF } = require("jspdf");
 
+const packageJson = require('./package.json');
+const si = require('systeminformation');
+
 let mainWindow;
 let db; // Declare db as a global variable
 
@@ -32,7 +35,7 @@ function createWindow() {
   });
 
   // Abre consola
-  //mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -47,6 +50,46 @@ function createWindow() {
 
   mainWindow.on('closed', function () {
     mainWindow = null;
+  });
+}
+
+async function sendAppInfo(){
+  try {
+    // obtener la version de la aplicacion
+    const currentVersion = packageJson.version;
+    console.log('Version de la aplicacion:', currentVersion);
+
+    // Obtener información del sistema
+    const systemInfo = await si.system();
+    const serialNumber = systemInfo.serial || 'Desconocido';
+
+    if(serialNumber == 'Desconocido'){
+      serialNumber = await getWindowsSerialNumber();
+    }
+
+    console.log(`Version: ${currentVersion}, Numero de serie: ${serialNumber}`);
+
+    // axios.post('https://tu-backend.com/api/version', { serialNumber, version })
+    //       .then(response => console.log(`SerialNumber: ${serialNumber}, Versión reportada: ${version}`))
+    //       .catch(error => console.error('Error al reportar versión:', error));
+
+
+    console.log('Informacion reportada exitosamente');
+
+  } catch (error) {
+    console.error('Error al obtener información del sistema o enviarla:', error);
+  }
+}
+
+function getWindowsSerialNumber() {
+  return new Promise((resolve, reject) => {
+      exec('wmic bios get serialnumber', (error, stdout) => {
+          if (error) {
+              return reject(error);
+          }
+          const serial = stdout.split('\n')[1].trim();
+          resolve(serial || 'Desconocido');
+      });
   });
 }
 
@@ -318,6 +361,22 @@ function initializeDatabase() {
         deleted_at TEXT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS cs_monitor_equipos (
+        id INTEGER PRIMARY KEY,
+        numero_serial TEXT,
+        version_instalada TEXT,
+        app_en_ejecucion TEXT,
+        usuario_ejecutando_app TEXT,
+        lat TEXT,
+        lng TEXT,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -342,6 +401,7 @@ function initializeDatabase() {
 // Inicializa la aplicación cuando esté lista
 app.whenReady().then(() => {
   initializeDatabase();
+  sendAppInfo();
   createWindow();
 
   app.on('activate', () => {
@@ -607,4 +667,17 @@ ipcMain.on("get-image", (event, name) => {
     }
     event.reply("image-read-success", data);
   });
+});
+
+
+ipcMain.on("get-serial-number", async (event) => {
+  // Obtener información del sistema
+  const systemInfo = await si.system();
+  const serialNumber = systemInfo.serial || 'Desconocido';
+
+  if(serialNumber == 'Desconocido'){
+    serialNumber = await getWindowsSerialNumber();
+  }
+
+  return serialNumber;
 });
