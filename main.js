@@ -670,14 +670,16 @@ ipcMain.on("get-image", (event, name) => {
 });
 
 
-ipcMain.on("get-serial-number", async (event) => {
+ipcMain.handle("get-serial-number", async (event) => {
   // Obtener información del sistema
   const systemInfo = await si.system();
-  const serialNumber = systemInfo.serial || 'Desconocido';
+  let serialNumber = systemInfo.serial || 'Desconocido';
+  //console.log(serialNumber,'serialNumber_1');
 
-  if(serialNumber == 'Desconocido'){
-    serialNumber = await getWindowsSerialNumber();
-  }
+  // if(serialNumber == 'Desconocido'){
+  //   serialNumber = await getWindowsSerialNumber();
+  //   console.log(serialNumber,'serialNumber_2');
+  // }
 
   return serialNumber;
 });

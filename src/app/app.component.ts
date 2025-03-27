@@ -39,6 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   user: string = '';
   currentLocation: Location = { lat: 0, lng: 0 }; // Inicializamos con valores por defecto
+  //currentLocation: { lat: number; lng: number } | null = null;
 
   constructor(
     private storageService: StorageService,
@@ -54,6 +55,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.checkAndSync();
     this.checkAndSyncCurps();
+    this.checkAndSyncMonitorEquipo();
 
     this.startSyncInterval();
     this.startSyncCurpInterval();
@@ -87,6 +89,17 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  private checkAndSyncMonitorEquipo(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.startSyncMonitorEquipoInterval();
+    });
+  }
+
+
   private startSyncInterval(): void {
     this.syncSubscription = interval(environment.syncInterval).pipe(
       switchMap(() => this.networkStatusService.isOnline),
@@ -108,6 +121,17 @@ export class AppComponent implements OnInit, OnDestroy {
       this.validarSincronizacionCompleta(); //EMD
     });
   }
+
+  private startSyncMonitorEquipoInterval(): void {
+    this.syncSubscription = interval(environment.syncMonitorInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.sendInfo_MonitorEquipo();
+    });
+  }
+
 
   async syncAspirantesBeneficio(): Promise<void> {
     try {
@@ -245,7 +269,8 @@ export class AppComponent implements OnInit, OnDestroy {
       const app_version_actual = environment.gitversion;
 
       // obtener el serial number desde un metodo en main.js
-      const serial_number = await ipcRenderer.send("get-serial-number");
+      let serial_number = await ipcRenderer.invoke("get-serial-number");
+      //console.log(serial_number,'serial_number_3');
 
       // obtener el usuario logueado desde el storage
       let usuario = '';
@@ -262,15 +287,21 @@ export class AppComponent implements OnInit, OnDestroy {
         usuario_activo = '0';
       }
 
-      // Obtener la geo localizacion actual
-      this.geoService.getCurrentLocation().then(location => {
-        this.currentLocation = location; // Asignamos la ubicación obtenida
-        console.log('Ubicación obtenida:', this.currentLocation);
-      }).catch(error => console.error('Error obteniendo ubicación:', error));
+      // this.geoService.getCurrentLocation()
+      // .then(location => {
+      //   this.currentLocation = location;
+      //   console.log('Ubicación obtenida:', this.currentLocation);
+      // })
+      // .catch(error => console.error('Error obteniendo ubicación:', error));
+      // const {lat: latitud,lng: longitud} = this.currentLocation;
 
-      const {lat: latitud,lng: longitud} = this.currentLocation;
+      //let fecha_actual = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
 
-      let fecha_actual = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+      let fecha = new Date();
+      fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset()); // Ajusta a la zona horaria local
+      let fecha_actual = fecha.toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+
+      //console.log(fecha_actual);
 
 
       //construir el objeto
@@ -279,11 +310,13 @@ export class AppComponent implements OnInit, OnDestroy {
         version_instalada: app_version_actual,
         app_en_ejecucion: usuario_activo,
         usuario_ejecutando_app: usuario,
-        lat: latitud.toString(),
-        lng: longitud.toString(),
+        lat: '', //latitud.toString(),
+        lng: '',//longitud.toString(),
         fecha_evento: fecha_actual
 
       }
+
+      //console.log(obj_monitor_equipos);
 
       // enviar todo por medio de un servicio a TISA
       this.monitorEquipoService.registrarMonitorEquipo(obj_monitor_equipos).subscribe({
@@ -292,11 +325,10 @@ export class AppComponent implements OnInit, OnDestroy {
         }),
         error: ((error) => { })
       });
-
-
     } catch (error) {
       console.error("Error en sendInfo_MonitorEquipo: ", error);
     }
+
   }
 
 

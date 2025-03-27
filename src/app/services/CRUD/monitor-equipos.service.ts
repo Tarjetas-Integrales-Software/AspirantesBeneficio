@@ -29,6 +29,14 @@ export class MonitorEquiposService {
     return this.http.post(environment.apiUrl + '/lic/aspben/monitor_equipos/register', { ...monitor_equipo });
   }
 
+  editMonitorEquipo(monitor_equipo: cs_monitor_equipos): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/monitor_equipos/edit', { ...monitor_equipo });
+  }
+
+  registerOrEditMonitorEquipo(monitor_equipo: cs_monitor_equipos): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/monitor_equipos/register_edit', { ...monitor_equipo });
+  }
+
 
   async insertOrUpdate_MonitorEquipo(
     numero_serial: string, version_instalada: string,
