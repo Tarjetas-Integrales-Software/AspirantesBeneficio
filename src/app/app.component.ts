@@ -103,7 +103,7 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarCurps();
-
+      this.syncAspirantesBeneficioDocumento();
       this.validarSincronizacionCompleta(); //EMD
     });
   }
@@ -147,8 +147,6 @@ export class AppComponent implements OnInit, OnDestroy {
             });
           });
 
-          console.log("Nuevo id Aspirante:", nuevoAspirante.id, "Nuevo id Documento:", nuevoIdDocumento);
-
           // Verificamos que los IDs sean números válidos antes de crear la relación
           if (typeof nuevoAspirante.id === "number" && typeof nuevoIdDocumento === "number") {
             const nuevaRelacion = {
@@ -160,8 +158,6 @@ export class AppComponent implements OnInit, OnDestroy {
               next: (response) => {
                 if (response.response) {
                   this.aspirantesBeneficioDocumentosService.eliminarRelacion(relacion.id);
-
-                  console.log("Relación creada y archivo subido:");
 
                   this.documentosService.registerDocumento(nuevoAspirante, nuevoDocumento)
                 }
