@@ -14,6 +14,10 @@ export class AsistenciaService {
 
   // REMOTOS INICIO
 
+  getHistoricoAsistenciasUser(id: number): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/historico/user', { id_user: id });
+  }
+
   getAsistencias(): Observable<any> {
     return this.http.get(environment.apiUrl + '/lic/aspben/asistencia_all');
   }
@@ -38,6 +42,13 @@ export class AsistenciaService {
 
   // LOCALES INICIO
 
+  async consultarAsistenciaPorId(id: number): Promise<any> {
+    const sql = 'SELECT * FROM cajeros_asistencia WHERE id = ?;';
+    const params = [id];
+    const resultados = await this.databaseService.query(sql, params);
+    return resultados.length > 0 ? resultados[0] : null;
+  }
+
   async localCreateAsistencia(foto: {
     id_user: number;
     id_tipo: number;
@@ -48,12 +59,13 @@ export class AsistenciaService {
   }): Promise<any> {
     const sql = `
       INSERT OR REPLACE INTO cajeros_asistencia (
-        id_user, id_tipo, fecha_hora, created_id, created_at
-      ) VALUES (?, ?, ?, ?, ?);
+        id_user, id_tipo, id_modulo, fecha_hora, created_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?);
     `;
     const params = [
       foto.id_user,
       foto.id_tipo,
+      foto.id_modulo,
       foto.fecha_hora,
       foto.created_id,
       foto.created_at,

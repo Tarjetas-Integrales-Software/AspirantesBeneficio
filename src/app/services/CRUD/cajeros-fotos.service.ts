@@ -15,28 +15,35 @@ export class CajerosFotosService {
   // REMOTOS INICIO
 
   getFotos(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/asistencia_all');
+    return this.http.get(environment.apiUrl + '/lic/aspben/cajerosfotos_all');
   }
 
   getFotosUsuario(idUsuario: number): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia_por_id_user', { id_user: idUsuario });
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajerosfotos_por_id', { id_user: idUsuario });
   }
 
-  createFoto(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/register', { ...asistencia });
+  createFoto(foto: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajerosfotos/register', { ...foto });
   }
 
-  editFoto(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/edit', { ...asistencia });
+  editFoto(foto: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajerosfotos/edit', { ...foto });
   }
 
-  deleteFoto(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/delete', { ...asistencia });
+  deleteFoto(foto: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajerosfotos/delete', { ...foto });
   }
 
   // REMOTOS FIN
 
   // LOCALES INICIO
+
+  async consultarFotoPorId(id: number): Promise<any> {
+    const sql = 'SELECT * FROM cajeros_fotos WHERE id = ?;';
+    const params = [id];
+    const resultados = await this.databaseService.query(sql, params);
+    return resultados.length > 0 ? resultados[0] : null;
+  }
 
   async localCreateFoto(foto: {
     id_status: number;

@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 import { StorageService } from '../../services/storage.service';
 import { AsistenciaService } from '../../services/CRUD/asistencia.service';
@@ -41,7 +42,8 @@ export interface Asistencia {
     FormsModule,
     ReactiveFormsModule,
     MatTableModule,
-    MatPaginator
+    MatPaginator,
+    MatSlideToggleModule
   ],
   templateUrl: './asistencia.component.html',
   styleUrl: './asistencia.component.scss'
@@ -51,7 +53,7 @@ export class AsistenciaComponent implements OnInit {
 
   modulos: any[] = [];
 
-  displayedColumns: string[] = ['usuario', 'fecha_hora_entrada', 'fecha_hora_salida'];
+  displayedColumns: string[] = ['nombre_modulo', 'fecha', 'hora_entrada', 'hora_salida'];
   dataSource = new MatTableDataSource<Asistencia>([]);
 
   loading: boolean = false;
@@ -71,7 +73,8 @@ export class AsistenciaComponent implements OnInit {
     private usersService: UsersService) {
     this.myForm = this.fb.group({
       modulo: ['', [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(5)]]
+      password: ['', [Validators.required, Validators.minLength(5)]],
+      tipo: [this.tipoAsistencia()]
     });
   }
 
@@ -89,7 +92,7 @@ export class AsistenciaComponent implements OnInit {
 
     const user = this.storageService.get("user");
 
-    this.asistenciaService.getAsistenciasUsuario(user.iduser).subscribe({
+    this.asistenciaService.getHistoricoAsistenciasUser(user.iduser).subscribe({
       next: ((response) => {
         if (response.response) {
           this.dataSource.data = response.data;
@@ -121,16 +124,22 @@ export class AsistenciaComponent implements OnInit {
     if (!this.storageService.exists("user")) return;
 
     const idModulo = this.myForm.get('modulo')?.value;
+    const idTipo = this.myForm.get('tipo')?.value;
 
     if (!idModulo) return;
 
     const user = this.storageService.get("user");
-    const currentDate = new Date().toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+
+    const fullDate = new Date();
+    const time = fullDate.toTimeString().substring(0, 8) + '.000';
+    const date = fullDate.toJSON().substring(0, 10);
+
+    const currentDate = date + ' ' + time;
     const fileName = user.email + '-' + currentDate.substring(0, 19).replaceAll(':', '').replace(' ', '_');
 
     const [nuevaAsistencia, nuevaFoto] = await Promise.all([
-      this.registrarAsistencia(currentDate, user, idModulo),
-      this.registrarFoto(currentDate, fileName)
+      await this.registrarAsistencia(currentDate, user, idModulo, idTipo),
+      await this.registrarFoto(currentDate, fileName)
     ]);
 
     await this.registrarRelacionAsistenciaFoto(nuevaAsistencia, nuevaFoto);
@@ -139,12 +148,12 @@ export class AsistenciaComponent implements OnInit {
     Swal.fire('Asistencia registrada!', '', 'success');
   }
 
-  async registrarAsistencia(currentDate: string, user: { iduser: number }, idModulo: number): Promise<any> {
+  async registrarAsistencia(currentDate: string, user: { iduser: number }, idModulo: number, idTipo: boolean): Promise<any> {
     try {
       return await this.asistenciaService.localCreateAsistencia({
         id_user: user.iduser,
         id_modulo: idModulo,
-        id_tipo: 1,
+        id_tipo: idTipo ? 2 : 1,
         fecha_hora: currentDate,
       });
     } catch (error) {
@@ -220,5 +229,12 @@ export class AsistenciaComponent implements OnInit {
           }
         })
     }
+  }
+
+  tipoAsistencia(): boolean {
+    const ahora = new Date();
+    const horas = ahora.getHours();
+
+    return !(horas >= 0 && horas < 12);
   }
 }

@@ -163,15 +163,21 @@ export class FotosService {
   async registerPhoto(aspirante: any, foto: any) {
     // Leer la imagen desde el main process
     const { archivo, fecha, tipo } = foto;
-    const { id, curp } = aspirante;
+    const { id, curp, fecha_hora, user } = aspirante;
 
-    const imageData = await this.getImageFromMainProcess(curp);
+    let path = '';
+
+    if (curp !== undefined) path = 'imagenesBeneficiarios';
+    if (fecha_hora !== undefined) path = 'imagenesAsistencia';
+
+
+    const imageData = await this.getImageFromMainProcess(curp || archivo.replaceAll(':', '').replace(' ', '_'), path);
 
     // Crear el FormData
     const formData = new FormData();
     formData.append('fecha', fecha);
     formData.append('tipo', tipo);
-    formData.append('curp', curp);
+    formData.append('curp', curp || archivo.replaceAll(':', '').replace(' ', '_'));
     formData.append('id_aspirante_beneficio', id.toString());
 
     // Convertir el buffer a un archivo Blob
@@ -186,9 +192,9 @@ export class FotosService {
     }).toPromise();
   }
 
-  private getImageFromMainProcess(imageName: string): Promise<ArrayBuffer> {
+  private getImageFromMainProcess(imageName: string, path: string): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
-      ipcRenderer.send('get-image', imageName, 'imagenesBeneficiarios');
+      ipcRenderer.send('get-image', imageName, path);
       ipcRenderer.once('image-read-success', (event: any, data: any) => {
         resolve(data);
       });

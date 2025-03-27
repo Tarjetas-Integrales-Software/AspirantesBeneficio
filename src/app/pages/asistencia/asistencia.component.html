@@ -4,7 +4,7 @@
             <mat-form-field class="form__item">
                 <mat-label>Módulo</mat-label>
                 <mat-select formControlName="modulo">
-                    <mat-option *ngFor="let modulo of modulos" [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
+                    <mat-option *ngFor="let modulo of modulos" [value]="modulo.id">{{modulo.nombre}}</mat-option>
                 </mat-select>
                 @if( isValidField('modulo') ) {
                 <mat-error class="text-red-500">
@@ -17,28 +17,37 @@
                 <input matInput placeholder="Clave..." formControlName="password" type="password">
             </mat-form-field>
 
+            <mat-slide-toggle class="input-tipo" formControlName="tipo">
+                {{ myForm.get('tipo')?.value ? 'Salida' : 'Entrada' }}
+            </mat-slide-toggle>
         </form>
         <app-camara #camaraComponent (buttonClicked)="comprobarClave()"></app-camara>
     </section>
     <section class="bg-white border-0 shadow-lg rounded p-4 w-full">
         <h2>Histórico de asistencia</h2>
         <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+            <!-- Fecha Módulo -->
+            <ng-container matColumnDef="nombre_modulo">
+                <th mat-header-cell *matHeaderCellDef> Módulo </th>
+                <td mat-cell *matCellDef="let element"> {{element.nombre_modulo}} </td>
+            </ng-container>
+
             <!-- Fecha Column -->
-            <ng-container matColumnDef="usuario">
+            <ng-container matColumnDef="fecha">
                 <th mat-header-cell *matHeaderCellDef> Fecha </th>
-                <td mat-cell *matCellDef="let element"> {{element.usuario}} </td>
+                <td mat-cell *matCellDef="let element"> {{element.fecha}} </td>
             </ng-container>
 
             <!-- Entrada Column -->
-            <ng-container matColumnDef="fecha_hora_entrada">
+            <ng-container matColumnDef="hora_entrada">
                 <th mat-header-cell *matHeaderCellDef> Entrada </th>
-                <td mat-cell *matCellDef="let element"> {{element.fecha_hora_entrada}} </td>
+                <td mat-cell *matCellDef="let element"> {{element.hora_entrada}} </td>
             </ng-container>
 
             <!-- Salida Column -->
-            <ng-container matColumnDef="fecha_hora_salida">
+            <ng-container matColumnDef="hora_salida">
                 <th mat-header-cell *matHeaderCellDef> Salida </th>
-                <td mat-cell *matCellDef="let element"> {{element.fecha_hora_salida}} </td>
+                <td mat-cell *matCellDef="let element"> {{element.hora_salida}} </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

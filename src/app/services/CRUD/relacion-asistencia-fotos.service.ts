@@ -15,28 +15,33 @@ export class RelacionAsistenciaFotosService {
   // REMOTOS INICIO
 
   getRelaciones(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/asistencia_all');
+    return this.http.get(environment.apiUrl + '/lic/aspben/cajeros_fotos_all');
   }
 
   getRelacionesUsuario(idUsuario: number): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia_por_id_user', { id_user: idUsuario });
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajeros_fotos_por_id_user', { id_user: idUsuario });
   }
 
-  createRelacion(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/register', { ...asistencia });
+  createRelacion(relacion: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajeros_fotos/register', { ...relacion });
   }
 
-  editRelacion(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/edit', { ...asistencia });
+  editRelacion(relacion: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajeros_fotos/edit', { ...relacion });
   }
 
-  deleteRelacion(asistencia: Object): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/asistencia/delete', { ...asistencia });
+  deleteRelacion(relacion: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/cajeros_fotos/delete', { ...relacion });
   }
 
   // REMOTOS FIN
 
   // LOCALES INICIO
+
+  async consultarRelacionesDesincronizadas(): Promise<any[]> {
+    const sql = 'SELECT * FROM relacion_asistencia_fotos WHERE sincronizado IS NULL ORDER BY created_at DESC;';
+    return await this.databaseService.query(sql);
+  }
 
   async localCreateRelacion(foto: {
     id_asistencia: number;
@@ -59,6 +64,21 @@ export class RelacionAsistenciaFotosService {
     ];
 
     return await this.databaseService.execute(sql, params);
+  }
+
+  // Eliminar una relación (soft delete)
+  async eliminarRelacion(id: number): Promise<any> {
+    const sql = 'UPDATE relacion_asistencia_fotos SET sincronizado = ? WHERE id = ?;';
+
+    const params = [1, id];
+
+    try {
+      const result = await this.databaseService.execute(sql, params);
+      return result;
+    } catch (error) {
+      console.error('Error al eliminar la relacion:', error);
+      throw new Error('No se pudo eliminar la relacion');
+    }
   }
 
   // LOCALES FIN

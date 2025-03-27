@@ -323,6 +323,7 @@ function initializeDatabase() {
         id_asistencia INTEGER NULL,
         id_cajero_foto INTEGER NULL,
         id_status INTEGER NULL,
+        sincronizado INTEGER NULL,
         created_id INTEGER NULL,
         updated_id INTEGER NULL,
         deleted_id INTEGER NULL,
