@@ -10,13 +10,22 @@ import { RelacionAsistenciaFotosService } from './services/CRUD/relacion-asisten
 import { AsistenciaService } from './services/CRUD/asistencia.service';
 import { CajerosFotosService } from './services/CRUD/cajeros-fotos.service';
 import { CurpsRegistradasService } from './services/CRUD/curps-registradas.service';
+import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes-beneficio-documentos.service';
+import { DocumentosService } from './services/CRUD/documentos.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
 import { environment } from '../environments/environment';
-import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes-beneficio-documentos.service';
-import { DocumentosService } from './services/CRUD/documentos.service';
+import { GeolocationService } from './services/geolocation.service';
+import { MonitorEquiposService } from './services/CRUD/monitor-equipos.service';
+const { ipcRenderer } = (window as any).require("electron");
+import { cs_monitor_equipos } from './services/CRUD/monitor-equipos.service';
+
+interface Location {
+  lat: number;
+  lng: number;
+}
 
 @Component({
   selector: 'app-root',
@@ -33,16 +42,22 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private syncSubscription: Subscription | undefined;
 
+  user: string = '';
+  currentLocation: Location = { lat: 0, lng: 0 }; // Inicializamos con valores por defecto
+  //currentLocation: { lat: number; lng: number } | null = null;
+
   constructor(
     private storageService: StorageService,
     private networkStatusService: NetworkStatusService,
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
     private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
+    private curpsRegistradasService: CurpsRegistradasService,
+    private geoService: GeolocationService,
+    private monitorEquipoService: MonitorEquiposService,
     private relacionAsistenciaFotosService: RelacionAsistenciaFotosService,
     private asistenciaService: AsistenciaService,
     private cajerosFotosService: CajerosFotosService,
-    private curpsRegistradasService: CurpsRegistradasService,
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
     private documentosService: DocumentosService
   ) { }
@@ -50,11 +65,14 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.checkAndSyncAspirantes();
     this.checkAndSyncCurps();
+    this.checkAndSyncMonitorEquipo();
     this.checkAndSyncAsistencias();
 
     this.startSyncAspirantesInterval();
     this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
+
+    this.sendInfo_MonitorEquipo();
     this.startSyncAsistenciaInterval();
   }
 
@@ -91,6 +109,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarAsistencias();
+    });
+  }
+
+  private checkAndSyncMonitorEquipo(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.startSyncMonitorEquipoInterval();
     });
   }
 
@@ -133,6 +161,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarAsistencias();
+    });
+  }
+
+  private startSyncMonitorEquipoInterval(): void {
+    this.syncSubscription = interval(environment.syncMonitorInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.sendInfo_MonitorEquipo();
     });
   }
 
@@ -456,5 +494,59 @@ export class AppComponent implements OnInit, OnDestroy {
         console.error("Error al crear aspirante:", error);
       }
     });
+  }
+
+  async sendInfo_MonitorEquipo(): Promise<void> {
+
+    try {
+
+      // obtener la version de la aplicacion desde enviroment
+      const app_version_actual = environment.gitversion;
+
+      // obtener el serial number desde un metodo en main.js
+      let serial_number = await ipcRenderer.invoke("get-serial-number");
+
+      // obtener el usuario logueado desde el storage
+      let usuario = '';
+      let usuario_activo = '';
+
+      if (this.storageService.exists("user")) {
+        const user = this.storageService.get("user");
+        this.user = user.email; //nombre del usuario
+
+        usuario = this.user;
+        usuario_activo = '1';
+      } else {
+        usuario = '';
+        usuario_activo = '0';
+      }
+
+      let fecha = new Date();
+      fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset()); // Ajusta a la zona horaria local
+      let fecha_actual = fecha.toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+
+      //construir el objeto
+      const obj_monitor_equipos: cs_monitor_equipos = {
+        numero_serial: serial_number,
+        version_instalada: app_version_actual,
+        app_en_ejecucion: usuario_activo,
+        usuario_ejecutando_app: usuario,
+        lat: '', //latitud.toString(),
+        lng: '',//longitud.toString(),
+        fecha_evento: fecha_actual
+
+      }
+
+      // enviar todo por medio de un servicio a TISA
+      this.monitorEquipoService.registrarMonitorEquipo(obj_monitor_equipos).subscribe({
+        next: ((response) => {
+          console.log("Se sincronizo la informacion de monitor equipos");
+        }),
+        error: ((error) => { })
+      });
+    } catch (error) {
+      console.error("Error en sendInfo_MonitorEquipo: ", error);
+    }
+
   }
 }
