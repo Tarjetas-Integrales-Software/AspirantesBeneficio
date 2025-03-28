@@ -19,9 +19,7 @@ export class AspirantesBeneficioFotosService {
   constructor(private databaseService: DatabaseService) { }
 
   updateSyncStatus(value: boolean): void {
-    console.log('updateSyncStatus', value);
     this.syncStatusSignal.set(value);
-    console.log('syncStatusSignal', this.syncStatusSignal());
   }
 
   getSyncStatus(): boolean | null {

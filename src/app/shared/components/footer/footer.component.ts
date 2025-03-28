@@ -21,7 +21,6 @@ export class FooterComponent implements OnInit {
   ) {
 
     effect(() => {
-      console.log('Ruta de la imagen actualizada:', this.aspirantesBeneficioFotosService.syncStatusImage());
     });
 
   }

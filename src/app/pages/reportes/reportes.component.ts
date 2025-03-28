@@ -113,6 +113,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
           this.displayedColumns = Object.keys(primerElemento);
 
           this.dataSource.data = response.data;
+          this.dataSource.paginator = this.paginator;
         }
       }),
       complete: () => {

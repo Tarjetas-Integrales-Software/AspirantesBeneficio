@@ -110,11 +110,6 @@ export class FotoComponent implements OnInit {
   }
 
   async startStream() {
-    // if (this.datosGeneralesComponent.myForm.invalid) {
-    //   console.log("Formulario no válido, no se puede iniciar el video.");
-    //   return;
-    // }
-
     if (this.stream) {
       this.stopStream()
     }
@@ -158,7 +153,7 @@ export class FotoComponent implements OnInit {
 
   savePhoto(name: string) {
     if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name);
+      ipcRenderer.send("save-image", this.capturedImage, name, 'imagenesBeneficiarios');
     }
   }
 
@@ -188,7 +183,6 @@ export class FotoComponent implements OnInit {
       if (controlErrors != null) {
         Object.keys(controlErrors).forEach(keyError => {
           const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
-          console.log(errorMessage);
           errorMessages += `${errorMessage}\n`;
         });
       }
@@ -341,7 +335,6 @@ export class FotoComponent implements OnInit {
     if (this.datosGeneralesComponent.myForm.valid) {
       // obtengo la informacion del formulario a editar
       const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
-
       try {
         const response = await this.aspirantesBeneficioService.editarAspirante(form);
         if (response.success) {

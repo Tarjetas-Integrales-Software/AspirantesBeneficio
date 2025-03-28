@@ -62,7 +62,6 @@ export class ConfiguracionesComponent implements OnInit
   }
 
   selectedValue_modulo(){
-    console.log('selectedValue_modu', this.selectedValue_modu);
     this.selectedValue_modu = this.myForm.get('modulo')?.value;
   }
 
@@ -91,7 +90,6 @@ export class ConfiguracionesComponent implements OnInit
   }
 
   async onSubmit(): Promise<void> {
-    console.log('submitForm', this.myForm.value);
     try {
       this.selectedValue_modu = this.myForm.get('modulo')?.value;
       await this.configuracionesService.insertOrUpdateConfiguracion('modulo', this.selectedValue_modu);

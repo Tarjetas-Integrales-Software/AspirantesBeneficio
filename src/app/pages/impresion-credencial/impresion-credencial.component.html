@@ -18,6 +18,36 @@
         </mat-form-field>
 
         <mat-form-field>
+          <mat-label>Módulo</mat-label>
+          <mat-select formControlName="modulo">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (modulo of modulos; track modulo) {
+            <mat-option [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Modalidad</mat-label>
+          <mat-select formControlName="modalidad">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (modalidad of modalidades; track modalidad) {
+            <mat-option [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Cajero</mat-label>
+          <mat-select formControlName="cajero">
+            <mat-option value="">- Selecciona una opción -</mat-option>
+            @for (cajero of cajeros; track cajero) {
+            <mat-option [value]="cajero.id">{{cajero.email}}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field>
           <mat-label>Fecha de registro</mat-label>
           <mat-date-range-input [rangePicker]="picker">
             <input
@@ -45,13 +75,29 @@
           />
         </mat-form-field>
 
-        <!-- <input
-          type="file"
-          (change)="cargarArchivo($event)"
-          accept=".xlsx, .xls"
-        />
-        <button (click)="subirDatos()">Enviar Datos al Servidor</button>
-        <p>{{ mensaje }}</p> -->
+
+        @if (permisoAccionesAdmin) {
+          <div class="card">
+            <div class="card-body" >
+              <div class="d-flex flex-column flex-md-row align-items-center justify-content-between" style="gap: 10px;">
+                <div>
+                  <label for="txtFile" class="btn">
+                    <i class="fa fa-cloud-upload bg-orange-300 hover:bg-green-350 text-white font-bold py-2 px-4 rounded">
+                      Importar Curps Aprobadas XLSX
+                    </i>
+                  </label>
+                  <div class="input-group">
+                    <input type="file" #fileInput id="txtFile" accept=".xls,.xlsx" style="display:none;" name="file" formControlName="file"
+                      (change)="onFileSelected($event)">
+                  </div>
+                  <div *ngIf="lblUploadingFile" style="margin: 0;font-size: 18px;color: #5270ae;">
+                    <label style="font-weight: 500;">{{lblUploadingFile}}</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
 
       </form>
     </div>
@@ -60,10 +106,10 @@
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
     <div class="flex justify-between items-center mb-2">
       <div class="flex justify-start items-center gap-5">
-        <!-- <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
         [disabled]="!generado || loading" (click)="downloadExcel()">Descargar XLSX</button>
       <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-        [disabled]="!generado || loading" (click)="downloadPdf()">Descargar PDF</button> -->
+        [disabled]="!generado || loading" (click)="downloadPdf()">Descargar PDF</button>
       </div>
 
       <div class="flex justify-start items-center gap-5">
@@ -198,19 +244,15 @@
             <td mat-cell *matCellDef="let row" class="action-cell">
               <div
                 class="flex justify-end items-center gap-2 *:flex *:justify-center *:items-center *:rounded-full *:p-2">
-                @if (permisoAcciones && row.impreso != 1) {
+                @if (row.impreso != 1) {
                 <button (click)="print(row)" mat-button color="accent" class="flex gap-2">
-                  <!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
-                    <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
-                    <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
-                  </svg> -->
                   Imprimir Tarjeta
                 </button>
                 }
+                @if (permisoAccionesOperador) {
+                  <button mat-button (click)="deleteCurpAprobada(row.id_curp_aprobada_ssas)" color="accent">Eliminar</button>
+                }
+
               </div>
             </td>
           </ng-container>
