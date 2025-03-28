@@ -115,7 +115,6 @@ export class ConfiguracionesService {
 
     // Ejecutar la consulta
     const resultados = await this.databaseService.query(sql, clave ? [clave] : []);
-    console.log(resultados);
     return resultados;
   }
 

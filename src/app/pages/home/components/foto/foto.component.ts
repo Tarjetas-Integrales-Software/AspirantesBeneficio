@@ -10,11 +10,14 @@ import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from "@angular/router";
 import { switchMap } from "rxjs";
 import { environment } from "../../../../../environments/environment";
+import {MatCheckboxModule} from '@angular/material/checkbox';
+import { DocumentosService } from "../../../../services/CRUD/documentos.service";
+import { AspirantesBeneficioDocumentosService } from "../../../../services/CRUD/aspirantes-beneficio-documentos.service";
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'fotoComponent',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatCheckboxModule],
   templateUrl: './foto.component.html',
   styleUrl: './foto.component.scss'
 })
@@ -28,7 +31,9 @@ export class FotoComponent implements OnInit {
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private http: HttpClient,
     private fotosService: FotosService,
-    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService
+    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
+    private documentosService: DocumentosService,
+    private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService
   ) { }
 
   private activatedRoute = inject(ActivatedRoute);
@@ -42,6 +47,14 @@ export class FotoComponent implements OnInit {
   downloadPath = "C:/Users/DELL 540/AppData/Roaming/Aspirantes Beneficio/imagenesBeneficiarios"
   editFoto: Aspirante | null = null
   imgFoto = signal<string | null>(null);
+  isCheckboxChecked: boolean = false;
+
+  documentFileLoaded: boolean = false;
+  lblUploadingFile: string = '';
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
 
   ngOnInit() {
     this.getAvailableCameras()
@@ -65,8 +78,26 @@ export class FotoComponent implements OnInit {
                 }
                 });
 
-            });
+      });
 
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos PDF', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+    }
   }
 
   async getAvailableCameras() {
@@ -79,11 +110,6 @@ export class FotoComponent implements OnInit {
   }
 
   async startStream() {
-    // if (this.datosGeneralesComponent.myForm.invalid) {
-    //   console.log("Formulario no válido, no se puede iniciar el video.");
-    //   return;
-    // }
-
     if (this.stream) {
       this.stopStream()
     }
@@ -127,7 +153,18 @@ export class FotoComponent implements OnInit {
 
   savePhoto(name: string) {
     if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name);
+      ipcRenderer.send("save-image", this.capturedImage, name, 'imagenesBeneficiarios');
+    }
+  }
+
+  savePdf(name: string) {
+    if (this.documentFile.file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        ipcRenderer.send("save-pdf", Buffer.from(arrayBuffer), name);
+      };
+      reader.readAsArrayBuffer(this.documentFile.file);
     }
   }
 
@@ -146,7 +183,6 @@ export class FotoComponent implements OnInit {
       if (controlErrors != null) {
         Object.keys(controlErrors).forEach(keyError => {
           const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
-          console.log(errorMessage);
           errorMessages += `${errorMessage}\n`;
         });
       }
@@ -162,7 +198,7 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  async uploadFile(): Promise<void> {
+  async uploadFoto(): Promise<void> {
     const formattedFecha = new Date().toISOString();
     const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
@@ -184,6 +220,28 @@ export class FotoComponent implements OnInit {
     }
   }
 
+  async uploadDocs(): Promise<void> {
+    const formattedFecha = new Date().toISOString();
+    const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
+
+    try {
+      // Crear foto en la base de datos local
+      await this.documentosService.crearDocumento({
+        id_status: 1, // Asignar el estado adecuado
+        fecha: formattedFecha,
+        tipo: 'doc_aspben',
+        archivo: curp + '.pdf',
+        path: 'docsaspirantesbeneficio/' + curp + '.pdf', // Asignar el path adecuado si es necesario
+        archivoOriginal: `captured_file.pdf`,
+        extension: 'pdf',
+        created_id: 0, // Asignar el ID adecuado si es necesario
+        created_at: formattedFecha
+      });
+    } catch (error) {
+      console.error('Error al guardar el documento en la base de datos local:', error);
+    }
+  }
+
   async onSubmit(): Promise<void> {
     // Detener el video de la cámara
     this.stopStream();
@@ -193,19 +251,42 @@ export class FotoComponent implements OnInit {
       this.datosGeneralesComponent.onSafe();
 
       try {
-
         if (this.capturedImage) {
           const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
           // Obtenemos los datos del formulario
           // Creamos el aspirante con los datos obtenidos del formulario
           await this.aspirantesBeneficioService.crearAspirante(form);
           // Subimos la foto del aspirante
-          await this.uploadFile(); // Subir la foto después de crear el aspirante
+          await this.uploadFoto(); // Subir la foto después de crear el aspirante
 
           this.savePhoto(form.curp);
+
           // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
           const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
           const lastIdFoto = await this.fotosService.getLastId() || 0;
+
+          // Guardar el archivo PDF si se ha cargadoI
+          if (this.documentFile.file && this.isCheckboxChecked) {
+
+            // Subir el documento a la base de datos
+            await this.uploadDocs();
+
+            // Guardar el documento en el directorio local
+            this.savePdf(form.curp);
+
+            // Obtenemos el último ID de la tabla de documentos
+            const lastIdDocumento = await this.documentosService.getLastId() || 0;
+
+            // Creamos la relación entre el aspirante y el documento
+            await this.aspirantesBeneficioDocumentosService.crearRelacion({
+              id_aspirante_beneficio: lastIdApirante,
+              id_documento: lastIdDocumento,
+              id_status: 1,
+              created_id: 0,
+              created_at: ""
+            });
+          }
+
 
           // Creamos la relación entre el aspirante y la foto
           await this.aspirantesBeneficioFotosService.crearRelacion({
@@ -215,6 +296,7 @@ export class FotoComponent implements OnInit {
             created_id: 0,
             created_at: ""
           });
+
           Swal.fire({
             title: 'Registro exitoso!',
             icon: 'success',
@@ -222,8 +304,10 @@ export class FotoComponent implements OnInit {
             showConfirmButton: false
           });
 
-          //borramos la foto y datos del formulario
+          // Borramos la foto, el archivo PDF y los datos del formulario
           this.capturedImage = null;
+          this.documentFile.file = null;
+          this.lblUploadingFile = '';
           this.datosGeneralesComponent.myForm.reset();
           this.datosGeneralesComponent.myForm.markAsPristine();
           this.datosGeneralesComponent.disabledGradoCarrera();
@@ -251,7 +335,6 @@ export class FotoComponent implements OnInit {
     if (this.datosGeneralesComponent.myForm.valid) {
       // obtengo la informacion del formulario a editar
       const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
-
       try {
         const response = await this.aspirantesBeneficioService.editarAspirante(form);
         if (response.success) {

@@ -44,6 +44,10 @@ export class AspirantesBeneficioService {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_beneficio/register', { ...aspirante });
   }
 
+  consultarAspirantePorCurp(curp: string): Observable<{data: Aspirante[]}> {
+    return this.http.post<{data: Aspirante[]}>(environment.apiUrl + '/lic/aspben/aspirantes_beneficio_por_curp', { curp: curp });
+  }
+
   async deleteAspirante(id: number): Promise<any> {
     const sql = 'UPDATE ct_aspirantes_beneficio SET confirmado = ? WHERE id = ?;';
 
@@ -203,11 +207,6 @@ export class AspirantesBeneficioService {
   // Leer todos los aspirantes
   async consultarAspirantes(): Promise<any[]> {
     const sql = 'SELECT * FROM ct_aspirantes_beneficio ORDER BY fecha_evento DESC;';
-    return await this.databaseService.query(sql);
-  }
-
-  async consultarAspirantesDesincronizados(): Promise<any[]> {
-    const sql = 'SELECT * FROM ct_aspirantes_beneficio WHERE confirmado IS NULL ORDER BY fecha_evento DESC;';
     return await this.databaseService.query(sql);
   }
 

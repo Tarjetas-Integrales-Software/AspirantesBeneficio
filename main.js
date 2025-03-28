@@ -35,7 +35,7 @@ function createWindow() {
   });
 
   // Abre consola
-  //mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -53,7 +53,7 @@ function createWindow() {
   });
 }
 
-async function sendAppInfo(){
+async function sendAppInfo() {
   try {
     // obtener la version de la aplicacion
     const currentVersion = packageJson.version;
@@ -63,7 +63,7 @@ async function sendAppInfo(){
     const systemInfo = await si.system();
     const serialNumber = systemInfo.serial || 'Desconocido';
 
-    if(serialNumber == 'Desconocido'){
+    if (serialNumber == 'Desconocido') {
       serialNumber = await getWindowsSerialNumber();
     }
 
@@ -83,13 +83,13 @@ async function sendAppInfo(){
 
 function getWindowsSerialNumber() {
   return new Promise((resolve, reject) => {
-      exec('wmic bios get serialnumber', (error, stdout) => {
-          if (error) {
-              return reject(error);
-          }
-          const serial = stdout.split('\n')[1].trim();
-          resolve(serial || 'Desconocido');
-      });
+    exec('wmic bios get serialnumber', (error, stdout) => {
+      if (error) {
+        return reject(error);
+      }
+      const serial = stdout.split('\n')[1].trim();
+      resolve(serial || 'Desconocido');
+    });
   });
 }
 
@@ -107,7 +107,7 @@ function dropTablesIfExists() {
 
     if (row) {
       db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-      console.log("Tabla eliminada con exito.");
+      console.log("Tabla eliminada con éxito.");
     } else {
       console.log("La tabla no existe, no se elimino.");
     }
@@ -375,8 +375,84 @@ function initializeDatabase() {
         created_id INTEGER,
         updated_id INTEGER,
         deleted_id INTEGER
+      );
+
+      CREATE TABLE IF NOT EXISTS relacion_asistencia_fotos (
+        id INTEGER PRIMARY KEY,
+        id_asistencia INTEGER NULL,
+        id_cajero_foto INTEGER NULL,
+        id_status INTEGER NULL,
+        sincronizado INTEGER NULL,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cajeros_asistencia (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_user INTEGER,
+        fecha_hora TEXT,
+        id_tipo INTEGER,
+        id_modulo INTEGER,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS cajeros_fotos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER,
+        fecha TEXT,
+        tipo TEXT,
+        archivo TEXT,
+        path TEXT,
+        archivoOriginal TEXT,
+        extension TEXT,
+        created_id INTEGER NULL,
+        updated_id INTEGER NULL,
+        deleted_id INTEGER NULL,
+        created_at TEXT NULL,
+        updated_at TEXT NULL,
+        deleted_at TEXT NULL
+      );
+      
+      CREATE TABLE IF NOT EXISTS ct_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        archivo TEXT NOT NULL,
+        path TEXT NOT NULL,
+        archivoOriginal TEXT NOT NULL,
+        extension TEXT NOT NULL,
+        created_id INTEGER NOT NULL,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        deleted_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS sy_aspirantes_beneficio_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_aspirante_beneficio INTEGER,
+        id_documento INTEGER,
+        id_status INTEGER,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -633,11 +709,11 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.on("save-image", (event, imageData, name) => {
+ipcMain.on("save-image", (event, imageData, name, customPath) => {
   const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(base64Data, "base64");
 
-  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+  const dirPath = path.join(app.getPath("userData"), customPath);
   const savePath = path.join(dirPath, name + ".webp");
 
   // Crear la carpeta si no existe
@@ -655,8 +731,8 @@ ipcMain.on("save-image", (event, imageData, name) => {
   });
 });
 
-ipcMain.on("get-image", (event, name) => {
-  const dirPath = path.join(app.getPath("userData"), "imagenesBeneficiarios");
+ipcMain.on("get-image", (event, name, customPath) => {
+  const dirPath = path.join(app.getPath("userData"), customPath);
   const filePath = path.join(dirPath, name + ".webp");
 
   fs.readFile(filePath, (err, data) => {
@@ -669,17 +745,43 @@ ipcMain.on("get-image", (event, name) => {
   });
 });
 
+ipcMain.on("save-pdf", (event, pdfData, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const savePath = path.join(dirPath, name + ".pdf");
+
+  // Crear la carpeta si no existe
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  // Guardar el archivo PDF
+  fs.writeFile(savePath, pdfData, (err) => {
+    if (err) {
+      console.error("Error al guardar el PDF:", err);
+      return;
+    }
+    console.log("PDF guardado en:", savePath);
+  });
+});
+
+ipcMain.on("get-pdf", (event, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const filePath = path.join(dirPath, name + ".pdf");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer el archivo PDF:", err);
+      event.reply("pdf-read-error", err);
+      return;
+    }
+    event.reply("pdf-read-success", data);
+  });
+});
 
 ipcMain.handle("get-serial-number", async (event) => {
   // Obtener información del sistema
   const systemInfo = await si.system();
   let serialNumber = systemInfo.serial || 'Desconocido';
-  //console.log(serialNumber,'serialNumber_1');
-
-  // if(serialNumber == 'Desconocido'){
-  //   serialNumber = await getWindowsSerialNumber();
-  //   console.log(serialNumber,'serialNumber_2');
-  // }
 
   return serialNumber;
 });

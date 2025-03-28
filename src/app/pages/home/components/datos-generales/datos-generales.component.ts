@@ -281,7 +281,7 @@ export class DatosGeneralesComponent implements OnInit {
             tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
             carrera: selectedCarrera ? selectedCarrera.nombre : '',
             id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
-            cp: selectedCP ? selectedCP.cp : ''
+            cp: aspirante.data.cp
           });
 
           return;

@@ -74,7 +74,7 @@ export class LoginComponent implements OnInit {
             this.storageService.set("perfiles", response.perfiles);
 
             this.router.navigate(['/inicio/configuraciones']);
-          }
+          } else Swal.fire(response.message, '', 'warning');
           this.loading = false;
         },
         (error) => {
