@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { environment } from './../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatabaseService } from './../database.service';
+
+const { ipcRenderer } = (window as any).require("electron");
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +34,44 @@ export class CajerosFotosService {
 
   deleteFoto(foto: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/cajerosfotos/delete', { ...foto });
+  }
+
+  async registerPhoto(asistencia: any, foto: any) {
+    // Leer la imagen desde el main process
+    const { archivo, tipo, fecha } = foto;
+    const { id } = asistencia;
+
+    const imageData = await this.getImageFromMainProcess(archivo, 'imagenesAsistencia');
+
+    // Crear el FormData
+    const formData = new FormData();
+    formData.append('fecha', fecha.substring(0, 19));
+    formData.append('tipo', tipo);
+    formData.append('nombre_foto', archivo);
+    formData.append('id_asistencia', id);
+
+    // Convertir el buffer a un archivo Blob
+    const blob = new Blob([imageData], { type: 'image/webp' });
+    formData.append('file', blob, archivo);
+
+    // Enviar la petición POST
+    return this.http.post(environment.apiUrl + '/lic/aspben/registrar-cajerosfotos', formData, {
+      headers: new HttpHeaders({
+        'Accept': 'application/json'
+      })
+    }).toPromise();
+  }
+
+  private getImageFromMainProcess(imageName: string, path: string): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      ipcRenderer.send('get-image', imageName, path);
+      ipcRenderer.once('image-read-success', (event: any, data: any) => {
+        resolve(data);
+      });
+      ipcRenderer.once('image-read-error', (event: any, err: any) => {
+        reject(err);
+      });
+    });
   }
 
   // REMOTOS FIN

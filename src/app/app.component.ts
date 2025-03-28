@@ -288,7 +288,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 if (response.response) {
                   this.relacionAsistenciaFotosService.eliminarRelacion(relacion.id);
 
-                  this.fotosService.registerPhoto(nuevaAsistencia, nuevaFoto)
+                  this.cajerosFotosService.registerPhoto(nuevaAsistencia, nuevaFoto)
                 }
               },
               error: (error) => {
