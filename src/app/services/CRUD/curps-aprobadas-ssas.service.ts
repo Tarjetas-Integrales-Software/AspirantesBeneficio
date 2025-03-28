@@ -28,7 +28,7 @@ export class CurpsAprobadasSsasService {
   }
 
 
-  BulkInsertCurpAprobadaSsas_InBatches(data: any[], batchSize: number = 250): Observable<any> {
+  BulkInsertCurpAprobadaSsas_InBatches(data: any[], batchSize: number = 100): Observable<any> {
     const batches = [];
     for (let i = 0; i < data.length; i += batchSize) {
       batches.push(data.slice(i, i + batchSize));

@@ -493,10 +493,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
       this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
 
-      console.log(this.documentFile,'this.documentFile');
-      console.log(this.documentFile.file,'this.documentFile.file');
-
-      this.importarExcel(this.documentFile.file);
+      this.importarExcel_v2(this.documentFile.file);
 
     } else {
       Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
@@ -554,6 +551,68 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         });
       }
     });
+  }
+
+  async importarExcel_v2(file: any) {
+    const archivo = file; //event.target.files[0];
+    if (archivo) {
+      await this.utilService.leerExcel_v2(archivo).then(
+      (response) => {
+        if(response){
+          console.log('Respuesta del servidor:', response);
+          this.mensaje = 'Datos importados exitosamente.';
+
+          this.datosExcel = [];
+          this.resetForm();
+
+          Swal.fire({
+            title: 'Importacion Generada con Éxito !!!',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        }else{
+          console.error('Error al enviar los datos:', response);
+          this.mensaje = 'Hubo un error al importar los datos.';
+          Swal.fire({
+            title: 'Ocurrio un Error en la Importacion',
+            icon: 'error',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        }
+      }
+      );
+
+    }
+  }
+
+  @ViewChild('fileInput') fileInput!: ElementRef;
+
+  resetForm() {
+    this.formImpresion.reset();
+    this.lblUploadingFile = '';
+    this.fileInput.nativeElement.value = ''; // Resetear solo el input file
+  }
+
+  deleteCurpAprobada(id: number): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Estas seguro de eliminar el registro?',
+      showConfirmButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed)
+        this.curpsAprobadasSsasService.deleteCurpAprobada(id).subscribe({
+          next: ((response) => {
+            Swal.fire('Eliminado con éxito!', '', 'success')
+            this.getAspirantesBeneficio();
+          }),
+          error: ((error) => { })
+        });
+    })
   }
 
   @ViewChild('fileInput') fileInput!: ElementRef;
