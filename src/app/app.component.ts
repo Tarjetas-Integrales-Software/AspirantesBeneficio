@@ -58,9 +58,6 @@ export class AppComponent implements OnInit, OnDestroy {
     private curpsRegistradasService: CurpsRegistradasService,
     private geoService: GeolocationService,
     private monitorEquipoService: MonitorEquiposService,
-    private relacionAsistenciaFotosService: RelacionAsistenciaFotosService,
-    private asistenciaService: AsistenciaService,
-    private cajerosFotosService: CajerosFotosService,
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
     private documentosService: DocumentosService
   ) { }

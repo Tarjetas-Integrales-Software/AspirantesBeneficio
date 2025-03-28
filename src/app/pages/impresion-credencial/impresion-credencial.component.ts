@@ -614,35 +614,4 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         });
     })
   }
-
-  @ViewChild('fileInput') fileInput!: ElementRef;
-
-  resetForm() {
-    this.formImpresion.reset();
-    this.lblUploadingFile = '';
-    this.fileInput.nativeElement.value = ''; // Resetear solo el input file
-  }
-
-  deleteCurpAprobada(id: number): void {
-      Swal.fire({
-        icon: 'warning',
-        title: '¿Estas seguro de eliminar el registro?',
-        showConfirmButton: true,
-        showCancelButton: true,
-        confirmButtonText: 'Sí',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed)
-          this.curpsAprobadasSsasService.deleteCurpAprobada(id).subscribe({
-            next: ((response) => {
-              Swal.fire('Eliminado con éxito!', '', 'success')
-              this.getAspirantesBeneficio();
-            }),
-            error: ((error) => { })
-          });
-      })
-
-    }
-
-
 }
