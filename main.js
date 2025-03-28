@@ -64,7 +64,7 @@ function dropTablesIfExists() {
 
     if (row) {
       db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-      console.log("Tabla eliminada con exito.");
+      console.log("Tabla eliminada con éxito.");
     } else {
       console.log("La tabla no existe, no se elimino.");
     }
@@ -362,6 +362,38 @@ function initializeDatabase() {
         updated_at TEXT NULL,
         deleted_at TEXT NULL
       );
+      CREATE TABLE IF NOT EXISTS ct_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_status INTEGER NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        archivo TEXT NOT NULL,
+        path TEXT NOT NULL,
+        archivoOriginal TEXT NOT NULL,
+        extension TEXT NOT NULL,
+        created_id INTEGER NOT NULL,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS sy_aspirantes_beneficio_documentos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_aspirante_beneficio INTEGER,
+        id_documento INTEGER,
+        id_status INTEGER,
+        enviado INTEGER NULL,
+        confirmado INTEGER NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -650,5 +682,38 @@ ipcMain.on("get-image", (event, name, customPath) => {
       return;
     }
     event.reply("image-read-success", data);
+  });
+});
+
+ipcMain.on("save-pdf", (event, pdfData, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const savePath = path.join(dirPath, name + ".pdf");
+
+  // Crear la carpeta si no existe
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  // Guardar el archivo PDF
+  fs.writeFile(savePath, pdfData, (err) => {
+    if (err) {
+      console.error("Error al guardar el PDF:", err);
+      return;
+    }
+    console.log("PDF guardado en:", savePath);
+  });
+});
+
+ipcMain.on("get-pdf", (event, name) => {
+  const dirPath = path.join(app.getPath("userData"), "pdfBeneficiarios");
+  const filePath = path.join(dirPath, name + ".pdf");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer el archivo PDF:", err);
+      event.reply("pdf-read-error", err);
+      return;
+    }
+    event.reply("pdf-read-success", data);
   });
 });
