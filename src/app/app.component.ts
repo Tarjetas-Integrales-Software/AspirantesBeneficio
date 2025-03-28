@@ -436,16 +436,17 @@ export class AppComponent implements OnInit, OnDestroy {
         console.error("Error al eliminar asistencia:", error);
       }
     });
+  }
 
-    eliminarRelacionadosDocumento(nuevoIdAspirante: null | number, nuevoIdDocumento: null | number): void {
-      if(typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
-        next: async (response) => {
-          if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
-        },
-        error: (error) => {
-          console.error("Error al crear aspirante:", error);
-        }
-      });
+  eliminarRelacionadosDocumento(nuevoIdAspirante: null | number, nuevoIdDocumento: null | number): void {
+    if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
 
     if (typeof nuevoIdDocumento === "number") this.documentosService.deleteDocumento(nuevoIdDocumento).subscribe({
       next: async (response) => {
