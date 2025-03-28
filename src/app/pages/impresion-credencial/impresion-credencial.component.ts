@@ -493,9 +493,6 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
       // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
       this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
 
-      console.log(this.documentFile,'this.documentFile');
-      console.log(this.documentFile.file,'this.documentFile.file');
-
       this.importarExcel_v2(this.documentFile.file);
 
     } else {
@@ -585,32 +582,6 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
           });
         }
       }
-
-        // next: (res) => {
-        //   console.log('Respuesta del servidor:', res);
-        //   this.mensaje = 'Datos importados exitosamente.';
-
-        //   this.datosExcel = [];
-        //   this.resetForm();
-
-        //   Swal.fire({
-        //     title: 'Importacion Generada con Éxito !!!',
-        //     icon: 'success',
-        //     timer: 2000,
-        //     showConfirmButton: false
-        //   });
-
-        // },
-        // error: (err) => {
-        //   console.error('Error al enviar los datos:', err);
-        //   this.mensaje = 'Hubo un error al importar los datos.';
-        //   Swal.fire({
-        //     title: 'Ocurrio un Error en la Importacion',
-        //     icon: 'error',
-        //     timer: 2000,
-        //     showConfirmButton: false
-        //   });
-        // }
       );
 
     }
@@ -643,6 +614,4 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         });
     })
   }
-
-
 }

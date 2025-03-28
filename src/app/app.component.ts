@@ -52,12 +52,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private aspirantesBeneficioService: AspirantesBeneficioService,
     private fotosService: FotosService,
     private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
-    private curpsRegistradasService: CurpsRegistradasService,
-    private geoService: GeolocationService,
-    private monitorEquipoService: MonitorEquiposService,
     private relacionAsistenciaFotosService: RelacionAsistenciaFotosService,
     private asistenciaService: AsistenciaService,
     private cajerosFotosService: CajerosFotosService,
+    private curpsRegistradasService: CurpsRegistradasService,
+    private geoService: GeolocationService,
+    private monitorEquipoService: MonitorEquiposService,
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
     private documentosService: DocumentosService
   ) { }
