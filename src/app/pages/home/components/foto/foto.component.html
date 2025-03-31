@@ -90,30 +90,35 @@
     </div>
   </div>
 
-  <div class="basis-full bg-gray-100">
-    <div class="py-2 flex gap-2 items-center flex-row justify-left bg-white border-0 shadow-lg sm:rounded-3xl px-2">
-      <div class="">
-        <mat-checkbox class="example-margin" [(ngModel)]="isCheckboxChecked">Validado por SSAS</mat-checkbox>
-      </div>
-      <div class="w-full p-3 overflow-hidden" [class.opacity-50]="!isCheckboxChecked" [class.pointer-events-none]="!isCheckboxChecked">
-        <div
-          class="relative border-dotted h-10 rounded-lg border-dashed border-2 border-blue-700 bg-gray-100 flex justify-center items-center">
+  @if(habilitarSubirDocumento === '1'){
 
-          <div class="absolute">
-            <div [ngClass]="{'flex gap-2 items-center': true, 'text-blue-400': lblUploadingFile, 'text-gray-400': !lblUploadingFile}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-folder-open">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" />
-              </svg>
-              <span class="block" id="fileName">{{ lblUploadingFile || 'Adjunte sus archivos aquí' }}</span>
+    <div class="basis-full bg-gray-100">
+      <div class="py-2 flex gap-2 items-center flex-row justify-left bg-white border-0 shadow-lg sm:rounded-3xl px-2">
+        <div class="">
+          <mat-checkbox class="example-margin" [(ngModel)]="isCheckboxChecked">Validado por SSAS</mat-checkbox>
+        </div>
+        <div class="w-full p-3 overflow-hidden" [class.opacity-50]="!isCheckboxChecked" [class.pointer-events-none]="!isCheckboxChecked">
+          <div
+            class="relative border-dotted h-10 rounded-lg border-dashed border-2 border-blue-700 bg-gray-100 flex justify-center items-center">
+
+            <div class="absolute">
+              <div [ngClass]="{'flex gap-2 items-center': true, 'text-blue-400': lblUploadingFile, 'text-gray-400': !lblUploadingFile}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-folder-open">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M5 19l2.757 -7.351a1 1 0 0 1 .936 -.649h12.307a1 1 0 0 1 .986 1.164l-.996 5.211a2 2 0 0 1 -1.964 1.625h-14.026a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v2" />
+                </svg>
+                <span class="block" id="fileName">{{ lblUploadingFile || 'Adjunte sus archivos aquí' }}</span>
+              </div>
             </div>
+
+            <input type="file" accept=".pdf" class="h-full w-full opacity-0" name="" (change)="onFileSelected($event)">
+
           </div>
-
-          <input type="file" accept=".pdf" class="h-full w-full opacity-0" name="" (change)="onFileSelected($event)">
-
         </div>
       </div>
     </div>
-  </div>
+
+  }
+
 
 </div>

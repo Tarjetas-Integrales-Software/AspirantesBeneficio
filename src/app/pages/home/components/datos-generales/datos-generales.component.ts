@@ -513,7 +513,21 @@ export class DatosGeneralesComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
     this.myForm.get('curp')?.setValue(input.value);
+
+
+    const curp = input.value;
+    const birthDateMatch = curp.match(/^.{4}(\d{2})(\d{2})(\d{2})/);
+    if (birthDateMatch) {
+      const year = parseInt(birthDateMatch[1], 10) + (parseInt(birthDateMatch[1], 10) > 25 ? 1900 : 2000);
+      const month = parseInt(birthDateMatch[2], 10) - 1;
+      const day = parseInt(birthDateMatch[3], 10);
+      const birthDate = new Date(year, month, day);
+
+
+      this.myForm.get('fecha_nacimiento')?.setValue(birthDate);
+    }
   }
+
   toUpperCaseName(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();

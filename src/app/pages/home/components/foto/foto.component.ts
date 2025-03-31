@@ -55,9 +55,16 @@ export class FotoComponent implements OnInit {
     file: '',
     archivos: []
   }
+  habilitarSubirDocumento: string = '';
 
   ngOnInit() {
     this.getAvailableCameras()
+
+    this.aspirantesBeneficioService.habilitarSubirDocumento().subscribe(res => {
+      if (res.response && res.data.length > 0) {
+        this.habilitarSubirDocumento = res.data[0].valor; // Accede correctamente a 'valor'
+      }
+    });
 
     this.activatedRoute.params
             .pipe(
