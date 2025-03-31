@@ -165,7 +165,7 @@ export class FotosService {
     const { archivo, fecha, tipo } = foto;
     const { id, curp } = aspirante;
 
-    const imageData = await this.getImageFromMainProcess(curp);
+    const imageData = await this.getImageFromMainProcess(curp, 'imagenesBeneficiarios');
 
     // Crear el FormData
     const formData = new FormData();
@@ -186,9 +186,9 @@ export class FotosService {
     }).toPromise();
   }
 
-  private getImageFromMainProcess(imageName: string): Promise<ArrayBuffer> {
+  private getImageFromMainProcess(imageName: string, path: string): Promise<ArrayBuffer> {
     return new Promise((resolve, reject) => {
-      ipcRenderer.send('get-image', imageName);
+      ipcRenderer.send('get-image', imageName, path);
       ipcRenderer.once('image-read-success', (event: any, data: any) => {
         resolve(data);
       });

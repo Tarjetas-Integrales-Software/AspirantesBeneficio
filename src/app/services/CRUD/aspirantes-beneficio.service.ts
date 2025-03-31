@@ -213,11 +213,6 @@ export class AspirantesBeneficioService {
     return await this.databaseService.query(sql);
   }
 
-  async consultarAspirantesDesincronizados(): Promise<any[]> {
-    const sql = 'SELECT * FROM ct_aspirantes_beneficio WHERE confirmado IS NULL ORDER BY fecha_evento DESC;';
-    return await this.databaseService.query(sql);
-  }
-
   // Leer un aspirante por ID
   async consultarAspirantePorId(id: number): Promise<any> {
     const sql = 'SELECT * FROM ct_aspirantes_beneficio WHERE id = ?;';

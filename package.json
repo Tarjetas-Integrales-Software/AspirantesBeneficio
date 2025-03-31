@@ -1,6 +1,6 @@
 {
   "name": "aspirantes-beneficio",
-  "version": "0.0.12",
+  "version": "1.0.0",
   "productName": "Aspirantes Beneficio",
   "description": "Aplicación para capturar la información y fotografia del aspirante a beneficiario",
   "author": "TISA",
@@ -59,6 +59,7 @@
     "pdfkit": "^0.16.0",
     "rxjs": "~7.8.0",
     "sweetalert2": "^11.17.2",
+    "systeminformation": "^5.25.11",
     "tslib": "^2.3.0",
     "update-electron-app": "^3.1.1",
     "xlsx": "^0.18.5",

@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { DatosGeneralesComponent } from './components/datos-generales/datos-generales.component';
-import { FotoComponent } from './components/foto/foto.component';
+import { FotoComponent } from './components/foto/foto.component'; 
 import { CurpsRegistradasService } from '../../services/CRUD/curps-registradas.service';
 import { OpcionesGeneralesService } from '../../services/CRUD/opciones-generales.service';
 

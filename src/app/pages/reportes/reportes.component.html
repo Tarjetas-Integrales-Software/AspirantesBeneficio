@@ -1,9 +1,9 @@
-<div class="container h-screen py-5 mx-auto">
+<div class="container py-5 mx-auto">
     <div class="px-6 pt-4 mb-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
         <div class="flex items-center justify-between">
             <form [formGroup]="formConsulta" class="flex items-center justify-between flex-wrap gap-2">
-                <mat-form-field>
+                <mat-form-field class="w-100">
                     <mat-label>Reportes</mat-label>
                     <mat-select formControlName="reporte">
                         @for (reporte of reportes; track reporte) {

@@ -4,7 +4,7 @@ import { ConsultaComponent } from "./consulta/consulta.component";
 import { PagesComponent } from "./pages.component";
 import { ReportesComponent } from "./reportes/reportes.component";
 import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
-import { ChecadorAsistenciaComponent } from "./checador-asistencia/checador-asistencia.component";
+import { AsistenciaComponent } from "./asistencia/asistencia.component";
 import { ImpresionCredencialComponent } from "./impresion-credencial/impresion-credencial.component";
 
 export const pagesRoutes: Routes = [
@@ -13,9 +13,9 @@ export const pagesRoutes: Routes = [
         component: PagesComponent,
         children: [
             {
-              path: 'configuraciones',
-              title: 'Configuraciones',
-              component: ConfiguracionesComponent
+                path: 'configuraciones',
+                title: 'Configuraciones',
+                component: ConfiguracionesComponent
             },
             {
                 path: 'registro',
@@ -33,19 +33,18 @@ export const pagesRoutes: Routes = [
                 component: HomeComponent
             },
             {
-              path: 'reportes',
-              title: 'Reportes',
-              component: ReportesComponent
+                path: 'reportes',
+                title: 'Reportes',
+                component: ReportesComponent
             },
             {
-              path: 'impresion-credencial',
-              title: 'Impresion Credencial',
-              component: ImpresionCredencialComponent
-            },
-            {
-              path: 'checador-asistencia',
-              title: 'Checador Asistencia',
-              component: ChecadorAsistenciaComponent
+                path: 'asistencia',
+                title: 'Asistencia',
+                component: AsistenciaComponent
+            }, {
+                path: 'impresion-credencial',
+                title: 'Impresion Credencial',
+                component: ImpresionCredencialComponent
             },
             {
                 path: '**',
