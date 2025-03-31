@@ -168,7 +168,7 @@ export class AsistenciaComponent implements OnInit {
         id_status: 1,
         fecha: currentDate,
         tipo: 'asistencia',
-        archivo: fileName,
+        archivo: fileName + '.webp',
         path: 'fotoscajerosaspirantesbeneficio/' + fileName + '.webp',
         archivoOriginal: 'captured_photo.webp',
         extension: 'webp'

@@ -37,17 +37,21 @@ export class CajerosFotosService {
   }
 
   async registerPhoto(asistencia: any, foto: any) {
-    // Leer la imagen desde el main process
-    const { archivo, tipo, fecha } = foto;
-    const { id } = asistencia;
 
-    const imageData = await this.getImageFromMainProcess(archivo, 'imagenesAsistencia');
+    console.log(asistencia, foto);
+    
+
+    // Leer la imagen desde el main process
+    const { id } = asistencia;
+    const { archivo, tipo, fecha } = foto;
+
+    const imageData = await this.getImageFromMainProcess(archivo.slice(0, -5), 'imagenesAsistencia');
 
     // Crear el FormData
     const formData = new FormData();
     formData.append('fecha', fecha.substring(0, 19));
     formData.append('tipo', tipo);
-    formData.append('nombre_foto', archivo);
+    formData.append('nombre_foto', archivo.slice(0, -5));
     formData.append('id_asistencia', id);
 
     // Convertir el buffer a un archivo Blob
