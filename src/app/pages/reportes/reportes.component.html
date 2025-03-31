@@ -3,7 +3,7 @@
 
         <div class="flex items-center justify-between">
             <form [formGroup]="formConsulta" class="flex items-center justify-between flex-wrap gap-2">
-                <mat-form-field>
+                <mat-form-field class="w-100">
                     <mat-label>Reportes</mat-label>
                     <mat-select formControlName="reporte">
                         @for (reporte of reportes; track reporte) {
