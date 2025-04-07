@@ -1,73 +1,67 @@
-<!-- component -->
 <div class="relative">
   <div class="fixed bottom-1 right-5 flex flex-col items-end justify-center z-[100]">
 
     @if (menuShow) {
     <div class="bg-gray-100 mb-2">
-
       <div x-show="open" click.away="open = false"
         class="mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 px-2 py-2 *:text-end">
 
-        <a (click)="menuShow = false" routerLink="/inicio/asistencia" routerLinkActive="bg-[#f26507]/50"
-            class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-            <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clock-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20.942 13.021a9 9 0 1 0 -9.407 7.967" /><path d="M12 7v5l3 3" /><path d="M15 19l2 2l4 -4" /></svg>
-          Asistencia
-        </a>
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_asistencia')"
+          texto="Asistencia" 
+          ruta="/inicio/asistencia"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M20.942 13.021a9 9 0 1 0 -9.407 7.967" /><path d="M12 7v5l3 3" /><path d="M15 19l2 2l4 -4" />'
+        ></app-opcion-menu>
 
-        <a (click)="menuShow = false" routerLink="/inicio/impresion-credencial" routerLinkActive="bg-[#f26507]/50"
-            class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-            <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-printer"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
-          Impresión
-        </a>
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_impresion')"
+          texto="Impresión" 
+          ruta="/inicio/impresion-credencial"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />'
+        ></app-opcion-menu>
 
-        <a (click)="menuShow = false" routerLink="/inicio/configuraciones" routerLinkActive="bg-[#f26507]/50"
-            class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-            <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-settings-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.445 20.913a1.665 1.665 0 0 1 -1.12 -1.23a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.31 .318 1.643 1.79 .997 2.694" /><path d="M15 19l2 2l4 -4" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
-          Configurar
-        </a>
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_reportes')"
+          texto="Reportes" 
+          ruta="/inicio/reportes"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 17v-5" /><path d="M12 17v-1" /><path d="M15 17v-3" />'
+        ></app-opcion-menu>
 
-        <a (click)="menuShow = false" routerLink="/inicio/reportes" routerLinkActive="bg-[#f26507]/50"
-            class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-            <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-report-analytics"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 17v-5" /><path d="M12 17v-1" /><path d="M15 17v-3" /></svg>
-          Reportes
-        </a>
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_consulta')"
+          texto="Consulta" 
+          ruta="/inicio/consulta"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />'
+        ></app-opcion-menu>
 
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_registro')"
+          texto="Registro" 
+          ruta="/inicio/registro"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4c.96 0 1.84 .338 2.53 .901" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M16 19h6" /><path d="M19 16v6" />'
+        ></app-opcion-menu>
 
-        <a (click)="menuShow = false" routerLink="/inicio/consulta" routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-          <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
-          Consulta</a>
+        <app-opcion-menu 
+          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_configurar')"
+          texto="Configurar" 
+          ruta="/inicio/configuraciones"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M11.445 20.913a1.665 1.665 0 0 1 -1.12 -1.23a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.31 .318 1.643 1.79 .997 2.694" /><path d="M15 19l2 2l4 -4" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />'
+        ></app-opcion-menu>
 
+        <app-opcion-menu 
+          texto="Cerrar Sesión" 
+          [esCerrarSesion]="true"
+          [accion]="cerrarSesion.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2" /><path d="M3 12h13l-3 -3" /><path d="M13 15l3 -3" />'
+        ></app-opcion-menu>
 
-        <a (click)="menuShow = false" routerLink="/inicio/registro" routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-lg text-gray-700 hover:bg-gray-100 rounded-md font-bold flex gap-3 justify-around">
-          <svg  xmlns="http://www.w3.org/2000/svg"  width="32"  height="32"  viewBox="0 0 24 24"
-            fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-users-plus"><path stroke="none" d="M0 0h24v24H0z"
-            fill="none"/>
-            <path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-            <path d="M3 21v-2a4 4 0 0 1 4 -4h4c.96 0 1.84 .338 2.53 .901" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            <path d="M16 19h6" />
-            <path d="M19 16v6" />
-          </svg>
-          Registro</a>
-
-
-        <a (click)="cerrarSesion()" routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-lg text-red-500 hover:bg-red-100 rounded-md font-bold flex gap-3 justify-around">
-          <svg xmlns="http://www.w3.org/2000/svg"
-            width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round"
-            class="icon icon-tabler icons-tabler-outline icon-tabler-login-2">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2" />
-            <path d="M3 12h13l-3 -3" />
-            <path d="M13 15l3 -3" />
-          </svg>
-          Cerrar Sesión</a>
       </div>
-
     </div>
     }
 
