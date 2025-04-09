@@ -152,4 +152,28 @@ export class AspirantesBeneficioFotosService {
   editRelacion(relacion: { id_aspirante_beneficio: number; id_foto: number }): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/aspirantes_fotos/edit', { ...relacion });
   }
+
+
+  // Actualizar una relación
+  async actualizarConfirmadoPorIdAspiranteBeneficio(
+    id_aspirante_beneficio: number,
+  ): Promise<any> {
+    const campos = [];
+    const params = [];
+
+    if (id_aspirante_beneficio !== undefined) {
+      campos.push('confirmado = NULL');
+      params.push(id_aspirante_beneficio);
+    }
+
+    if (campos.length === 0) {
+      throw new Error('No se proporcionaron campos para actualizar.');
+    }
+
+    const sql = `UPDATE sy_aspirantes_beneficio_fotos SET ${campos.join(', ')} WHERE id_aspirante_beneficio = ?;`;
+    params.push(id_aspirante_beneficio);
+
+    return await this.databaseService.execute(sql, params);
+  }
+
 }

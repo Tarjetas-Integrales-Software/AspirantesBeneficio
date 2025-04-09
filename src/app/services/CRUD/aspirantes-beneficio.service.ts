@@ -251,4 +251,12 @@ export class AspirantesBeneficioService {
       return { success: false, message: 'Error al actualizar el aspirante' };
     }
   }
+
+  // Leer un aspirante por curp
+  async consultarAspirantePorCurpDbLocal(curp: string): Promise<any> {
+    const sql = 'SELECT id FROM ct_aspirantes_beneficio WHERE curp = ?;';
+    const params = [curp];
+    const resultados = await this.databaseService.query(sql, params);
+    return resultados.length > 0 ? resultados[0] : null;
+  }
 }

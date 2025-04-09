@@ -35,7 +35,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -421,7 +421,7 @@ function initializeDatabase() {
         updated_at TEXT NULL,
         deleted_at TEXT NULL
       );
-      
+
       CREATE TABLE IF NOT EXISTS ct_documentos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         id_status INTEGER NOT NULL,
