@@ -5,6 +5,15 @@ import { Observable } from 'rxjs';
 import { DatabaseService } from './../database.service';
 import { firstValueFrom } from 'rxjs';
 
+export interface cs_monitor_ejecucion_acciones {
+  numero_serial?: string;
+  usuario_ejecutando_app?: string;
+  tipo_accion?: string;
+  fecha_evento?: string;
+  created_id?: number;
+  created_at?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -26,6 +35,10 @@ export class AccionesService {
 
   updateCurpEncontrada(curp: String): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/curps_reenviar/edit/encontrada', { curp: curp, encontrada: 1 });
+  }
+
+  registrarMonitorEjecucionAcciones(monitor_ejecucion_acciones: cs_monitor_ejecucion_acciones): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/monitor_ejecuion_acciones/register', { ...monitor_ejecucion_acciones });
   }
 
 
