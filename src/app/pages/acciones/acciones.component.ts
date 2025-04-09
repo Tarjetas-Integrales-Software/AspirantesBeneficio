@@ -22,11 +22,11 @@ export interface cs_monitor_ejecucion_acciones {
 
 @Component({
   selector: 'app-acciones',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './acciones.component.html',
   styleUrl: './acciones.component.scss'
 })
-export class AccionesComponent {
+export class AccionesComponent implements OnInit {
 
   curps_reenviar_a_tisa: any[] = [];
   isButtonDisabled = false;
@@ -41,6 +41,18 @@ export class AccionesComponent {
     private storageService: StorageService,
 
   ) { }
+
+  habilitarReenvioCurps = signal('');
+
+  ngOnInit() {
+    this.accionesService.habilitarReenvioCurps().subscribe(res => {
+      if (res.response && res.data.length > 0) {
+        this.habilitarReenvioCurps.set(res.data[0].valor);
+        console.log(this.habilitarReenvioCurps,'habilitarReenvioCurps');
+        console.log(typeof(this.habilitarReenvioCurps),'typeof_habilitarReenvioCurps');
+      }
+    });
+  }
 
    obtenerSoloCurps(arreglo: any[]): string[] {
     return arreglo.map(item => item.curp);

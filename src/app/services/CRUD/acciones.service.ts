@@ -41,5 +41,8 @@ export class AccionesService {
     return this.http.post(environment.apiUrl + '/lic/aspben/monitor_ejecuion_acciones/register', { ...monitor_ejecucion_acciones });
   }
 
+  habilitarReenvioCurps(): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/acciones_habilita_reenvio_curps', { clave: "habilita_boton_reenviar_curps" });
+  }
 
 }
