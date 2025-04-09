@@ -158,20 +158,14 @@ export class AspirantesBeneficioFotosService {
   async actualizarConfirmadoPorIdAspiranteBeneficio(
     id_aspirante_beneficio: number,
   ): Promise<any> {
-    const campos = [];
-    const params = [];
 
-    if (id_aspirante_beneficio !== undefined) {
-      campos.push('confirmado = NULL');
-      params.push(id_aspirante_beneficio);
+    if (id_aspirante_beneficio === undefined || id_aspirante_beneficio === null) {
+      throw new Error('Se requiere un id_aspirante_beneficio válido.');
     }
 
-    if (campos.length === 0) {
-      throw new Error('No se proporcionaron campos para actualizar.');
-    }
+    const sql = `UPDATE sy_aspirantes_beneficio_fotos SET confirmado = NULL WHERE id_aspirante_beneficio = ?;`;
 
-    const sql = `UPDATE sy_aspirantes_beneficio_fotos SET ${campos.join(', ')} WHERE id_aspirante_beneficio = ?;`;
-    params.push(id_aspirante_beneficio);
+    const params = [id_aspirante_beneficio];
 
     return await this.databaseService.execute(sql, params);
   }
