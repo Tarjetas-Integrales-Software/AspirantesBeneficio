@@ -6,6 +6,7 @@ import { ReportesComponent } from "./reportes/reportes.component";
 import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
 import { AsistenciaComponent } from "./asistencia/asistencia.component";
 import { ImpresionCredencialComponent } from "./impresion-credencial/impresion-credencial.component";
+import { AccionesComponent } from "./acciones/acciones.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -41,7 +42,13 @@ export const pagesRoutes: Routes = [
                 path: 'asistencia',
                 title: 'Asistencia',
                 component: AsistenciaComponent
-            }, {
+            },
+            {
+              path: 'acciones',
+              title: 'Acciones',
+              component: AccionesComponent
+          },
+            {
                 path: 'impresion-credencial',
                 title: 'Impresion Credencial',
                 component: ImpresionCredencialComponent
