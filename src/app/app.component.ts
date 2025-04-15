@@ -417,7 +417,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 }
               },
               error: (error) => {
-                this.eliminarRelacionadosAspirante(nuevoIdAsistencia, nuevoIdFoto);
+                this.eliminarRelacionadosAsistencia(nuevoIdAsistencia, nuevoIdFoto);
 
                 console.error("Error al crear relación:", error);
               }
@@ -425,7 +425,7 @@ export class AppComponent implements OnInit, OnDestroy {
           } else {
             console.error("No se pudo crear la relación porque faltan IDs válidos");
 
-            this.eliminarRelacionadosAspirante(nuevoIdAsistencia, nuevoIdFoto);
+            this.eliminarRelacionadosAsistencia(nuevoIdAsistencia, nuevoIdFoto);
           }
         } catch (error) {
           console.error("Error obteniendo aspirante o foto:", error);
