@@ -8,6 +8,6 @@ export const environment = {
     syncInterval: 600000,
     syncCurpInterval: 300000,
     syncMonitorInterval: 900000,
-    syncAsistenciaInterval: 1000000,
+    syncAsistenciaInterval: 30000,
     gitversion: APP_VERSION
 };
