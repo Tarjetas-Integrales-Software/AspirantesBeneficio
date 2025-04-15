@@ -1,5 +1,6 @@
 import { Component, ViewChild, OnInit } from '@angular/core';
 import { CommonModule } from "@angular/common";
+import { switchMap, filter, take } from 'rxjs/operators';
 import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
 import { CamaraComponent } from '../../components/camara/camara.component';
 import { MatInputModule } from '@angular/material/input';
@@ -146,6 +147,8 @@ export class AsistenciaComponent implements OnInit {
 
     this.camaraComponent.savePhoto(fileName, 'imagenesAsistencia');
     Swal.fire('Asistencia registrada!', '', 'success');
+
+    this.checkAndSyncAsistencias();
   }
 
   async registrarAsistencia(currentDate: string, user: { iduser: number }, idModulo: number, idTipo: boolean): Promise<any> {
@@ -236,5 +239,121 @@ export class AsistenciaComponent implements OnInit {
     const horas = ahora.getHours();
 
     return !(horas >= 0 && horas < 12);
+  }
+
+  private checkAndSyncAsistencias(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarAsistencias();
+    });
+  }
+
+  async actualizarAsistencias(): Promise<void> {
+    try {
+      const items = await this.relacionAsistenciaFotosService.consultarRelacionesDesincronizadas();
+
+      for (const relacion of items) {
+        const { id_asistencia, id_cajero_foto } = relacion;
+
+        try {
+          const asistencia = await this.asistenciaService.consultarAsistenciaPorId(id_asistencia);
+          const foto = await this.cajerosFotosService.consultarFotoPorId(id_cajero_foto);
+
+          let nuevaAsistencia = {};
+          let nuevaFoto = {};
+          let nuevoIdAsistencia: number | null = null;
+          let nuevoIdFoto: number | null = null;
+
+          // Crear aspirante y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.asistenciaService.createAsistencia(asistencia).subscribe({
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdAsistencia = response.data.id;
+                  nuevaAsistencia = response.data;
+                }
+
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear aspirante:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Crear foto y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.cajerosFotosService.createFoto(foto).subscribe({
+              next: (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdFoto = response.data.id;
+                  nuevaFoto = response.data;
+                }
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear foto:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Verificamos que los IDs sean números válidos antes de crear la relación
+          if (typeof nuevoIdAsistencia === "number" && typeof nuevoIdFoto === "number") {
+            const nuevaRelacion = {
+              id_asistencia: nuevoIdAsistencia,
+              id_cajero_foto: nuevoIdFoto
+            };
+
+            this.relacionAsistenciaFotosService.createRelacion(nuevaRelacion).subscribe({
+              next: (response) => {
+                if (response.response) {
+                  this.relacionAsistenciaFotosService.eliminarRelacion(relacion.id);
+
+                  this.cajerosFotosService.registerPhoto(nuevaAsistencia, nuevaFoto)
+                }
+              },
+              error: (error) => {
+                this.eliminarRelacionadosAsistencia(nuevoIdAsistencia, nuevoIdFoto);
+
+                console.error("Error al crear relación:", error);
+              }
+            });
+          } else {
+            console.error("No se pudo crear la relación porque faltan IDs válidos");
+
+            this.eliminarRelacionadosAsistencia(nuevoIdAsistencia, nuevoIdFoto);
+          }
+        } catch (error) {
+          console.error("Error obteniendo aspirante o foto:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  eliminarRelacionadosAsistencia(nuevoIdAsistencia: null | number, nuevoIdFoto: null | number): void {
+    if (typeof nuevoIdAsistencia === "number") this.asistenciaService.deleteAsistencia(nuevoIdAsistencia).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdAsistencia = null;
+      },
+      error: (error) => {
+        console.error("Error al eliminar asistencia:", error);
+      }
+    });
+
+    if (typeof nuevoIdFoto === "number") this.cajerosFotosService.deleteFoto(nuevoIdFoto).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
+      },
+      error: (error) => {
+        console.error("Error al eliminar asistencia:", error);
+      }
+    });
   }
 }
