@@ -19,6 +19,7 @@ export class CamaraComponent implements OnInit {
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
 
   @Input() buttonTitle: string = "Capturar";
+  @Input() disabledRegister: boolean = true;
 
   @Output() submitForm = new EventEmitter<void>();
 
@@ -129,4 +130,8 @@ export class CamaraComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> { }
+
+  deleteImage() {
+    this.capturedImage = null;
+  }
 }
