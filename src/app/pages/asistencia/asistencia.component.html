@@ -21,7 +21,7 @@
                 {{ myForm.get('tipo')?.value ? 'Salida' : 'Entrada' }}
             </mat-slide-toggle>
         </form>
-        <app-camara #camaraComponent (buttonClicked)="comprobarClave()"></app-camara>
+        <app-camara #camaraComponent (buttonClicked)="comprobarClave()" [disabledRegister]="loadingRegistro"></app-camara>
     </section>
     <section class="bg-white border-0 shadow-lg rounded p-4 w-full">
         <h2>Histórico de asistencia</h2>

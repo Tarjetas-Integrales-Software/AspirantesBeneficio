@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit } from '@angular/core';
+import { Component, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from "@angular/common";
 import { switchMap, filter, take } from 'rxjs/operators';
 import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
@@ -59,11 +59,14 @@ export class AsistenciaComponent implements OnInit {
 
   loading: boolean = false;
   errorMessage: string = '';
+  loadingRegistro: boolean = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild('camaraComponent') camaraComponent!: CamaraComponent;
 
-  constructor(private fb: FormBuilder,
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
     private storageService: StorageService,
     private asistenciaService: AsistenciaService,
     private cajerosFotosService: CajerosFotosService,
@@ -129,6 +132,8 @@ export class AsistenciaComponent implements OnInit {
 
     if (!idModulo) return;
 
+    this.loadingRegistro = true;
+
     const user = this.storageService.get("user");
 
     const fullDate = new Date();
@@ -146,9 +151,13 @@ export class AsistenciaComponent implements OnInit {
     await this.registrarRelacionAsistenciaFoto(nuevaAsistencia, nuevaFoto);
 
     this.camaraComponent.savePhoto(fileName, 'imagenesAsistencia');
-    Swal.fire('Asistencia registrada!', '', 'success');
-
+    
     this.checkAndSyncAsistencias();
+    this.camaraComponent.deleteImage();
+    this.myForm.get('password')?.reset('');
+    Swal.fire('Asistencia registrada!', '', 'success');
+    this.loadingRegistro = false;
+    this.cdr.detectChanges();
   }
 
   async registrarAsistencia(currentDate: string, user: { iduser: number }, idModulo: number, idTipo: boolean): Promise<any> {
@@ -212,7 +221,11 @@ export class AsistenciaComponent implements OnInit {
         async (response) => {
           if (response.response) {
             await this.registrar();
-          } else Swal.fire(response.message, '', 'warning');
+          } else Swal.fire({
+            title: response.message,
+            text: 'Usuario: ' + user.email,
+            icon: 'warning'
+          });
           this.loading = false;
         },
         (error) => {
