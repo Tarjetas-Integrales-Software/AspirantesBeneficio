@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { StorageService } from '../../../services/storage.service';
 import { MenuService } from '../../../services/CRUD/menu.service';
 
@@ -8,7 +8,7 @@ import { OpcionMenuComponent } from '../opcion-menu/opcion-menu.component';
 
 @Component({
   selector: 'menuComponent',
-  imports: [CommonModule, OpcionMenuComponent],
+  imports: [CommonModule, OpcionMenuComponent, RouterLink],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })
