@@ -6,7 +6,17 @@
 
         <div class="grid grid-cols-3 gap-4 *:text-white items-end">
 
+<<<<<<< HEAD
           <img class="w-[200px]" src="./assets/img/yoJalisco.png" alt="Yo Jalisco">
+=======
+          <div class="w-full aspect-video rounded-lg overflow-hidden ">
+
+            <div class="w-full h-full flex items-center justify-center text-gray-400">
+              <img class="w-[200px]" src="./assets/img/yoJalisco.png" alt="Yo Jalisco">
+            </div>
+
+          </div>
+>>>>>>> 02f38c9 (feat: mejora en la interfaz de usuario y gestión de imágenes en el componente de impresión)
 
           <span class="text-[22px] font-bold">Subsidia el 50%</span>
           <div class="">
@@ -16,7 +26,13 @@
         </div>
 
         <div class="flex gap-4 *:text-white">
-          <img class="w-[200px] flex-auto" src="./assets/img/usuario.png" alt="Escudo de Jalisco">
+          <div class="max-w-[200px] flex-auto">
+            @if (capturedImage()) {
+              <img [src]="capturedImage()" alt="Captured photo" class="w-full h-full object-cover">
+              } @else {
+                <img class="" src="./assets/img/usuario.png" alt="Escudo de Jalisco">
+              }
+          </div>
           <div class="flex-auto py-3 *:flex">
             <div class="flex-col">
               <span>Nombre del beneficiario:</span>
@@ -65,7 +81,82 @@
 
     <div class="basis-3/8 max-w-[405px]">
 
-      <fotoComponent />
+      <div class="camara-container flex flex-col gap-4">
+        <div class="basis-full">
+          <div class="">
+
+            <div class="flex flex-col items-center">
+              <!-- Camera device selection -->
+              <mat-form-field class="w-full">
+                <mat-label>Cámara</mat-label>
+                <mat-select [(ngModel)]="selectedDevice" (ngModelChange)="startStream()">
+                  <mat-option value="">- Selecciona una opción -</mat-option>
+                  <mat-option *ngFor="let device of devices; let i = index" [value]="device.deviceId">{{
+                    device.label || 'Camera ' + (i + 1) }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Camera video stream -->
+              <div class="relative w-full aspect-video rounded-lg overflow-hidden mb-4">
+                <video #videoElement autoplay playsinline class="w-full h-full object-cover"></video>
+                @if (stream) {
+                <div class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                }
+              </div>
+
+              <!-- Captured image -->
+              <!-- <div class="w-full aspect-video rounded-lg overflow-hidden ">
+                @if (capturedImage()) {
+                <img [src]="capturedImage()" alt="Captured photo" class="w-full h-full object-cover">
+                } @else {
+                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                  Foto no capturada
+                </div>
+                }
+              </div> -->
+
+              <!-- Hidden canvas for capturing photos -->
+              <canvas #canvas hidden></canvas>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="basis-full">
+          <div class="py-2 flex gap-2 items-center flex-row justify-center px-2">
+
+            <!-- Capture button -->
+            <button (click)="capturePhoto()" [disabled]="!stream"
+              class="rounded-full w-16 h-16  bg-[#f26507]  border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+                class="w-8 h-8 text-gray-800 mx-auto">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z">
+                </path>
+              </svg>
+              <span class="sr-only">Capture photo</span>
+            </button>
+
+            <button (click)="notifyParent()" [disabled]="!capturedImage || disabledRegister"
+              class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right-to-arc">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M3 12h12" />
+                <path d="M11 8l4 4l-4 4" />
+                <path d="M12 21a9 9 0 0 0 0 -18" />
+              </svg>
+              <span>
+                {{ buttonTitle }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
 
     </div>
 
