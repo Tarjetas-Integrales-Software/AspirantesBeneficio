@@ -59,7 +59,7 @@
       </button>
 
       <!-- Register button -->
-      @if(!datosGeneralesComponent.editar) {
+      @if(!datosGeneralesComponent?.editar) {
       <button (click)="onSubmit()" [disabled]="!capturedImage"
         class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -72,7 +72,7 @@
         </svg>
         Registrar
       </button>
-      } @else{
+      } @else if(datosGeneralesComponent?.editar) {
       <button (click)="onEdit()"
         class="rounded-full w-3/4 flex flex-col items-center justify-center bg-rose-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -84,6 +84,19 @@
           <path d="M16 5l3 3" />
         </svg>
         Editar
+      </button>
+      } @else {
+      <button (click)="onSubmit()" [disabled]="!capturedImage"
+        class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right-to-arc">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <path d="M3 12h12" />
+          <path d="M11 8l4 4l-4 4" />
+          <path d="M12 21a9 9 0 0 0 0 -18" />
+        </svg>
+        Registrar
       </button>
       }
 
@@ -99,7 +112,7 @@
         </div>
         <div class="w-full p-3 overflow-hidden" [class.opacity-50]="!isCheckboxChecked" [class.pointer-events-none]="!isCheckboxChecked">
           <div
-            class="relative border-dotted h-10 rounded-lg border-dashed border-2 border-blue-700 bg-gray-100 flex justify-center items-center">
+            class="relative border-dotted h-10 rounded-lg border-2 border-blue-700 bg-gray-100 flex justify-center items-center">
 
             <div class="absolute">
               <div [ngClass]="{'flex gap-2 items-center': true, 'text-blue-400': lblUploadingFile, 'text-gray-400': !lblUploadingFile}">

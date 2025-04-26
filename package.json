@@ -19,7 +19,8 @@
     "electron": "electron .",
     "electron-build": "ng build --prod && electron main.js",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "build-start": "ng build --configuration production && electron ."
   },
   "private": true,
   "build": {
