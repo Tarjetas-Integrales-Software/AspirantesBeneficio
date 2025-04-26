@@ -10,6 +10,11 @@
           ruta="/inicio/acciones" [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 4v16l13 -8z" />'></app-opcion-menu>
 
+        <a routerLink="/inicio/impresion-manuales" routerLinkActive="router-link-active"
+          routerLinkActive="bg-[#f26507]/50" class="px-4 py-2 text-lg rounded-md font-bold flex gap-3 justify-around">
+          Impr Manual
+        </a>
+
         <app-opcion-menu *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_asistencia')" texto="Asistencia"
           ruta="/inicio/asistencia" [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M20.942 13.021a9 9 0 1 0 -9.407 7.967" /><path d="M12 7v5l3 3" /><path d="M15 19l2 2l4 -4" />'></app-opcion-menu>
@@ -33,12 +38,6 @@
         <app-opcion-menu *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_configurar')" texto="Configurar"
           ruta="/inicio/configuraciones" [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M11.445 20.913a1.665 1.665 0 0 1 -1.12 -1.23a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.31 .318 1.643 1.79 .997 2.694" /><path d="M15 19l2 2l4 -4" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />'></app-opcion-menu>
-
-        <a routerLink="/inicio/impresion-manuales" routerLinkActive="router-link-active"
-          routerLinkActive="bg-[#f26507]/50"
-          class="block px-4 py-2 text-lg rounded-md font-bold flex gap-3 justify-around">
-          Impresion Manual
-        </a>
 
         <app-opcion-menu texto="Cerrar Sesión" [esCerrarSesion]="true" [accion]="cerrarSesion.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2" /><path d="M3 12h13l-3 -3" /><path d="M13 15l3 -3" />'></app-opcion-menu>
