@@ -7,6 +7,13 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
 
+interface AspiranteBeneficio {
+  nombreBeneficiario: string;
+  curp: string;
+  telefono: string;
+  fechaExpedicion: string;
+}
+
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'app-impresion-manual',
@@ -22,12 +29,15 @@ export class ImpresionManualComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
 
-  @Input() buttonTitle: string = "Capturar";
+  
   @Input() disabledRegister: boolean = true;
 
   @Output() submitForm = new EventEmitter<void>();
 
   @Output() buttonClicked = new EventEmitter<void>();
+
+  printers: any[] = [];
+  selectedPrinter: string = '';
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -47,8 +57,8 @@ export class ImpresionManualComponent implements OnInit {
       ]],
       fechaExpedicion: [{ value: this.getFechaActual(), disabled: true }],
       telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
-      noTarjeta: [{ value: '', disabled: true }],
-      foto: [null, Validators.required]
+      noTarjeta: [null ,{ value: '', disabled: true }],
+      foto: [null, ]
     });
   }
 
@@ -61,7 +71,9 @@ export class ImpresionManualComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.getAvailableCameras()
+    this.getAvailableCameras();
+    this.getPrinters();
+    this.formulario.get('noTarjeta')?.disable();
   }
 
   notifyParent() {
@@ -158,11 +170,47 @@ export class ImpresionManualComponent implements OnInit {
     }
   }
 
-  onSubmit(): void {
+  async getPrinters() {
+    this.printers = await ipcRenderer.invoke('get-printers');
+    console.log(this.printers.length, 'printer-lenght');
+    if (this.printers.length > 0) {
+      this.selectedPrinter = this.printers[0].name;
+      console.log(this.printers, 'printers');
+    }
+  }
+
+  toUpperCaseName(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.formulario.get('nombreBeneficiario')?.setValue(input.value);
+  }
+
+  toUpperCaseCurp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.formulario.get('curp')?.setValue(input.value);
+  }
+
+
+  async printManual() {
     if (this.formulario.valid) {
-      console.log('Formulario enviado:', this.formulario.value);
+      const formData = this.formulario.value;
+      const photoPath = this.capturedImage(); // Foto recién tomada
+      
+      try {
+        ipcRenderer.send('print-id-card-manual', {
+          ...formData,
+          photoPath: photoPath,
+          printer: this.selectedPrinter
+        });
+
+        // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
+        
+      } catch (error) {
+        console.error('Error al enviar los datos para impresión manual:', error);
+      }
     } else {
-      console.error('Formulario inválido');
+      console.error('Formulario inválido, no se puede imprimir.');
     }
   }
 
