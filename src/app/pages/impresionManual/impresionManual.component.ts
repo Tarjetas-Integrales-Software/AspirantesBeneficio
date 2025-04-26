@@ -1,6 +1,6 @@
 import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal } from "@angular/core"
 import { CommonModule } from "@angular/common"
-import { FormGroup, FormsModule } from "@angular/forms"
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'app-impresion-manual',
-  imports: [CommonModule, FormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule , MatInputModule, MatFormFieldModule, MatSelectModule],
   templateUrl: './impresionManual.component.html',
   styles: `
     :host {
@@ -35,7 +35,30 @@ export class ImpresionManualComponent implements OnInit {
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
 
-  constructor(private http: HttpClient) { }
+  formulario: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.formulario = this.fb.group({
+      nombreBeneficiario: ['', [Validators.required, Validators.minLength(1)]],
+      curp: ['', [
+        Validators.required,
+        Validators.minLength(18),
+        Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
+      ]],
+      fechaExpedicion: [{ value: this.getFechaActual(), disabled: true }],
+      telefono: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      noTarjeta: [{ value: '', disabled: true }],
+      foto: [null, Validators.required]
+    });
+  }
+
+  getFechaActual(): string {
+    const hoy = new Date();
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anio = hoy.getFullYear();
+    return `${dia}-${mes}-${anio}`;
+  }
 
   ngOnInit() {
     this.getAvailableCameras()
@@ -78,6 +101,7 @@ export class ImpresionManualComponent implements OnInit {
   }
 
   async capturePhoto() {
+    // this.formulario.patchValue({ foto });
     const video = this.videoElement.nativeElement
     const canvas = this.canvas.nativeElement
     canvas.width = video.videoWidth
@@ -134,7 +158,13 @@ export class ImpresionManualComponent implements OnInit {
     }
   }
 
-  async onSubmit(): Promise<void> { }
+  onSubmit(): void {
+    if (this.formulario.valid) {
+      console.log('Formulario enviado:', this.formulario.value);
+    } else {
+      console.error('Formulario inválido');
+    }
+  }
 
   deleteImage() {
     this.capturedImage.set(null);
