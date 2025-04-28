@@ -747,7 +747,9 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
     const win = new BrowserWindow({ width: 200, height: 200, show: false });
     win.loadFile(savePath_pdf);
     win.webContents.on('did-finish-load', () => {
+      console.log('PDF cargado, comenzando impresión...');
       setTimeout(() => {
+        console.log('Esperando 1 segundo antes de imprimir...');
         win.webContents.print({
           silent: true,
           deviceName: data.printer,
@@ -756,8 +758,12 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
           margins: {
             marginType: 'none',
           },
+
         }, (success, errorType) => {
-          if (success) win.close();
+          if (success) {
+            win.close();
+            console.log('Impresión completada');
+          }
           else {
             console.log(errorType);
             win.close();
@@ -765,6 +771,7 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
         });
       }, 1000);
     });
+
 
     setTimeout(() => {
       if (fs.existsSync(imagePath)) {
