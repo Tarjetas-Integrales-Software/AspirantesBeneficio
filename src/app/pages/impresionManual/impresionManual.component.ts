@@ -23,7 +23,6 @@ export class ImpresionManualComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
 
-
   @Input() disabledRegister: boolean = true;
 
   @Output() submitForm = new EventEmitter<void>();
@@ -198,7 +197,6 @@ export class ImpresionManualComponent implements OnInit {
     if (this.formulario.valid) {
       const formData = this.formulario.value;
       const photoPath = this.capturedImage(); // Foto recién tomada
-
       try {
         ipcRenderer.send('print-id-card-manual', {
           ...formData,
