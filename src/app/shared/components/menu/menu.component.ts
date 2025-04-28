@@ -8,7 +8,7 @@ import { OpcionMenuComponent } from '../opcion-menu/opcion-menu.component';
 
 @Component({
   selector: 'menuComponent',
-  imports: [CommonModule, OpcionMenuComponent, RouterLink],
+  imports: [CommonModule, OpcionMenuComponent],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })
