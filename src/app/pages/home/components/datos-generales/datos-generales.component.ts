@@ -211,7 +211,7 @@ export class DatosGeneralesComponent implements OnInit {
         html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
         allowOutsideClick: false,
         allowEscapeKey: false,
-        timer: 5000,
+        timer: 3000,
         timerProgressBar: true,
         didOpen: () => {
           Swal.showLoading();

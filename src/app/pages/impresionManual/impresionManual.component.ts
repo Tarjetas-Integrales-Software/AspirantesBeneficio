@@ -1,4 +1,4 @@
-import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal, inject } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
@@ -7,6 +7,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
 import { ImpresionManualService } from "./impresionManual.service";
+import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
+import { Router } from "@angular/router";
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
@@ -37,10 +39,11 @@ export class ImpresionManualComponent implements OnInit {
   capturedImage = signal<string | null>(null)
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
+  modulo_actual: string | null = null;
 
   formulario: FormGroup;
 
-  constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService) {
+  constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService, private configuracionesService: ConfiguracionesService) {
     this.formulario = this.fb.group({
       nombreBeneficiario: ['', [Validators.required, Validators.minLength(4)]],
       curp: ['', [
@@ -54,6 +57,8 @@ export class ImpresionManualComponent implements OnInit {
       foto: [null, ]
     });
   }
+
+  private router = inject(Router);
 
   soloNumeros(event: KeyboardEvent): boolean {
     const charCode = event.key.charCodeAt(0);
@@ -78,6 +83,40 @@ export class ImpresionManualComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.modulo_actual = this.configuracionesService.getSelectedValueModu();
+        if (!this.modulo_actual) {
+          let timerInterval: NodeJS.Timeout;
+          Swal.fire({
+            icon: 'info',
+            title: 'Aún no seleccionás un módulo...',
+            html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: () => {
+              Swal.showLoading();
+              const container = Swal.getHtmlContainer();
+              if (!container) return; // Verifica que no sea null
+              const b = container.querySelector('b') as HTMLElement | null;
+              if (!b) return; // Verifica que 'b' exista
+
+              timerInterval = setInterval(() => {
+                const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
+                if (typeof timerLeft === 'number') { // Verifica si es un número
+                  b.textContent = Math.ceil(timerLeft / 1000).toString();
+                }
+              }, 1000);
+            },
+            willClose: () => {
+              clearInterval(timerInterval);
+            }
+          }).then((result) => {
+            if (result.dismiss === Swal.DismissReason.timer) {
+              this.router.navigateByUrl('/inicio/configuraciones');
+            }
+          });
+        }
     this.getAvailableCameras();
     this.getAvailablePrinters();
     this.getPrinters();
@@ -218,7 +257,7 @@ export class ImpresionManualComponent implements OnInit {
       const photoPath = this.capturedImage(); // Foto recién tomada
       try {
         // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
-
+        this.modulo_actual = this.configuracionesService.getSelectedValueModu();
         const fechaExpedicion = await this.getFechaActualFormatoAñoMesDia();
 
         const aspirante = {
@@ -226,7 +265,10 @@ export class ImpresionManualComponent implements OnInit {
           curp: formData.curp,
           telefono: formData.telefono,
           fechaExpedicion: fechaExpedicion || this.formulario.get('fechaExpedicion')?.value,
+          modulo: this.modulo_actual,
         }
+
+        debugger;
 
         ipcRenderer.send('print-id-card-manual', {
           ...aspirante,
