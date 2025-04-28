@@ -41,7 +41,7 @@
                   formControlName="nombreBeneficiario" id="" (input)="toUpperCaseName($event)">
                 <div
                   *ngIf="formulario.get('nombreBeneficiario')?.invalid && formulario.get('nombreBeneficiario')?.touched">
-                  <small class="text-white">El nombre es requerido y debe tener al menos 1 carácter.</small>
+                  <small class="text-white">El nombre es requerido y debe tener al menos 4 carácteres.</small>
                 </div>
               </div>
               <div class="flex flex-col">
