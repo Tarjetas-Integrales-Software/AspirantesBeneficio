@@ -113,10 +113,10 @@
 
                 <mat-form-field class="w-full">
                   <mat-label>Impresora</mat-label>
-                  <mat-select [(ngModel)]="selectedPrinter" (ngModelChange)="onPrinterChange()">
+                  <mat-select [(ngModel)]="selectedPrinter">
                     <mat-option value="">- Selecciona una impresora-</mat-option>
-                    <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.deviceId">{{
-                      printer.label || 'Printer ' + (i + 1) }}</mat-option>
+                    <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.name">{{
+                      printer.name || 'Printer ' + (i + 1) }}</mat-option>
                   </mat-select>
                 </mat-form-field>
               </div>

@@ -64,12 +64,12 @@ export class ImpresionManualComponent implements OnInit {
     return `${dia}-${mes}-${anio}`;
   }
 
-  getFechaActualFormatoAñoMesDia(): string {
+  async getFechaActualFormatoAñoMesDia(): Promise<string> {
     const hoy = new Date();
     const dia = String(hoy.getDate()).padStart(2, '0');
     const mes = String(hoy.getMonth() + 1).padStart(2, '0');
     const anio = hoy.getFullYear();
-    return `${anio}-${mes}-${dia}`;
+    return `${dia}-${mes}-${anio}`;
   }
 
   ngOnInit() {
@@ -106,16 +106,9 @@ export class ImpresionManualComponent implements OnInit {
     this.printers = await ipcRenderer.invoke('get-printers');
     console.log(this.printers.length, 'printer-lenght');
     if (this.printers.length > 0) {
-      this.selectedPrinter = this.printers[0].name;
+      // this.selectedPrinter = this.printers[0].name;
       console.log(this.printers, 'printers');
     }
-  }
-
-  onPrinterChange(selectedPrinterId?: string): void {
-    // The selectedPrinter property is already updated via [(ngModel)]
-    // Add any additional logic needed when the printer selection changes
-    console.log('Printer selection changed to:', this.selectedPrinter);
-    // If you passed the value via $event: console.log('Printer selection changed to:', selectedPrinterId);
   }
 
   async startStream() {
@@ -231,9 +224,8 @@ export class ImpresionManualComponent implements OnInit {
           nombreBeneficiario: formData.nombreBeneficiario,
           curp: formData.curp,
           telefono: formData.telefono,
-          fechaExpedicion: this.getFechaActualFormatoAñoMesDia(),
+          fechaExpedicion: '2025-04-28',
         }
-
         // Llamar al servicio para registrar la impresión
         this.impresionManualService.registerImpresion(aspirante).subscribe({
           next: (response) => {
