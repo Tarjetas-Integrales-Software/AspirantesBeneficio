@@ -46,10 +46,11 @@
               </div>
               <div class="flex flex-col">
                 <label>CURP:</label>
-                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" formControlName="curp" (input)="toUpperCaseCurp($event)"
-                  id="">
+                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" formControlName="curp"
+                  (input)="toUpperCaseCurp($event)" id="">
                 <div *ngIf="formulario.get('curp')?.invalid && formulario.get('curp')?.touched">
-                  <small class="text-white">La CURP es requerida, debe tener 18 caracteres y cumplir con el formato.</small>
+                  <small class="text-white">La CURP es requerida, debe tener 18 caracteres y cumplir con el
+                    formato.</small>
                 </div>
               </div>
               <div class="flex flex-row gap-4">
@@ -91,25 +92,34 @@
       </form>
     </div>
 
-    <div class="basis-3/8 max-w-[405px]">
+    <div class="basis-3/8 max-w-[432px]">
 
       <div class="camara-container ">
         <div
           class="flex flex-col justify-between gap-1 bg-white border-0 shadow-lg sm:rounded-3xl h-[424px] overflow-hidden">
           <div class="basis-full">
-            <div class=" ">
 
-              <div class="flex flex-col items-center">
-                <!-- Camera device selection -->
+            <div class="flex flex-col items-center">
+              <div class="flex gap-2 items-center justify-center">
+              <!-- Camera device selection -->
                 <mat-form-field class="w-full">
                   <mat-label>Cámara</mat-label>
                   <mat-select [(ngModel)]="selectedDevice" (ngModelChange)="startStream()">
-                    <mat-option value="">- Selecciona una opción -</mat-option>
+                    <mat-option value="">- Selecciona una camara -</mat-option>
                     <mat-option *ngFor="let device of devices; let i = index" [value]="device.deviceId">{{
                       device.label || 'Camera ' + (i + 1) }}</mat-option>
                   </mat-select>
                 </mat-form-field>
 
+                <mat-form-field class="w-full">
+                  <mat-label>Impresora</mat-label>
+                  <mat-select [(ngModel)]="selectedPrinter" (ngModelChange)="onPrinterChange()">
+                    <mat-option value="">- Selecciona una impresora-</mat-option>
+                    <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.deviceId">{{
+                      printer.label || 'Printer ' + (i + 1) }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
                 <!-- Camera video stream -->
                 <div class="relative w-full aspect-video overflow-hidden">
                   <video #videoElement autoplay playsinline class="w-full h-full object-cover"></video>
@@ -122,10 +132,10 @@
                 <canvas #canvas hidden></canvas>
               </div>
 
-            </div>
+
           </div>
 
-          <div class="basis-full flex justify-center items-center">
+          <div class="basis-full flex flex-col justify-center items-center">
             <div class="w-full py-2 flex gap-2 items-center flex-row justify-center px-2">
 
               <!-- Capture button -->
@@ -145,7 +155,9 @@
 
               <button (click)="printManual()" [disabled]="formulario.invalid || !capturedImage()"
                 class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
                   <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                   <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
                   <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
@@ -156,6 +168,7 @@
                 </span>
               </button>
             </div>
+
           </div>
         </div>
       </div>

@@ -30,6 +30,7 @@ export class ImpresionManualComponent implements OnInit {
   @Output() buttonClicked = new EventEmitter<void>();
 
   printers: any[] = [];
+  selectedPrinterName: string = '';
   selectedPrinter: string = '';
 
   devices: MediaDeviceInfo[] = []
@@ -73,6 +74,7 @@ export class ImpresionManualComponent implements OnInit {
 
   ngOnInit() {
     this.getAvailableCameras();
+    this.getAvailablePrinters();
     this.getPrinters();
     this.formulario.get('noTarjeta')?.disable();
   }
@@ -88,6 +90,32 @@ export class ImpresionManualComponent implements OnInit {
     } catch (error) {
       console.error("Error accessing media devices:", error)
     }
+  }
+
+  async getAvailablePrinters() {
+    try {
+      const printers = await ipcRenderer.invoke('get-printers');
+      this.printers = printers;
+      console.log("Available printers:", this.printers);
+    } catch (error) {
+      console.error("Error accessing printers:", error);
+    }
+  }
+
+  async getPrinters() {
+    this.printers = await ipcRenderer.invoke('get-printers');
+    console.log(this.printers.length, 'printer-lenght');
+    if (this.printers.length > 0) {
+      this.selectedPrinter = this.printers[0].name;
+      console.log(this.printers, 'printers');
+    }
+  }
+
+  onPrinterChange(selectedPrinterId?: string): void {
+    // The selectedPrinter property is already updated via [(ngModel)]
+    // Add any additional logic needed when the printer selection changes
+    console.log('Printer selection changed to:', this.selectedPrinter);
+    // If you passed the value via $event: console.log('Printer selection changed to:', selectedPrinterId);
   }
 
   async startStream() {
@@ -171,14 +199,7 @@ export class ImpresionManualComponent implements OnInit {
     }
   }
 
-  async getPrinters() {
-    this.printers = await ipcRenderer.invoke('get-printers');
-    console.log(this.printers.length, 'printer-lenght');
-    if (this.printers.length > 0) {
-      this.selectedPrinter = this.printers[0].name;
-      console.log(this.printers, 'printers');
-    }
-  }
+
 
   toUpperCaseName(event: Event): void {
     const input = event.target as HTMLInputElement;
