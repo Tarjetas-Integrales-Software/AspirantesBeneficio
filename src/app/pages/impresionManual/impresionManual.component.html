@@ -37,7 +37,7 @@
             <div class="flex-auto py-3">
               <div class="flex flex-col">
                 <label>Nombre del beneficiario:</label>
-                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text"
+                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" minlength="4"
                   formControlName="nombreBeneficiario" id="" (input)="toUpperCaseName($event)">
                 <div
                   *ngIf="formulario.get('nombreBeneficiario')?.invalid && formulario.get('nombreBeneficiario')?.touched">
@@ -47,7 +47,7 @@
               <div class="flex flex-col">
                 <label>CURP:</label>
                 <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" formControlName="curp"
-                  (input)="toUpperCaseCurp($event)" id="">
+                  (input)="toUpperCaseCurp($event)" id="" maxlength="18" minlength="18">
                 <div *ngIf="formulario.get('curp')?.invalid && formulario.get('curp')?.touched">
                   <small class="text-white">La CURP es requerida, debe tener 18 caracteres y cumplir con el
                     formato.</small>
@@ -62,7 +62,7 @@
                 <div class="basis-1/2">
                   <label>Telefono:</label>
                   <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
-                    formControlName="telefono" id="">
+                    formControlName="telefono" id="" maxlength="10" minlength="10">
                   <div *ngIf="formulario.get('telefono')?.invalid && formulario.get('telefono')?.touched">
                     <small class="text-white">El teléfono es requerido y debe tener 10 dígitos.</small>
                   </div>
@@ -113,7 +113,7 @@
 
                 <mat-form-field class="w-full">
                   <mat-label>Impresora</mat-label>
-                  <mat-select [(ngModel)]="selectedPrinter">
+                  <mat-select [ngModel]="selectedPrinter()" (selectionChange)="selectedPrinter.set($event.value)">
                     <mat-option value="">- Selecciona una impresora-</mat-option>
                     <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.name">{{
                       printer.name || 'Printer ' + (i + 1) }}</mat-option>
@@ -153,7 +153,7 @@
                 <span class="sr-only">Capture photo</span>
               </button>
 
-              <button (click)="printManual()" [disabled]="formulario.invalid || !capturedImage()"
+              <button (click)="printManual()" [disabled]="formulario.invalid || !capturedImage() || !selectedPrinter()"
                 class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

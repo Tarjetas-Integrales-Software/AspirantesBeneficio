@@ -30,8 +30,7 @@ export class ImpresionManualComponent implements OnInit {
   @Output() buttonClicked = new EventEmitter<void>();
 
   printers: any[] = [];
-  selectedPrinterName: string = '';
-  selectedPrinter: string = '';
+  selectedPrinter = signal<string | null>(null);
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -215,17 +214,20 @@ export class ImpresionManualComponent implements OnInit {
         ipcRenderer.send('print-id-card-manual', {
           ...formData,
           photoPath: photoPath,
-          printer: this.selectedPrinter
+          printer: this.selectedPrinter()
         });
 
         // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
+
+        const fechaExpedicion = await this.getFechaActualFormatoAñoMesDia();
 
         const aspirante = {
           nombreBeneficiario: formData.nombreBeneficiario,
           curp: formData.curp,
           telefono: formData.telefono,
-          fechaExpedicion: '2025-04-28',
+          fechaExpedicion: fechaExpedicion,
         }
+        debugger;
         // Llamar al servicio para registrar la impresión
         this.impresionManualService.registerImpresion(aspirante).subscribe({
           next: (response) => {
