@@ -6,13 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
-
-interface AspiranteBeneficio {
-  nombreBeneficiario: string;
-  curp: string;
-  telefono: string;
-  fechaExpedicion: string;
-}
+import { ImpresionManualService } from "./impresionManual.service";
 
 const { ipcRenderer } = (window as any).require("electron");
 @Component({
@@ -29,7 +23,7 @@ export class ImpresionManualComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
 
-  
+
   @Input() disabledRegister: boolean = true;
 
   @Output() submitForm = new EventEmitter<void>();
@@ -47,7 +41,7 @@ export class ImpresionManualComponent implements OnInit {
 
   formulario: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService) {
     this.formulario = this.fb.group({
       nombreBeneficiario: ['', [Validators.required, Validators.minLength(1)]],
       curp: ['', [
@@ -68,6 +62,14 @@ export class ImpresionManualComponent implements OnInit {
     const mes = String(hoy.getMonth() + 1).padStart(2, '0');
     const anio = hoy.getFullYear();
     return `${dia}-${mes}-${anio}`;
+  }
+
+  getFechaActualFormatoAñoMesDia(): string {
+    const hoy = new Date();
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anio = hoy.getFullYear();
+    return `${anio}-${mes}-${dia}`;
   }
 
   ngOnInit() {
@@ -196,7 +198,7 @@ export class ImpresionManualComponent implements OnInit {
     if (this.formulario.valid) {
       const formData = this.formulario.value;
       const photoPath = this.capturedImage(); // Foto recién tomada
-      
+
       try {
         ipcRenderer.send('print-id-card-manual', {
           ...formData,
@@ -205,7 +207,36 @@ export class ImpresionManualComponent implements OnInit {
         });
 
         // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
-        
+
+        const aspirante = {
+          nombreBeneficiario: formData.nombreBeneficiario,
+          curp: formData.curp,
+          telefono: formData.telefono,
+          fechaExpedicion: this.getFechaActualFormatoAñoMesDia(),
+        }
+
+        // Llamar al servicio para registrar la impresión
+        this.impresionManualService.registerImpresion(aspirante).subscribe({
+          next: (response) => {
+            console.log('Registro de impresión exitoso:', response);
+            Swal.fire({
+              title: 'Impresión exitosa',
+              text: 'La tarjeta se imprimió correctamente.',
+              icon: 'success',
+              confirmButtonText: 'Aceptar'
+            });
+          },
+          error: (error) => {
+            console.error('Error al registrar la impresión:', error);
+            Swal.fire({
+              title: 'Error',
+              text: 'No se pudo registrar la impresión.',
+              icon: 'error',
+              confirmButtonText: 'Aceptar'
+            });
+          }
+        });
+
       } catch (error) {
         console.error('Error al enviar los datos para impresión manual:', error);
       }
