@@ -211,12 +211,6 @@ export class ImpresionManualComponent implements OnInit {
       const formData = this.formulario.value;
       const photoPath = this.capturedImage(); // Foto recién tomada
       try {
-        ipcRenderer.send('print-id-card-manual', {
-          ...formData,
-          photoPath: photoPath,
-          printer: this.selectedPrinter()
-        });
-
         // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
 
         const fechaExpedicion = await this.getFechaActualFormatoAñoMesDia();
@@ -225,9 +219,14 @@ export class ImpresionManualComponent implements OnInit {
           nombreBeneficiario: formData.nombreBeneficiario,
           curp: formData.curp,
           telefono: formData.telefono,
-          fechaExpedicion: fechaExpedicion,
+          fechaExpedicion: fechaExpedicion || this.formulario.get('fechaExpedicion')?.value,
         }
-        debugger;
+
+        ipcRenderer.send('print-id-card-manual', {
+          ...aspirante,
+          photoPath: photoPath,
+          printer: this.selectedPrinter()
+        });
         // Llamar al servicio para registrar la impresión
         this.impresionManualService.registerImpresion(aspirante).subscribe({
           next: (response) => {
