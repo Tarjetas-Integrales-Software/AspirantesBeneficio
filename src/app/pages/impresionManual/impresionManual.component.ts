@@ -42,7 +42,7 @@ export class ImpresionManualComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService) {
     this.formulario = this.fb.group({
-      nombreBeneficiario: ['', [Validators.required, Validators.minLength(1)]],
+      nombreBeneficiario: ['', [Validators.required, Validators.minLength(4)]],
       curp: ['', [
         Validators.required,
         Validators.minLength(18),
