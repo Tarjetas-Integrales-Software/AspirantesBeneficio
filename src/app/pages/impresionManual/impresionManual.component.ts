@@ -79,7 +79,7 @@ export class ImpresionManualComponent implements OnInit {
     const dia = String(hoy.getDate()).padStart(2, '0');
     const mes = String(hoy.getMonth() + 1).padStart(2, '0');
     const anio = hoy.getFullYear();
-    return `${dia}-${mes}-${anio}`;
+    return `${anio}-${mes}-${dia}`;
   }
 
   ngOnInit() {
@@ -275,8 +275,14 @@ export class ImpresionManualComponent implements OnInit {
           photoPath: photoPath,
           printer: this.selectedPrinter()
         });
+
         // Llamar al servicio para registrar la impresión
-        this.impresionManualService.registerImpresion(aspirante).subscribe({
+        this.impresionManualService.registerImpresion(
+          {
+            ...aspirante,
+            fechaExpedicion: fechaExpedicion,
+          }
+        ).subscribe({
           next: (response) => {
             console.log('Registro de impresión exitoso:', response);
             Swal.fire({
@@ -296,6 +302,12 @@ export class ImpresionManualComponent implements OnInit {
             });
           }
         });
+
+        debugger;
+
+        this.formulario.reset();
+        this.capturedImage.set(null);
+        this.stopStream();
 
       } catch (error) {
         console.error('Error al enviar los datos para impresión manual:', error);
