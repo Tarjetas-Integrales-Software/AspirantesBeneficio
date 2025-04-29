@@ -1,8 +1,13 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './auth/login/login.component';
-import { HomeComponent } from './pages/home/home.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
-  { path: '', component: HomeComponent },
+  {
+    path: 'auth',
+    loadChildren: () => import('./login/login.routes')
+  },
+  {
+    path: 'inicio',
+    loadChildren: () => import('./pages/pages.routes').then(m => m.pagesRoutes)
+  },
+  { path: '**', redirectTo: '/inicio/digitalizador', pathMatch: 'full' }
 ];

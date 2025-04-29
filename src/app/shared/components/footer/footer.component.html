@@ -1,0 +1,18 @@
+<!-- component -->
+<footer class="footer mx-auto w-full flex p-4 bg-gray-300 text-gray-800">
+  <div class="basis-2/10 flex flex-col justify-center items-center">
+    <img [src]="aspirantesBeneficioFotosService.syncStatusImage()" style="width: 22px;" alt="status sync" />
+    <p>Versión: {{ version }}</p>
+  </div>
+  <div class="basis-6/10 text-center">
+    <p>
+      Usuario - {{user}}
+    </p>
+    <p>
+      Copyright © {{ currentYear }} -
+      <a class="font-semibold" target="_blank" href="https://tarjetasintegrales.mx/">Tarjetas Integrales S.A. de
+        C.V.</a>
+    </p>
+  </div>
+  <div class="basis-2/10"></div>
+</footer>
