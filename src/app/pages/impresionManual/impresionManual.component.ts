@@ -268,6 +268,8 @@ export class ImpresionManualComponent implements OnInit {
           modulo: this.modulo_actual,
         }
 
+        debugger;
+
         ipcRenderer.send('print-id-card-manual', {
           ...aspirante,
           photoPath: photoPath,
