@@ -21,7 +21,7 @@
           </div>
         </div>
         <div class="col-span-5 px-2 h-[600px]">
-          <div class="chart-container flex flex-col items-center justify-end gap-10">
+          <div class="chart-container h-[600px] flex flex-col items-center justify-end gap-10">
             <canvas id="myBarChart"> {{ chart }} </canvas>
           </div>
         </div>
@@ -44,7 +44,7 @@
             </button>
           </div>
           <div class="h-[500px] bg-sky-200 border-l border-slate-700">
-            <form class="w-full">
+            <form class="w-full h-[500px]">
               <mat-form-field class="w-full">
                 <mat-label>Assignee</mat-label>
                 <input type="text" matInput [formControl]="myControl" [matAutocomplete]="auto">
@@ -55,13 +55,25 @@
                     }
                   </mat-list>
                 </mat-autocomplete>
-                <mat-list role="list">
+                <mat-list role="list" class="max-h-[425px] overflow-y-auto">
                   <mat-list-item role="listitem">Naranja</mat-list-item>
                   <mat-list-item role="listitem">Manzana</mat-list-item>
                   <mat-list-item role="listitem">Pera</mat-list-item>
                   <mat-list-item role="listitem">Uva</mat-list-item>
                   <mat-list-item role="listitem">Mango</mat-list-item>
                   <mat-list-item role="listitem">Sandia</mat-list-item>
+                  <mat-list-item role="listitem">Guayaba</mat-list-item>
+                  <mat-list-item role="listitem">Durazno</mat-list-item>
+                  <mat-list-item role="listitem">Freza</mat-list-item>
+                  <mat-list-item role="listitem">Naranja</mat-list-item>
+                  <mat-list-item role="listitem">Manzana</mat-list-item>
+                  <mat-list-item role="listitem">Pera</mat-list-item>
+                  <mat-list-item role="listitem">Uva</mat-list-item>
+                  <mat-list-item role="listitem">Mango</mat-list-item>
+                  <mat-list-item role="listitem">Sandia</mat-list-item>
+                  <mat-list-item role="listitem">Guayaba</mat-list-item>
+                  <mat-list-item role="listitem">Durazno</mat-list-item>
+                  <mat-list-item role="listitem">Freza</mat-list-item>
                 </mat-list>
 
               </mat-form-field>
