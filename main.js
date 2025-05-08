@@ -24,6 +24,13 @@ if (require('electron-squirrel-startup')) app.quit();
 
 app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
 
+
+// para poder usar el sistema de archivos de windows
+const remote = require('@electron/remote/main');
+// Inicializar @electron/remote
+remote.initialize();
+
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
@@ -51,6 +58,10 @@ function createWindow() {
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
+
+  // Habilitar remote para esta ventana
+  remote.enable(win.webContents);
+
 }
 
 async function sendAppInfo() {
@@ -453,6 +464,38 @@ function initializeDatabase() {
         updated_at TEXT,
         deleted_at TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS sy_config_digitalizador (
+        id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        ruta_digitalizados TEXT NULL,
+        ruta_enviados TEXT NULL,
+        tiempo_sync INTEGER NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ct_tipos_documentos_digitalizador (
+        id INTEGER PRIMARY KEY,
+        tipo_doc_dig TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS ct_contenedores (
+        id INTEGER PRIMARY KEY,
+        nombre TEXT NULL,
+        descripcion_contenedor TEXT NULL,
+        descripcion_ubicacion TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);

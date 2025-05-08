@@ -1,16 +1,39 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal, type OnInit } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  inject,
+  ViewChild,
+  ElementRef,
+  Component,
+  signal,
+  type OnInit,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+  FormBuilder,
+} from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Observable, startWith, map } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { Chart, registerables } from 'chart.js';
+import { FileSystemService } from '../../services/file-system.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ElectronService } from '../../services/electron.service';
+import Swal from 'sweetalert2';
+import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitalizador.service';
+import { NetworkStatusService } from '../../services/network-status.service';
 
 Chart.register(...registerables);
 
-export interface User {
+export interface Curp {
+  value: string;
   name: string;
 }
 
@@ -22,199 +45,611 @@ export interface User {
     MatInputModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
-    AsyncPipe,
+    //AsyncPipe,
     MatListModule,
-    CommonModule
+    MatSelectModule,
+    CommonModule,
   ],
   templateUrl: './digitalizador.component.html',
-  styles: `
-    :host {
-      display: block;
-    }
-    .directory-selector-container {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      background-color: #fff;
-    }
-
-    h2 {
-      color: #333;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .input-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-      color: #555;
-    }
-
-    .file-input-wrapper {
-      display: flex;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-      cursor: pointer;
-    }
-
-    .button {
-      padding: 10px 15px;
-      background-color: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .button:hover {
-      background-color: #e0e0e0;
-    }
-
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 30px;
-    }
-
-    .save-button {
-      padding: 12px 30px;
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .save-button:hover {
-      background-color: #45a049;
-    }
-
-    .save-button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-
-  `,
+  styleUrl: './digitalizador.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DigitalizadorComponent implements OnInit {
-  myControl = new FormControl<string | User>('');
-  options: User[] = [{ name: 'Manzana' }, { name: 'Uva' }, { name: 'Naranja' }];
-  filteredOptions?: Observable<User[]>;
-  chart: any;
-  showModal = false;
+  private fb = inject(FormBuilder);
+  @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
 
-  toggleModal() {
-    this.showModal = !this.showModal;
+  filteredOptions?: Observable<Curp[]>;
+  chart: any;
+  showModal_configuraciones = false;
+  showModal_upload_esperados_tipo_archivo = false;
+
+  curpsesControl = new FormControl();
+  isMonitoring: boolean = false;
+
+  private fs: any;
+  private path: any;
+
+  readonly targetDirectory = 'C:\\ExpedientesBeneficiarios';
+  readonly targetDirectory_Digitalizados =
+    'C:\\ExpedientesBeneficiarios\\Digitalizados';
+  readonly targetDirectory_Enviados = 'C:\\ExpedientesBeneficiarios\\Enviados';
+
+  constructor(
+    private fileSystemService: FileSystemService,
+    private electronService: ElectronService,
+    private snackBar: MatSnackBar,
+    private configDigitalizadorService: ConfigDigitalizadorService,
+    private networkStatusService: NetworkStatusService
+  ) {
+    this.fs = window.require('fs');
+    this.path = window.require('path');
+  }
+
+  myForm: FormGroup = this.fb.group({
+    curp: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(18),
+        Validators.pattern(
+          /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/
+        ),
+      ],
+    ],
+    curpses: this.curpsesControl,
+  });
+
+  myForm_Config: FormGroup = this.fb.group({
+    id_tipo_doc_dig: ['', [Validators.required]],
+  });
+
+  myForm_Upload: FormGroup = this.fb.group({
+    id_tipo_doc_dig: ['', [Validators.required]],
+  });
+
+  myForm_Footer: FormGroup = this.fb.group({
+    id_contenedor: ['', [Validators.required]],
+  });
+
+
+
+  toggleModal_Configuraciones() {
+    this.showModal_configuraciones = !this.showModal_configuraciones;
+  }
+
+  toggleModal_UploadEsperadosTipoArchivo() {
+    this.showModal_upload_esperados_tipo_archivo = !this.showModal_upload_esperados_tipo_archivo;
   }
 
   ngOnInit() {
-    this.filteredOptions = this.myControl.valueChanges.pipe(
-      startWith(''),
-      map(value => {
-        const name = typeof value === 'string' ? value : value?.name;
-        return name ? this._filter(name as string) : this.options.slice();
-      }),
-    );
+
+    const online = this.networkStatusService.checkConnection();
+    if (online) {
+      this.syncDataBase();
+      this.getContenedores();
+      this.getTiposDocDig();
+
+    }
+
+
+
     this.chart = new Chart('myBarChart', this.bar);
+
+    if (this.electronService.isElectron) {
+      console.log('Running in Electron!');
+    }
+
+    // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
+    this.creaCarpetaExpedientes();
+    this.creaCarpetaExpedientes_Digitalizados();
+    this.creaCarpetaExpedientes_Enviados();
+
+    // Asegurar que el README.txt exista al iniciar el componente
+    this.fileSystemService.ensureFileExists(
+      'README.txt',
+      this.targetDirectory_Digitalizados
+    );
+    this.fileSystemService.ensureFileExists(
+      'README.txt',
+      this.targetDirectory_Enviados
+    );
+
+    // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
+    this.configDigitalizadorService.CreateConfigInicialDigitalizador();
   }
 
-  displayFn(user: User): string {
-    return user && user.name ? user.name : '';
+  syncDataBase(): void {
+    this.configDigitalizadorService.getTiposDocsDigitalizador().subscribe({
+      next: (response) => {
+        this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(response.data);
+      },
+      error: (error) => {
+        console.error('Error al obtener Tipos Documentos Digitalizacion:', error);
+      }
+    });
+
+    this.configDigitalizadorService.getContenedores().subscribe({
+      next: (response) => {
+        this.configDigitalizadorService.syncLocalDataBase_Contenedores(response.data);
+      },
+      error: (error) => {
+        console.error('Error al obtener Contenedores:', error);
+      }
+    });
   }
 
-  private _filter(name: string): User[] {
-    const filterValue = name.toLowerCase();
+  async creaCarpetaExpedientes() {
+    try {
+      // const hasPermission = await this.fileSystemService.checkPermissions(this.targetDirectory);
+      // if (!hasPermission) {
+      //   this.snackBar.open('No tiene permisos para acceder a esta ubicación', 'Cerrar', {
+      //     duration: 5000,
+      //     panelClass: ['error-snackbar']
+      //   });
+      //   return;
+      // }
 
-    return this.options.filter(option => option.name.toLowerCase().includes(filterValue));
+      const exists = await this.fileSystemService.directoryExists(
+        this.targetDirectory
+      );
+
+      if (!exists) {
+        const created = await this.fileSystemService.ensureDirectoryExists(
+          this.targetDirectory
+        );
+        if (created) {
+          console.log(`Directorio creado: ${this.targetDirectory}`);
+          this.snackBar.open(
+            `Directorio creado: ${this.targetDirectory}`,
+            'Cerrar',
+            {
+              duration: 3000,
+            }
+          );
+        }
+      } else {
+        console.log(`El directorio ya existe: ${this.targetDirectory}`);
+        this.snackBar.open(
+          `Directorio ya existe: ${this.targetDirectory}`,
+          'Cerrar',
+          {
+            duration: 3000,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error al verificar/crear el directorio:', error);
+      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar'],
+      });
+    }
+  }
+
+  async creaCarpetaExpedientes_Digitalizados() {
+    try {
+      const exists = await this.fileSystemService.directoryExists(
+        this.targetDirectory_Digitalizados
+      );
+
+      if (!exists) {
+        const created = await this.fileSystemService.ensureDirectoryExists(
+          this.targetDirectory_Digitalizados
+        );
+        if (created) {
+          console.log(
+            `Directorio creado: ${this.targetDirectory_Digitalizados}`
+          );
+          this.snackBar.open(
+            `Directorio creado: ${this.targetDirectory_Digitalizados}`,
+            'Cerrar',
+            {
+              duration: 3000,
+            }
+          );
+        }
+      } else {
+        console.log(
+          `El directorio ya existe: ${this.targetDirectory_Digitalizados}`
+        );
+        this.snackBar.open(
+          `Directorio ya existe: ${this.targetDirectory_Digitalizados}`,
+          'Cerrar',
+          {
+            duration: 3000,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error al verificar/crear el directorio:', error);
+      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar'],
+      });
+    }
+  }
+
+  async creaCarpetaExpedientes_Enviados() {
+    try {
+      const exists = await this.fileSystemService.directoryExists(
+        this.targetDirectory_Enviados
+      );
+
+      if (!exists) {
+        const created = await this.fileSystemService.ensureDirectoryExists(
+          this.targetDirectory_Enviados
+        );
+        if (created) {
+          console.log(`Directorio creado: ${this.targetDirectory_Enviados}`);
+          this.snackBar.open(
+            `Directorio creado: ${this.targetDirectory_Enviados}`,
+            'Cerrar',
+            {
+              duration: 3000,
+            }
+          );
+        }
+      } else {
+        console.log(
+          `El directorio ya existe: ${this.targetDirectory_Enviados}`
+        );
+        this.snackBar.open(
+          `Directorio ya existe: ${this.targetDirectory_Enviados}`,
+          'Cerrar',
+          {
+            duration: 3000,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Error al verificar/crear el directorio:', error);
+      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
+        duration: 5000,
+        panelClass: ['error-snackbar'],
+      });
+    }
+  }
+
+  showDialog() {
+    if (this.electronService.isElectron) {
+      console.log('SI es electron');
+      this.electronService.dialog
+        ?.showOpenDialog({
+          properties: ['openFile'],
+        })
+        .then((result) => {
+          if (!result.canceled) {
+            console.log('Archivo seleccionado:', result.filePaths[0]);
+          }
+        });
+    } else {
+      console.log('NO es electron');
+    }
+  }
+
+  displayFn(curp: Curp): string {
+    return curp && curp.name ? curp.name : '';
   }
 
   public bar: any = {
     type: 'bar',
     data: {
-      labels: ['Red', 'Blue', 'Yellow'],
-      datasets: [{
-        label: 'My First Dataset',
-        data: [300, 50, 100],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)'
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)'
-        ],
-        borderWidth: 1
-      }]
+      labels: ['Esperados', 'Digitalizados', 'Enviados'],
+      datasets: [
+        {
+          label: '',
+          data: [50000, 20000, 7500],
+          backgroundColor: [
+            'rgba(129, 125, 126, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(148, 226, 152, 0.2)',
+          ],
+          borderColor: [
+            'rgba(129, 125, 126, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(148, 226, 152, 1)',
+          ],
+          borderWidth: 1,
+        },
+      ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'top',
         },
         title: {
-          display: true,
-          text: 'Chart.js Doughnut Chart'
-        }
-      }
+          display: false,
+          text: 'Grafica Cantidad Expedientes por Status',
+        },
+      },
     },
   };
 
   // Signals para almacenar las rutas
-  sourcePath = signal<string>("")
-  destinationPath = signal<string>("")
+  sourcePath = signal<string>('');
+  destinationPath = signal<string>('');
+  timeSync = signal<number>(10);
+  curps = signal<Curp[]>([
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
+    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
+  ]);
 
   // Método para manejar la selección de la ruta de origen
   onSourcePathSelected(event: Event): void {
-    const input = event.target as HTMLInputElement
+    const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
+      console.log('entre al if');
       // Obtenemos la ruta del directorio seleccionado
       // Nota: debido a restricciones de seguridad del navegador, solo obtenemos el nombre
       // del directorio, no la ruta completa del sistema de archivos
-      this.sourcePath.set(input.files[0].webkitRelativePath.split("/")[0])
+      this.sourcePath.set(input.files[0].webkitRelativePath.split('/')[0]);
+    } else {
+      console.log('entre al else');
+      // Caso cuando el directorio está vacío
+      // Esto solo funciona en algunos navegadores
+      const path = input.value;
+      console.log(path);
+      if (path.includes('\\')) {
+        this.sourcePath.set(path.split('\\').slice(0, -1).join('\\'));
+      } else if (path.includes('/')) {
+        this.sourcePath.set(path.split('/').slice(0, -1).join('/'));
+      }
     }
+    console.log(this.sourcePath);
   }
 
   // Método para manejar la selección de la ruta de destino
   onDestinationPathSelected(event: Event): void {
-    const input = event.target as HTMLInputElement
+    const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.destinationPath.set(input.files[0].webkitRelativePath.split("/")[0])
+      console.log('entre al if');
+      this.destinationPath.set(input.files[0].webkitRelativePath.split('/')[0]);
+    } else {
+      console.log('entre al else');
+      // Caso cuando el directorio está vacío
+      // Esto solo funciona en algunos navegadores
+      const path = input.value;
+      console.log(path);
+      if (path.includes('\\')) {
+        this.destinationPath.set(path.split('\\').slice(0, -1).join('\\'));
+      } else if (path.includes('/')) {
+        this.destinationPath.set(path.split('/').slice(0, -1).join('/'));
+      }
     }
+    console.log(this.destinationPath);
   }
 
   // Método para guardar las rutas
-  saveDirectories(): void {
-    console.log("Ruta origen:", this.sourcePath())
-    console.log("Ruta destino:", this.destinationPath())
+  async saveDirectories(): Promise<void> {
+    try {
+      const ruta_origen = this.path.join(
+        this.targetDirectory,
+        this.sourcePath()
+      );
+      const ruta_destino = this.path.join(
+        this.targetDirectory,
+        this.destinationPath()
+      );
+      const tiempo_sync = this.getTiempoSyncSegValue();
 
-    // Aquí puedes implementar la lógica para guardar o procesar las rutas
-    // Por ejemplo, enviar a un servicio, almacenar en localStorage, etc.
-    alert(`Rutas guardadas:\nOrigen: ${this.sourcePath()}\nDestino: ${this.destinationPath()}`)
+      // Guardar informacion de configuracion de digitalizador en la db Local
+      await this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
+        ruta_digitalizados: ruta_origen,
+        ruta_enviados: ruta_destino,
+        tiempo_sync: tiempo_sync,
+      });
+
+      // Obtener configuración
+      const config =
+        await this.configDigitalizadorService.consultarConfigDigitalizador();
+      console.log(config);
+      if (config) {
+        Swal.fire({
+          title: 'Configuracion Almacenada Correctamente',
+          html: `
+            <b>Ruta Digitalizados:</b> ${
+              config.ruta_digitalizados || 'No definida'
+            }<br>
+            <b>Ruta Enviados:</b> ${config.ruta_enviados || 'No definida'}<br>
+            <b>Intervalo Sync:</b> ${
+              config.tiempo_sync
+                ? config.tiempo_sync + ' segundos'
+                : 'No definido'
+            }
+          `,
+          icon: 'success',
+          timer: 5000,
+          showConfirmButton: false,
+          confirmButtonText: 'Aceptar',
+        });
+        console.log('Configuración actual:', config);
+      } else {
+        Swal.fire({
+          title: 'Configuración no encontrada',
+          text: 'No existe configuración guardada',
+          icon: 'warning',
+          confirmButtonText: 'Aceptar',
+        });
+        console.log('No existe configuración guardada');
+      }
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Ocurrió un error al obtener la configuración',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      console.error('Error al obtener configuración:', error);
+    }
+
+    //console.log("Ruta origen:", this.sourcePath())
+    //console.log("Ruta destino:", this.destinationPath())
+    //alert(`Rutas guardadas:\nOrigen: ${this.sourcePath()}\nDestino: ${this.destinationPath()}`)
+  }
+
+  // Método para obtener el valor
+  getTiempoSyncSegValue() {
+    const value = this.tiempoSyncSegRef.nativeElement.valueAsNumber;
+    console.log('Valor numérico:', value);
+    return value;
+  }
+
+  // Método para el evento change
+  onTiempoSyncSegChange() {
+    const value = this.tiempoSyncSegRef.nativeElement.value;
+    console.log('Valor como string:', value);
   }
 
   // Método para abrir el selector de archivos programáticamente
   openFileSelector(inputId: string): void {
-    document.getElementById(inputId)?.click()
+    document.getElementById(inputId)?.click();
   }
+
+  startMonitoreo() {
+    this.isMonitoring = true;
+    console.log('START Presionado');
+  }
+
+  stopMonitoreo() {
+    this.isMonitoring = false;
+    console.log('STOP Presionado');
+  }
+
+  buscarCurps() {}
+
+  isValidField(fieldName: string): boolean | null {
+    return (
+      this.myForm.controls[fieldName].errors &&
+      this.myForm.controls[fieldName].touched
+    );
+  }
+
+  getFieldError(fieldName: string): string | null {
+    if (!this.myForm.controls[fieldName].errors) return null;
+
+    const errors = this.myForm.controls[fieldName].errors ?? {};
+
+    for (const key of Object.keys(errors)) {
+      switch (key) {
+        case 'required':
+          return 'Este campo es requerido';
+        case 'email':
+          return 'El email no es válido';
+        case 'minlength':
+          return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
+        case 'pattern':
+          return 'El formato de la curp no es correcto';
+      }
+    }
+    return null;
+  }
+
+  toUpperCaseCurp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.myForm.get('curp')?.setValue(input.value);
+  }
+
+  tipos_documento_dig: any[] = [];
+  contenedores: any[] = [];
+
+  selectedValue_2: string = '';
+  selectedValue_3: string = '';
+  selectedValue_4: string = '';
+
+  selectedValue2() {
+    this.selectedValue_2 = this.myForm_Config.get('id_tipo_doc_dig')?.value;
+
+    switch (Number(this.selectedValue_2)) {
+      case 1:
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
+      case 5:
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  selectedValue3() {
+    this.selectedValue_3 = this.myForm_Upload.get('id_tipo_doc_dig')?.value;
+
+    switch (Number(this.selectedValue_3)) {
+      case 1:
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
+      case 5:
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  selectedValue4() {
+    this.selectedValue_4 = this.myForm_Footer.get('id_contenedor')?.value;
+
+    switch (Number(this.selectedValue_4)) {
+      case 1:
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
+      case 5:
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  getTiposDocDig(): void {
+    this.configDigitalizadorService
+      .consultarTiposDocsDigitalizador()
+      .then((tipos_documento_dig) => {
+        this.tipos_documento_dig = tipos_documento_dig;
+      })
+      .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
+  }
+
+  getContenedores(): void {
+    this.configDigitalizadorService
+      .consultarContenedores()
+      .then((contenedores) => {
+        this.contenedores = contenedores;
+      })
+      .catch((error) => console.error('Error al obtener los contenedores:', error));
+  }
+
+
+
 }

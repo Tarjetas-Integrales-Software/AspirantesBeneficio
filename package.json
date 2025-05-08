@@ -20,7 +20,8 @@
     "electron-build": "ng build --prod && electron main.js",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "build-start": "ng build --configuration production && electron ."
+    "build-start": "ng build --configuration production && electron .",
+    "build-devs": "ng build --configuration development && electron ."
   },
   "private": true,
   "build": {
@@ -46,6 +47,7 @@
     "@angular/platform-browser": "^19.1.7",
     "@angular/platform-browser-dynamic": "^19.1.7",
     "@angular/router": "^19.1.7",
+    "@electron/remote": "^2.1.2",
     "@tailwindcss/postcss": "^4.0.7",
     "@tailwindcss/vite": "^4.0.7",
     "@types/better-sqlite3": "^7.6.12",
