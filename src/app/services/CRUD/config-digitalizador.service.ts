@@ -211,10 +211,76 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async consultarContenedores(): Promise<{ id: number; modalidad: string }[]> {
+  async consultarContenedores(): Promise<{ id: number; nombre: string }[]> {
     const sql = `
       SELECT id, nombre, descripcion_contenedor, descripcion_ubicacion
       FROM ct_contenedores
+      WHERE deleted_at IS NULL
+      ORDER BY id;
+    `;
+
+    // Ejecutar la consulta
+    const resultados = await this.databaseService.query(sql);
+    return resultados;
+  }
+
+  // EXTENSIONES DE ARCHIVOS A DIGITALIZAR - DIGITALIZADOR PARA ASPBEN
+
+  getExtensiones(): Observable<any> {
+    return new Observable(observer => {
+      this.networkStatusService.isOnline.subscribe(online => {
+        if (online) {
+          this.http.get(environment.apiUrl + '/lic/aspben/extensiones_activos').subscribe({
+            next: (response) => {
+              observer.next(response);
+              observer.complete();
+            },
+            error: (error) => {
+              observer.error(error);
+            }
+          });
+        } else {
+          const sql = 'SELECT * FROM ct_extensiones WHERE deleted_at IS NULL';
+          const params: any[] = [];
+
+          this.databaseService.query(sql, params).then(resultados => {
+            observer.next({ data: resultados });
+            observer.complete();
+          }).catch(error => {
+            observer.error(error);
+          });
+        }
+      });
+    });
+  }
+
+  async syncLocalDataBase_Extensiones(datos: any[]): Promise<void> {
+    for (const item of datos) {
+      const sql = `
+        INSERT OR REPLACE INTO ct_extensiones (
+          id, nombre,
+          created_id, updated_id, deleted_id, created_at, updated_at, deleted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const params = [
+        item.id,
+        item.nombre,
+        item.created_id,
+        item.updated_id,
+        item.deleted_id,
+        item.created_at,
+        item.updated_at,
+        item.deleted_at,
+      ];
+
+      await this.databaseService.execute(sql, params);
+    }
+  }
+
+  async consultarExtensiones(): Promise<{ id: number; nombre: string }[]> {
+    const sql = `
+      SELECT id, nombre
+      FROM ct_extensiones
       WHERE deleted_at IS NULL
       ORDER BY id;
     `;

@@ -29,6 +29,8 @@ import { ElectronService } from '../../services/electron.service';
 import Swal from 'sweetalert2';
 import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitalizador.service';
 import { NetworkStatusService } from '../../services/network-status.service';
+import { UtilService } from '../../services/util.service';
+import { DigitalizarArchivosServiceService } from '../../services/CRUD/digitalizar-archivos-service.service';
 
 Chart.register(...registerables);
 
@@ -79,7 +81,9 @@ export class DigitalizadorComponent implements OnInit {
     private electronService: ElectronService,
     private snackBar: MatSnackBar,
     private configDigitalizadorService: ConfigDigitalizadorService,
-    private networkStatusService: NetworkStatusService
+    private networkStatusService: NetworkStatusService,
+    private utilService: UtilService,
+    private digitalizarArchivosServiceService: DigitalizarArchivosServiceService
   ) {
     this.fs = window.require('fs');
     this.path = window.require('path');
@@ -105,6 +109,8 @@ export class DigitalizadorComponent implements OnInit {
 
   myForm_Upload: FormGroup = this.fb.group({
     id_tipo_doc_dig: ['', [Validators.required]],
+    id_extension: ['', [Validators.required]],
+    file: ''
   });
 
   myForm_Footer: FormGroup = this.fb.group({
@@ -128,6 +134,9 @@ export class DigitalizadorComponent implements OnInit {
       this.syncDataBase();
       this.getContenedores();
       this.getTiposDocDig();
+      this.getExtensiones();
+
+
 
     }
 
@@ -174,6 +183,15 @@ export class DigitalizadorComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al obtener Contenedores:', error);
+      }
+    });
+
+    this.configDigitalizadorService.getExtensiones().subscribe({
+      next: (response) => {
+        this.configDigitalizadorService.syncLocalDataBase_Extensiones(response.data);
+      },
+      error: (error) => {
+        console.error('Error al obtener Extensiones:', error);
       }
     });
   }
@@ -567,10 +585,12 @@ export class DigitalizadorComponent implements OnInit {
 
   tipos_documento_dig: any[] = [];
   contenedores: any[] = [];
+  extensiones: any[] = [];
 
   selectedValue_2: string = '';
   selectedValue_3: string = '';
   selectedValue_4: string = '';
+  selectedValue_5: string = '';
 
   selectedValue2() {
     this.selectedValue_2 = this.myForm_Config.get('id_tipo_doc_dig')?.value;
@@ -632,6 +652,26 @@ export class DigitalizadorComponent implements OnInit {
     }
   }
 
+  selectedValue5() {
+    this.selectedValue_5 = this.myForm_Upload.get('id_extension')?.value;
+
+    switch (Number(this.selectedValue_5)) {
+      case 1:
+        break;
+      case 2:
+        break;
+      case 3:
+        break;
+      case 4:
+        break;
+      case 5:
+        break;
+
+      default:
+        break;
+    }
+  }
+
   getTiposDocDig(): void {
     this.configDigitalizadorService
       .consultarTiposDocsDigitalizador()
@@ -649,6 +689,109 @@ export class DigitalizadorComponent implements OnInit {
       })
       .catch((error) => console.error('Error al obtener los contenedores:', error));
   }
+
+  getExtensiones(): void {
+    this.configDigitalizadorService
+      .consultarExtensiones()
+      .then((extensiones) => {
+        this.extensiones = extensiones;
+      })
+      .catch((error) => console.error('Error al obtener los extensiones:', error));
+  }
+
+  rolesUsuario: Array<{ fkRole: number }> = [];
+  rolesConPermisoAdmin: number[] = [104];
+
+  //IMPORTAR EXCEL
+  lblUploadingFile: string = '';
+  documentFileLoaded: boolean = false;
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
+
+  datosExcel: any[] = [];
+  mensaje: string = '';
+
+  get permisoAccionesAdmin(): boolean {
+    // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
+    return this.rolesUsuario.some(
+      (perfil) =>
+        perfil.fkRole && this.rolesConPermisoAdmin.includes(Number(perfil.fkRole))
+    );
+  }
+
+  onFileSelected(event: any): void {
+      const file = event.target.files[0];
+      console.log(file,'file');
+      if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+        this.lblUploadingFile = file.name;
+        this.documentFile.file = file;
+        // No establecer el valor del campo de entrada de archivo directamente
+        // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+        this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+        if(this.selectedValue_3 != null){
+          let tipo_doc = Number(this.selectedValue_3);
+          let ext = this.selectedValue_5;
+          this.importarExcel_ArchivosDigitalizar(this.documentFile.file,tipo_doc,ext);
+        }else{
+          Swal.fire('Error', 'Por favor Selecciona el tipo de documento', 'error');
+        }
+      } else {
+        Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+        this.lblUploadingFile = '';
+        this.documentFile.file = null;
+        // No establecer el valor del campo de entrada de archivo directamente
+        // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+        this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+      }
+    }
+
+
+
+
+
+    async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
+      const archivo = file; //event.target.files[0];
+      if (archivo) {
+        await this.utilService.leerExcel_ArchivosDigitalizar(archivo,tipo_doc,ext).then(
+        (response) => {
+          if(response){
+            console.log('Respuesta del servidor:', response);
+            this.mensaje = 'Datos importados exitosamente.';
+
+            this.datosExcel = [];
+            this.resetForm();
+
+            Swal.fire({
+              title: 'Importacion Generada con Éxito !!!',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }else{
+            console.error('Error al enviar los datos:', response);
+            this.mensaje = 'Hubo un error al importar los datos.';
+            Swal.fire({
+              title: 'Ocurrio un Error en la Importacion',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        }
+        );
+
+      }
+    }
+
+    @ViewChild('fileInput') fileInput!: ElementRef;
+
+    resetForm() {
+      this.myForm_Upload.reset();
+      this.lblUploadingFile = '';
+      this.fileInput.nativeElement.value = ''; // Resetear solo el input file
+    }
 
 
 

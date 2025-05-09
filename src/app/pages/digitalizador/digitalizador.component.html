@@ -5,7 +5,7 @@
     >
       <div class="grid grid-cols-10 w-full">
         <div
-          class="col-span-2 *:h-[200px] *:w-full *:border-b *:border-slate-700"
+          class="col-span-2 *:h-[200px] *:w-full *:border-slate-700"
         >
           <div
             class="bg-gray-300 bg-opacity-80 text-gray-900 flex flex-col justify-center items-center gap-2 border-r border-b border-slate-700"
@@ -494,7 +494,8 @@
             >
               Upload - Esperados por Tipo Documento
             </h3>
-            <form [formGroup]="myForm_Upload" class="my-2 w-full">
+            <form [formGroup]="myForm_Upload" class="flex items-center justify-between flex-wrap gap-2">
+
               <mat-form-field class="w-full">
                 <mat-label>Tipo Documento a Digitalizar</mat-label>
                 <mat-select
@@ -512,19 +513,56 @@
                   >
                 </mat-select>
               </mat-form-field>
+
+              <mat-form-field class="w-full">
+                <mat-label>Extension</mat-label>
+                <mat-select
+                  class="w-full"
+                  [ngStyle]="{ height: '25px' }"
+                  formControlName="id_extension"
+                  (selectionChange)="selectedValue5()"
+                >
+                  <mat-option
+                    class="w-full"
+                    [ngStyle]="{ height: '25px' }"
+                    *ngFor="let extension of extensiones"
+                    [value]="extension.nombre"
+                    >{{ extension.nombre }}</mat-option
+                  >
+                </mat-select>
+              </mat-form-field>
+
+              <!-- @if (permisoAccionesAdmin) { -->
+                <div class="card">
+                  <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between" style="gap: 10px;">
+                      <div>
+                        <label for="txtFile" class="btn">
+                          <i class="fa fa-cloud-upload bg-orange-300 hover:bg-green-350 text-white font-bold py-2 px-4 rounded">
+                            Importar Archivos Esperados XLSX
+                          </i>
+                        </label>
+                        <div class="input-group">
+                          <input type="file" #fileInput id="txtFile" accept=".xls,.xlsx" style="display:none;" name="file"
+                            formControlName="file" (change)="onFileSelected($event)">
+                        </div>
+                        <div *ngIf="lblUploadingFile" style="margin: 0;font-size: 18px;color: #5270ae;">
+                          <label style="font-weight: 500;">{{lblUploadingFile}}</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <!-- } -->
+
             </form>
+
+
+
           </div>
         </div>
       </div>
       <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button
-          (click)="saveDirectories()"
-          [disabled]="!sourcePath() || !destinationPath() || !timeSync()"
-          type="button"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
-        >
-          Guardar
-        </button>
         <button
           (click)="toggleModal_UploadEsperadosTipoArchivo()"
           type="button"

@@ -496,6 +496,17 @@ function initializeDatabase() {
         deleted_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS ct_extensiones (
+        id INTEGER PRIMARY KEY,
+        nombre TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
