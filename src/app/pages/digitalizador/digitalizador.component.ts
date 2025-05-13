@@ -7,6 +7,7 @@ import {
   Component,
   signal,
   type OnInit,
+  OnDestroy,
 } from '@angular/core';
 import {
   FormControl,
@@ -20,7 +21,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Observable, startWith, map } from 'rxjs';
+import { Observable, startWith, map, interval, Subscription } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
@@ -56,7 +57,14 @@ export interface Curp {
   styleUrl: './digitalizador.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DigitalizadorComponent implements OnInit {
+export class DigitalizadorComponent implements OnInit, OnDestroy {
+
+  private monitorSubscription: Subscription = Subscription.EMPTY;
+  private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados'; // Configurar según necesidades
+  private carpetaDestino: string = 'C:\\ExpedientesBeneficiarios\\Enviados'; // Configurar según necesidades
+  private intervalo: number = 5000; // 3 segundos
+
+
   private fb = inject(FormBuilder);
   @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
 
@@ -72,8 +80,7 @@ export class DigitalizadorComponent implements OnInit {
   private path: any;
 
   readonly targetDirectory = 'C:\\ExpedientesBeneficiarios';
-  readonly targetDirectory_Digitalizados =
-    'C:\\ExpedientesBeneficiarios\\Digitalizados';
+  readonly targetDirectory_Digitalizados = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
   readonly targetDirectory_Enviados = 'C:\\ExpedientesBeneficiarios\\Enviados';
 
   constructor(
@@ -83,7 +90,8 @@ export class DigitalizadorComponent implements OnInit {
     private configDigitalizadorService: ConfigDigitalizadorService,
     private networkStatusService: NetworkStatusService,
     private utilService: UtilService,
-    private digitalizarArchivosServiceService: DigitalizarArchivosServiceService
+    private digitalizarArchivosServiceService: DigitalizarArchivosServiceService,
+    //private logger: NGXLogger
   ) {
     this.fs = window.require('fs');
     this.path = window.require('path');
@@ -165,6 +173,10 @@ export class DigitalizadorComponent implements OnInit {
 
     // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
     this.configDigitalizadorService.CreateConfigInicialDigitalizador();
+  }
+
+  ngOnDestroy(): void {
+    this.detenerMonitor();
   }
 
   syncDataBase(): void {
@@ -541,11 +553,13 @@ export class DigitalizadorComponent implements OnInit {
   startMonitoreo() {
     this.isMonitoring = true;
     console.log('START Presionado');
+    this.iniciarMonitor();
   }
 
   stopMonitoreo() {
     this.isMonitoring = false;
     console.log('STOP Presionado');
+    this.detenerMonitor();
   }
 
   buscarCurps() {}
@@ -794,5 +808,40 @@ export class DigitalizadorComponent implements OnInit {
     }
 
 
+    ////////////////////////////////////////////////////
+    /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
+    ////////////////////////////////////////////////////
+
+
+    iniciarMonitor(): void {
+      //this.logger.info('Iniciando monitor de directorios...');
+      this.monitorSubscription = interval(this.intervalo).subscribe(() => {
+        this.procesarArchivos();
+      });
+
+      // Procesar inmediatamente al iniciar
+      this.procesarArchivos();
+    }
+
+    detenerMonitor(): void {
+      if (this.monitorSubscription) {
+        this.monitorSubscription.unsubscribe();
+        //this.logger.info('Monitor de directorios detenido');
+      }
+    }
+
+    procesarArchivos(): void {
+      //this.logger.info('Buscando archivos para procesar...');
+      this.digitalizarArchivosServiceService.procesarArchivosEnParalelo(this.carpetaOrigen, this.carpetaDestino)
+        .subscribe({
+          next: (resultados) => {
+            const exitosos = resultados.filter(r => r).length;
+            //this.logger.info(`Proceso completado. ${exitosos}/${resultados.length} archivos procesados con éxito.`);
+          },
+          error: (error) => {
+            //this.logger.error(`Error en el proceso general: ${error.message}`);
+          }
+        });
+    }
 
 }

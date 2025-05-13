@@ -917,6 +917,25 @@ ipcMain.on("get-pdf", (event, name) => {
   });
 });
 
+ipcMain.on("get-archivo-digitalizado", (event, args) => {
+
+  const { fileName, requestId } = args;
+
+  //const dirPath = "C:\\ExpedientesBeneficiarios\\Digitalizados";
+  const dirPath = path.join(app.getPath("userData"), "ArchivosDigitalizados");
+  const filePath = path.join(dirPath, fileName + ".pdf");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer el archivoo PDF:", err);
+      event.sender.send(`pdf-read-error-${requestId}`, err.message);
+      return;
+    }else{
+      event.sender.send(`pdf-read-success-${requestId}`, data);
+    }
+  });
+});
+
 ipcMain.handle("get-serial-number", async (event) => {
   // Obtener información del sistema
   const systemInfo = await si.system();
