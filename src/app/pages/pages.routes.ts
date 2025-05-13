@@ -7,6 +7,9 @@ import { ConfiguracionesComponent } from "./configuraciones/configuraciones.comp
 import { AsistenciaComponent } from "./asistencia/asistencia.component";
 import { ImpresionCredencialComponent } from "./impresion-credencial/impresion-credencial.component";
 import { AccionesComponent } from "./acciones/acciones.component";
+import { ImpresionManualComponent } from "./impresionManual/impresionManual.component";
+import { DigitalizadorComponent } from "./digitalizador/digitalizador.component";
+import { CortesComponent } from "./cortes/cortes.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -47,11 +50,26 @@ export const pagesRoutes: Routes = [
               path: 'acciones',
               title: 'Acciones',
               component: AccionesComponent
-          },
+            },
             {
                 path: 'impresion-credencial',
                 title: 'Impresion Credencial',
                 component: ImpresionCredencialComponent
+            },
+            {
+                path: 'impresion-manuales',
+                title: 'Impresion Credencial Manuales',
+                component: ImpresionManualComponent
+            },
+            {
+                path: 'digitalizador',
+                title: 'Digitalizador',
+                component: DigitalizadorComponent
+            },
+            {
+              path: 'cortes',
+              title: 'Cortes',
+              component: CortesComponent
             },
             {
                 path: '**',

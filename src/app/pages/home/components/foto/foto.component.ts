@@ -25,7 +25,7 @@ export class FotoComponent implements OnInit {
   @ViewChild("videoElement") videoElement!: ElementRef<HTMLVideoElement>
   @ViewChild("canvas") canvas!: ElementRef<HTMLCanvasElement>
   @Output() submitForm = new EventEmitter<void>();
-  @Input() datosGeneralesComponent!: DatosGeneralesComponent;
+  @Input() datosGeneralesComponent?: DatosGeneralesComponent;
 
   constructor(
     private aspirantesBeneficioService: AspirantesBeneficioService,
@@ -206,6 +206,10 @@ export class FotoComponent implements OnInit {
   }
 
   async uploadFoto(): Promise<void> {
+    if (!this.datosGeneralesComponent) {
+      console.error("DatosGeneralesComponent is not available for uploadDocs.");
+      return;
+    }
     const formattedFecha = new Date().toISOString();
     const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
@@ -228,6 +232,10 @@ export class FotoComponent implements OnInit {
   }
 
   async uploadDocs(): Promise<void> {
+    if (!this.datosGeneralesComponent) {
+      console.error("DatosGeneralesComponent is not available for uploadDocs.");
+      return;
+    }
     const formattedFecha = new Date().toISOString();
     const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
@@ -250,6 +258,10 @@ export class FotoComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
+    if (!this.datosGeneralesComponent) {
+      console.error("DatosGeneralesComponent is not available for uploadDocs.");
+      return;
+    }
     // Detener el video de la cámara
     this.stopStream();
 
@@ -335,6 +347,10 @@ export class FotoComponent implements OnInit {
   }
 
   async onEdit() {
+    if (!this.datosGeneralesComponent) {
+      console.error("DatosGeneralesComponent is not available for uploadDocs.");
+      return;
+    }
     // Detener el video de la cámara
     this.stopStream();
 

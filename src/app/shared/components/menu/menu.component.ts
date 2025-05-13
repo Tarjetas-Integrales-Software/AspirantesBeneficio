@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { StorageService } from '../../../services/storage.service';
 import { MenuService } from '../../../services/CRUD/menu.service';
 
@@ -16,7 +16,21 @@ export class MenuComponent implements OnInit {
   menuShow: boolean = false;
   opcionesMenu: any[] = [];
 
-  constructor(private router: Router, private storageService: StorageService, private menuService: MenuService) { }
+  rolesUsuario: Array<{ fkRole: number }> = [];
+
+  rolesConPermisoMenu_Asistencia: number[] = [106];
+  rolesConPermisoMenu_Registro: number[] = [108];
+  rolesConPermisoMenu_Consulta: number[] = [109];
+  rolesConPermisoMenu_Reportes: number[] = [110];
+  rolesConPermisoMenu_Impresion: number[] = [111];
+  rolesConPermisoMenu_ImpresionManual: number[] = [112];
+  rolesConPermisoMenu_Digitalizador: number[] = [113];
+
+  constructor(private router: Router, private storageService: StorageService, private menuService: MenuService) {
+    if (this.storageService.exists('perfiles'))
+      this.rolesUsuario = this.storageService.get('perfiles');
+
+  }
 
   ngOnInit(): void {
     this.getOpcionesMenu();
@@ -59,4 +73,12 @@ export class MenuComponent implements OnInit {
       }
     })
   }
+
+  get permisoMenu_Registro(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Registro.includes(Number(perfil.fkRole)));}
+  get permisoMenu_Consulta(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Consulta.includes(Number(perfil.fkRole)));}
+  get permisoMenu_Reportes(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Reportes.includes(Number(perfil.fkRole)));}
+  get permisoMenu_Asistencia(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Asistencia.includes(Number(perfil.fkRole)));}
+  get permisoMenu_Impresion(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Impresion.includes(Number(perfil.fkRole)));}
+  get permisoMenu_ImpresionManual(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_ImpresionManual.includes(Number(perfil.fkRole)));}
+  get permisoMenu_Digitalizador(): boolean {return this.rolesUsuario.some((perfil) =>perfil.fkRole && this.rolesConPermisoMenu_Digitalizador.includes(Number(perfil.fkRole)));}
 }

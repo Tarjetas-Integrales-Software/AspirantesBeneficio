@@ -707,6 +707,91 @@ ipcMain.on('print-id-card_v2', async (event, data, name) => {
   });
 });
 
+ipcMain.on('print-id-card-manual', async (event, data) => {
+  try {
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: [85, 54] // Ancho x Alto en mm
+    });
+
+    const name = data.curp; // Nombre del archivo PDF
+    const dirPath = path.join(app.getPath("userData"), "credencialesgeneradas");
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath); // Crear carpeta si no existe
+    }
+    const savePath_pdf = path.join(dirPath, name + ".pdf");
+
+    const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
+    fs.writeFileSync(imagePath, Buffer.from(data.photoPath.split(",")[1], 'base64'));
+
+    const imageBase64 = fs.readFileSync(imagePath, { encoding: "base64" });
+    const imageFormat = path.extname(imagePath).toUpperCase().replace(".", "");
+
+    doc.addImage(
+      `data:image/${imageFormat};base64,${imageBase64}`,
+      imageFormat,
+      3,
+      10,
+      24,
+      28
+    );
+
+    doc.setFontSize(6);
+    doc.text(`${data.nombreBeneficiario}`, 30.5, 16, { maxWidth: 120, lineBreak: false });
+
+    doc.setFontSize(8);
+    doc.text(`${data.curp}`, 30.5, 23.5, { maxWidth: 120, lineBreak: false });
+    doc.text(`${data.fechaExpedicion}`, 30.5, 31, { maxWidth: 70, lineBreak: false });
+    doc.text(`${data.telefono}`, 55, 31, { maxWidth: 70, lineBreak: false });
+
+    doc.save(savePath_pdf);
+
+    event.reply("pdf-generado", `PDF guardado en: ${savePath_pdf}`);
+
+    const win = new BrowserWindow({ width: 200, height: 200, show: false });
+    win.loadFile(savePath_pdf);
+    win.webContents.on('did-finish-load', () => {
+      console.log('PDF cargado, comenzando impresión...');
+      setTimeout(() => {
+        console.log('Esperando 1 segundo antes de imprimir...');
+        win.webContents.print({
+          silent: true,
+          deviceName: data.printer,
+          pageSize: { width: 54000, height: 85000 },
+          landscape: true,
+          margins: {
+            marginType: 'none',
+          },
+
+        }, (success, errorType) => {
+          if (success) {
+            win.close();
+            console.log('Impresión completada');
+          }
+          else {
+            console.log(errorType);
+            win.close();
+          }
+        });
+      }, 1000);
+    });
+
+
+    setTimeout(() => {
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+        console.log('El archivo ha sido eliminado exitosamente');
+      } else {
+        console.log('El archivo no existe, no se puede eliminar.');
+      }
+    }, 5000);
+
+  } catch (error) {
+    console.error("Error al generar el PDF:", error);
+    event.reply("pdf-error", "Error al generar el PDF");
+  }
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

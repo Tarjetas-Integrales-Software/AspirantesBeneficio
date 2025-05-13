@@ -9,5 +9,5 @@ export const routes: Routes = [
     path: 'inicio',
     loadChildren: () => import('./pages/pages.routes').then(m => m.pagesRoutes)
   },
-  { path: '**', redirectTo: 'auth', pathMatch: 'full' }
+  { path: '**', redirectTo: '/auth/login', pathMatch: 'full' }
 ];

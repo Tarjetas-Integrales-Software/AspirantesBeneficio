@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, inject, Output, EventEmitter } from "@angular/core"
+import { Component, OnInit, inject, Output, EventEmitter, signal } from "@angular/core"
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,6 +12,7 @@ import { ModulosService } from "../../services/CRUD/modulos.service";
 import Swal from 'sweetalert2';
 import { MatCardModule } from '@angular/material/card';
 import { Router } from "@angular/router";
+import { MenuService } from "../../services/CRUD/menu.service";
 
 
 @Component({
@@ -36,12 +37,14 @@ export class ConfiguracionesComponent implements OnInit
   @Output() submitForm = new EventEmitter<void>();
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  opcionesMenu = signal<any[]>([]);
+
   modulos: any[] = [];
   selectedValue_modu: string = '';
 
   constructor(private modulosService: ModulosService
     , private configuracionesService: ConfiguracionesService
-    , private routerService: Router
+    , private menuService: MenuService
   ) { }
 
     myForm: FormGroup = this.fb.group({
@@ -51,6 +54,7 @@ export class ConfiguracionesComponent implements OnInit
 
   ngOnInit() {
     this.getModulosAspben()
+    this.getOpcionesMenu();
   }
 
   async getModulosAspben() {
@@ -89,6 +93,21 @@ export class ConfiguracionesComponent implements OnInit
     return null;
   }
 
+  getOpcionesMenu() {
+    this.menuService.getOpcionesMenu().subscribe({
+      next: response => {
+        if (response.response) {
+          // this.opcionesMenu = response.data;
+          this.opcionesMenu.set(response.data)
+          console.log('Estas son las opcines del menu: ', this.opcionesMenu())
+        }
+      },
+      error: error => {
+        console.log(error);
+      }
+    })
+  }
+
   async onSubmit(): Promise<void> {
     try {
       this.selectedValue_modu = this.myForm.get('modulo')?.value;
@@ -99,7 +118,36 @@ export class ConfiguracionesComponent implements OnInit
         timer: 2000,
         showConfirmButton: false,
       }).then(() => {
-          this.router.navigate(['/inicio/registro']);
+
+        if (this.opcionesMenu().length > 0) {
+          const menuOptions: { [key: string]: string } = {};
+          this.opcionesMenu().forEach((option: any) => {
+            menuOptions[option.clave] = option.valor;
+          });
+          if (menuOptions['menu_habilitar_registro'] === '1') {
+            this.router.navigate(['/inicio/registro']);
+          } else if (menuOptions['menu_habilitar_consulta'] === '1') {
+            this.router.navigate(['/inicio/consulta']);
+          } else if (menuOptions['menu_habilitar_asistencia'] === '1') {
+            this.router.navigate(['/inicio/asistencia']);
+          } else if (menuOptions['menu_habilitar_reportes'] === '1') {
+            this.router.navigate(['/inicio/reportes']);
+          } else if (menuOptions['menu_habilitar_impresion'] === '1') {
+            this.router.navigate(['/inicio/impresion-credencial']);
+          } else if (menuOptions['menu_habilitar_impr_manual'] === '1') {
+            this.router.navigate(['/inicio/impresion-manuales']);
+          } else if (menuOptions['menu_habilitar_cortes'] === '1') {
+            this.router.navigate(['/inicio/cortes']);
+          } else if (menuOptions['menu_habilitar_digitalizacion'] === '1') {
+            this.router.navigate(['/inicio/digitalizacion']);
+          } else {
+            // Si no tiene ningún permiso, mostrar un mensaje
+            Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema', 'warning');
+          }
+        } else {
+          // Si no hay opciones de menú, redirigir a la página de inicio
+          this.router.navigate(['/inicio']);
+        }
       });
     } catch (error) {
       console.error('Error al guardar la configuracion en la base de datos local:', error);
