@@ -268,8 +268,6 @@ export class ImpresionManualComponent implements OnInit {
           modulo: this.modulo_actual,
         }
 
-        debugger;
-
         ipcRenderer.send('print-id-card-manual', {
           ...aspirante,
           photoPath: photoPath,
@@ -302,8 +300,6 @@ export class ImpresionManualComponent implements OnInit {
             });
           }
         });
-
-        debugger;
 
         this.formulario.reset();
         this.capturedImage.set(null);
