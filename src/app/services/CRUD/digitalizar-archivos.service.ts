@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { environment } from './../../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, forkJoin, from, Observable, of, switchMap } from 'rxjs';
-import { DatabaseService } from '../../services/database.service';
+import { DatabaseService } from '../database.service';
+import { PDFDocument, PDFImage  } from 'pdf-lib';
+import { PdfCompressService } from '../pdf-compress.service';
 
 const { ipcRenderer } = (window as any).require("electron");
 const path = (window as any).require('path');
@@ -14,13 +16,14 @@ const fs = (window as any).require('fs');
 @Injectable({
   providedIn: 'root'
 })
-export class DigitalizarArchivosServiceService {
+export class DigitalizarArchivosService {
 
   private _token: string = '';
 
   private http = inject(HttpClient);
+  private pdfCompressService = inject(PdfCompressService);
+
   constructor(private databaseService: DatabaseService
-    //, private logger: NGXLogger
   ) {
 
   }
@@ -35,12 +38,18 @@ export class DigitalizarArchivosServiceService {
     }
 
     batches.forEach((batch, index) => {
-      this.http.post(environment.apiUrl + '/lic/aspben/digitalizar_archivos/bulk-insert', { registros: batch }).subscribe(response => {
+      this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/bulk-insert', { registros: batch }).subscribe(response => {
         console.log(`Lote ${index + 1} enviado correctamente`, response);
       });
     });
 
     return of(null);
+  }
+
+
+
+  edit_archivo_esperado(nombre_archivo: string, status: number): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/edit', { nombre_archivo: nombre_archivo, status: status });
   }
 
   delete(id: number): Observable<any> {
@@ -94,6 +103,9 @@ export class DigitalizarArchivosServiceService {
     try {
       const curp = path.basename(archivo,'.pdf').toUpperCase();
 
+      const ahora = new Date();
+      const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
+
       console.log(curp);
 
       let beneficiario = {
@@ -103,7 +115,7 @@ export class DigitalizarArchivosServiceService {
 
       let documento = {
         archivo: archivo,
-        fecha: '2025-05-12',
+        fecha: fechaFormateada,
         tipo:'expediente_beneficiario'
       }
 
@@ -111,6 +123,18 @@ export class DigitalizarArchivosServiceService {
         switchMap(exito => {
           if (exito) {
             try {
+
+              //actualizar el status a 1 para indicar que ya fue digitalizado y enviado a TISA, en la tabla ct_archivos_esperados_digitalizados
+              console.log(curp,'antes de edit_archivo_esperado');
+              this.edit_archivo_esperado(curp,1).subscribe({
+                next:(data)=>{
+
+                },error:(error)=>{
+
+                }
+              });
+
+              // Se mueve el archivo de digitalizados a enviados para que ya no se tome de nuevo
               const destino = path.join(carpetaDestino, path.basename(archivo));
               fs.renameSync(archivo, destino);
               //this.logger.info(`Archivo movido a enviados: ${archivo}`);
@@ -148,6 +172,17 @@ export class DigitalizarArchivosServiceService {
         // Leer el archivo PDF desde el proceso principal
         const fileData = await this.getFileFromMainProcess(curp);
 
+        // Optimizar el PDF
+        const pdfDoc = await PDFDocument.load(fileData);
+
+        // Configurar opciones de optimización
+        const optimizedPdfBytes = await pdfDoc.save({
+            useObjectStreams: true,  // Reduce tamaño
+            // Otras opciones de optimización:
+            // useCompression: true,
+            // reduceFileSize: true
+        });
+
         // Crear el FormData
         const formData = new FormData();
         formData.append('fecha', fecha);
@@ -156,7 +191,7 @@ export class DigitalizarArchivosServiceService {
         formData.append('id_beneficiario', id.toString());
 
         // Convertir el buffer a un archivo Blob con el tipo correcto
-        const blob = new Blob([fileData], { type: 'application/pdf' });
+        const blob = new Blob([optimizedPdfBytes], { type: 'application/pdf' });
         formData.append('file', blob, archivo);
 
         // Enviar la petición POST al backend
@@ -192,5 +227,7 @@ export class DigitalizarArchivosServiceService {
 
     });
   }
+
+
 
 }

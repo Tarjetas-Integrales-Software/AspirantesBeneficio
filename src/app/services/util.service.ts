@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { CurpsAprobadasSsasService } from './CRUD/curps-aprobadas-ssas.service';
 import { Observable } from 'rxjs';
-import { DigitalizarArchivosServiceService } from './CRUD/digitalizar-archivos-service.service';
+import { DigitalizarArchivosService } from './CRUD/digitalizar-archivos.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +12,7 @@ export class UtilService {
 
 
   constructor(private http: HttpClient, private curpsAprobadasSsasService: CurpsAprobadasSsasService,
-            private digitalizarArchivosServiceService: DigitalizarArchivosServiceService
+            private digitalizarArchivosService: DigitalizarArchivosService
   )
    { }
 
@@ -129,7 +129,7 @@ export class UtilService {
 
         console.log(registros);
 
-        this.digitalizarArchivosServiceService.BulkInsert_InBatches(registros, 100);
+        this.digitalizarArchivosService.BulkInsert_InBatches(registros, 100);
 
         resolve(true);
       };

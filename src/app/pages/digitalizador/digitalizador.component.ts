@@ -31,7 +31,7 @@ import Swal from 'sweetalert2';
 import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitalizador.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { UtilService } from '../../services/util.service';
-import { DigitalizarArchivosServiceService } from '../../services/CRUD/digitalizar-archivos-service.service';
+import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
 
 Chart.register(...registerables);
 
@@ -60,8 +60,9 @@ export interface Curp {
 export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   private monitorSubscription: Subscription = Subscription.EMPTY;
-  private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados'; // Configurar según necesidades
-  private carpetaDestino: string = 'C:\\ExpedientesBeneficiarios\\Enviados'; // Configurar según necesidades
+  //private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados';
+  private carpetaOrigen: string = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
+  private carpetaDestino: string = 'C:\\ExpedientesBeneficiarios\\Enviados';
   private intervalo: number = 5000; // 3 segundos
 
 
@@ -90,7 +91,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private configDigitalizadorService: ConfigDigitalizadorService,
     private networkStatusService: NetworkStatusService,
     private utilService: UtilService,
-    private digitalizarArchivosServiceService: DigitalizarArchivosServiceService,
+    private digitalizarArchivosService: DigitalizarArchivosService,
     //private logger: NGXLogger
   ) {
     this.fs = window.require('fs');
@@ -832,7 +833,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     procesarArchivos(): void {
       //this.logger.info('Buscando archivos para procesar...');
-      this.digitalizarArchivosServiceService.procesarArchivosEnParalelo(this.carpetaOrigen, this.carpetaDestino)
+      this.digitalizarArchivosService.procesarArchivosEnParalelo(this.carpetaOrigen, this.carpetaDestino)
         .subscribe({
           next: (resultados) => {
             const exitosos = resultados.filter(r => r).length;

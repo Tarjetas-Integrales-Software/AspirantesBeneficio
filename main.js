@@ -921,8 +921,8 @@ ipcMain.on("get-archivo-digitalizado", (event, args) => {
 
   const { fileName, requestId } = args;
 
-  //const dirPath = "C:\\ExpedientesBeneficiarios\\Digitalizados";
-  const dirPath = path.join(app.getPath("userData"), "ArchivosDigitalizados");
+  //const dirPath = path.join(app.getPath("userData"), "ArchivosDigitalizados");
+  const dirPath = "C:\\ExpedientesBeneficiarios\\Digitalizados";
   const filePath = path.join(dirPath, fileName + ".pdf");
 
   fs.readFile(filePath, (err, data) => {
