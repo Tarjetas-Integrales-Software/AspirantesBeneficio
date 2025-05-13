@@ -42,7 +42,7 @@ function createWindow() {
   });
 
   // Abre consola
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -624,29 +624,34 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     // CODIGO DAVID INICIO
 
+    console.log('Impresora: ', data.printer, 'printer');
+
     win = new BrowserWindow({ width: 200, height: 200, show: false });
     // win.once('ready-to-show', () => win.hide())
     win.loadFile(savePath_pdf);
     // if pdf is loaded start printing.
-    win.webContents.on('did-finish-load', () => {
-      setTimeout(() => {
+    win.webContents.on('did-stop-loading', async () => {
+      console.log('Cargó la ventana');
+
+      try {
+        console.log('Intentando imprimir silenciosamente...');
+
         win.webContents.print({
           silent: true,
           deviceName: data.printer,
           pageSize: { width: 54000, height: 85000 },
           landscape: true,
-          margins: {
-            marginType: 'none',
-          },
+          margins: { marginType: 'none' }
         }, (success, errorType) => {
-          if (success)
-            win.close();
-          else {
-            console.log(errorType);
-            win.close();
-          }
+          if (!success) console.log(errorType)
+
+          win.close();
         });
-      }, 1000); // Espera 1 segundo antes de imprimir
+
+      } catch (error) {
+        console.error('Error en impresión:', error);
+        win.close();
+      }
     });
 
     // CODIGO DAVID FIN
@@ -800,30 +805,28 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
 
     const win = new BrowserWindow({ width: 200, height: 200, show: false });
     win.loadFile(savePath_pdf);
-    win.webContents.on('did-finish-load', () => {
-      console.log('PDF cargado, comenzando impresión...');
-      setTimeout(() => {
-        console.log('Esperando 1 segundo antes de imprimir...');
+    win.webContents.on('did-stop-loading', async () => {
+      console.log('Cargó la ventana');
+
+      try {
+        console.log('Intentando imprimir silenciosamente...');
+
         win.webContents.print({
           silent: true,
           deviceName: data.printer,
           pageSize: { width: 54000, height: 85000 },
           landscape: true,
-          margins: {
-            marginType: 'none',
-          },
-
+          margins: { marginType: 'none' }
         }, (success, errorType) => {
-          if (success) {
-            win.close();
-            console.log('Impresión completada');
-          }
-          else {
-            console.log(errorType);
-            win.close();
-          }
+          if (!success) console.log(errorType)
+
+          win.close();
         });
-      }, 1000);
+
+      } catch (error) {
+        console.error('Error en impresión:', error);
+        win.close();
+      }
     });
 
 
