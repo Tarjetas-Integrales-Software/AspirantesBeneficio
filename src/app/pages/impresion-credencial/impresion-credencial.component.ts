@@ -311,11 +311,13 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
 
     try {
-      ipcRenderer.send('print-id-card', {
-        ...aspirante,
-        photoPath: photoPath,
-        printer: this.selectedPrinter
-      });
+      const _impresora = this.formImpresion.get('impresora')?.value;
+
+        ipcRenderer.send('print-id-card', {
+          ...aspirante,
+          photoPath: photoPath,
+          printer: _impresora
+        });
 
       this.editAspiranteImpreso(aspirante);
 
@@ -485,7 +487,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
-    console.log(file,'file');
+    console.log(file, 'file');
     if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       this.lblUploadingFile = file.name;
       this.documentFile.file = file;
@@ -557,31 +559,31 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     const archivo = file; //event.target.files[0];
     if (archivo) {
       await this.utilService.leerExcel_v2(archivo).then(
-      (response) => {
-        if(response){
-          console.log('Respuesta del servidor:', response);
-          this.mensaje = 'Datos importados exitosamente.';
+        (response) => {
+          if (response) {
+            console.log('Respuesta del servidor:', response);
+            this.mensaje = 'Datos importados exitosamente.';
 
-          this.datosExcel = [];
-          this.resetForm();
+            this.datosExcel = [];
+            this.resetForm();
 
-          Swal.fire({
-            title: 'Importacion Generada con Éxito !!!',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }else{
-          console.error('Error al enviar los datos:', response);
-          this.mensaje = 'Hubo un error al importar los datos.';
-          Swal.fire({
-            title: 'Ocurrio un Error en la Importacion',
-            icon: 'error',
-            timer: 2000,
-            showConfirmButton: false
-          });
+            Swal.fire({
+              title: 'Importacion Generada con Éxito !!!',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            console.error('Error al enviar los datos:', response);
+            this.mensaje = 'Hubo un error al importar los datos.';
+            Swal.fire({
+              title: 'Ocurrio un Error en la Importacion',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
         }
-      }
       );
 
     }

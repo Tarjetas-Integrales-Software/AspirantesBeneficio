@@ -301,8 +301,6 @@ export class ImpresionManualComponent implements OnInit {
           }
         });
 
-        debugger;
-
         this.formulario.reset();
         this.capturedImage.set(null);
         this.stopStream();

@@ -24,6 +24,13 @@ if (require('electron-squirrel-startup')) app.quit();
 
 app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
 
+
+// para poder usar el sistema de archivos de windows
+const remote = require('@electron/remote/main');
+// Inicializar @electron/remote
+remote.initialize();
+
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
@@ -35,7 +42,7 @@ function createWindow() {
   });
 
   // Abre consola
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -51,6 +58,10 @@ function createWindow() {
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
+
+  // Habilitar remote para esta ventana
+  remote.enable(win.webContents);
+
 }
 
 async function sendAppInfo() {
@@ -453,6 +464,49 @@ function initializeDatabase() {
         updated_at TEXT,
         deleted_at TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS sy_config_digitalizador (
+        id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        ruta_digitalizados TEXT NULL,
+        ruta_enviados TEXT NULL,
+        tiempo_sync INTEGER NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ct_tipos_documentos_digitalizador (
+        id INTEGER PRIMARY KEY,
+        tipo_doc_dig TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS ct_contenedores (
+        id INTEGER PRIMARY KEY,
+        nombre TEXT NULL,
+        descripcion_contenedor TEXT NULL,
+        descripcion_ubicacion TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS ct_extensiones (
+        id INTEGER PRIMARY KEY,
+        nombre TEXT NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -570,29 +624,34 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     // CODIGO DAVID INICIO
 
+    console.log('Impresora: ', data.printer, 'printer');
+
     win = new BrowserWindow({ width: 200, height: 200, show: false });
     // win.once('ready-to-show', () => win.hide())
     win.loadFile(savePath_pdf);
     // if pdf is loaded start printing.
-    win.webContents.on('did-finish-load', () => {
-      setTimeout(() => {
+    win.webContents.on('did-stop-loading', async () => {
+      console.log('Cargó la ventana');
+
+      try {
+        console.log('Intentando imprimir silenciosamente...');
+
         win.webContents.print({
           silent: true,
           deviceName: data.printer,
           pageSize: { width: 54000, height: 85000 },
           landscape: true,
-          margins: {
-            marginType: 'none',
-          },
+          margins: { marginType: 'none' }
         }, (success, errorType) => {
-          if (success)
-            win.close();
-          else {
-            console.log(errorType);
-            win.close();
-          }
+          if (!success) console.log(errorType)
+
+          win.close();
         });
-      }, 1000); // Espera 1 segundo antes de imprimir
+
+      } catch (error) {
+        console.error('Error en impresión:', error);
+        win.close();
+      }
     });
 
     // CODIGO DAVID FIN
@@ -746,30 +805,28 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
 
     const win = new BrowserWindow({ width: 200, height: 200, show: false });
     win.loadFile(savePath_pdf);
-    win.webContents.on('did-finish-load', () => {
-      console.log('PDF cargado, comenzando impresión...');
-      setTimeout(() => {
-        console.log('Esperando 1 segundo antes de imprimir...');
+    win.webContents.on('did-stop-loading', async () => {
+      console.log('Cargó la ventana');
+
+      try {
+        console.log('Intentando imprimir silenciosamente...');
+
         win.webContents.print({
           silent: true,
           deviceName: data.printer,
           pageSize: { width: 54000, height: 85000 },
           landscape: true,
-          margins: {
-            marginType: 'none',
-          },
-
+          margins: { marginType: 'none' }
         }, (success, errorType) => {
-          if (success) {
-            win.close();
-            console.log('Impresión completada');
-          }
-          else {
-            console.log(errorType);
-            win.close();
-          }
+          if (!success) console.log(errorType)
+
+          win.close();
         });
-      }, 1000);
+
+      } catch (error) {
+        console.error('Error en impresión:', error);
+        win.close();
+      }
     });
 
 
@@ -860,6 +917,25 @@ ipcMain.on("get-pdf", (event, name) => {
       return;
     }
     event.reply("pdf-read-success", data);
+  });
+});
+
+ipcMain.on("get-archivo-digitalizado", (event, args) => {
+
+  const { fileName, requestId } = args;
+
+  //const dirPath = path.join(app.getPath("userData"), "ArchivosDigitalizados");
+  const dirPath = "C:\\ExpedientesBeneficiarios\\Digitalizados";
+  const filePath = path.join(dirPath, fileName + ".pdf");
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      console.error("Error al leer el archivoo PDF:", err);
+      event.sender.send(`pdf-read-error-${requestId}`, err.message);
+      return;
+    }else{
+      event.sender.send(`pdf-read-success-${requestId}`, data);
+    }
   });
 });
 
