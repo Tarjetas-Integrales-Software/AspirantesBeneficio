@@ -1,9 +1,9 @@
 const { app, BrowserWindow, Menu, ipcMain } = require('electron'); // Added ipcMain
 const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
-const path = require('path');
 const url = require('url');
-const fs = require("fs");
+const fs = require('fs');
+const path = require('path');
 
 //Impresion de Credencial
 const { exec } = require('child_process');
@@ -626,42 +626,14 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     console.log('Impresora: ', data.printer, 'printer');
 
-    win = new BrowserWindow({ width: 200, height: 200, show: false });
-    // win.once('ready-to-show', () => win.hide())
-    win.loadFile(savePath_pdf);
-    // if pdf is loaded start printing.
-    win.webContents.on('did-stop-loading', async () => {
-      console.log('Cargó la ventana');
+    const pdfFilePath = path.resolve(savePath_pdf);
+    const pdfFileUrl = 'file://' + pdfFilePath;
 
-      try {
-        console.log('Intentando imprimir silenciosamente...');
-
-        win.webContents.print({
-          silent: true,
-          deviceName: data.printer,
-          pageSize: { width: 54000, height: 85000 },
-          landscape: true,
-          margins: { marginType: 'none' }
-        }, (success, errorType) => {
-          if (!success) console.log(errorType)
-
-          win.close();
-        });
-
-      } catch (error) {
-        console.error('Error en impresión:', error);
-        win.close();
-      }
-    });
+    printCard(pdfFilePath, data.printer)
+      .then(() => console.log('Impresión completada'))
+      .catch(err => console.error('Error durante la impresión:', err));
 
     // CODIGO DAVID FIN
-
-    // Enviar el PDF a la impresora
-    /*
-    print(savePath_pdf, { printer: data.printer })
-      .then(() => console.log("Impresion completada"))
-      .catch((err) => console.error("Error al imprimir", err));
-    */
 
     // Verificar si el archivo existe antes de intentar eliminarlo
     try {
@@ -933,7 +905,7 @@ ipcMain.on("get-archivo-digitalizado", (event, args) => {
       console.error("Error al leer el archivoo PDF:", err);
       event.sender.send(`pdf-read-error-${requestId}`, err.message);
       return;
-    }else{
+    } else {
       event.sender.send(`pdf-read-success-${requestId}`, data);
     }
   });
@@ -946,3 +918,39 @@ ipcMain.handle("get-serial-number", async (event) => {
 
   return serialNumber;
 });
+
+async function printCard(pdfFileUrl, printerName) {
+  return new Promise((resolve, reject) => {
+    try {
+      const pdfPath = pdfFileUrl.replace('file://', '').replace(/\//g, '\\');
+
+      if (!fs.existsSync(pdfPath)) {
+        return reject(new Error('Archivo PDF no encontrado: ' + pdfPath));
+      }
+
+      // Ruta relativa al ejecutable de SumatraPDF
+      const sumatraPath = path.join(__dirname, 'tools', 'SumatraPDF.exe');
+
+      if (!fs.existsSync(sumatraPath)) {
+        return reject(new Error('SumatraPDF no encontrado en: ' + sumatraPath));
+      }
+
+      const command = `"${sumatraPath}" -print-to "${printerName}" "${pdfPath}"`;
+
+      console.log('Ejecutando comando:', command);
+
+      exec(command, (err, stdout, stderr) => {
+        if (err) {
+          console.error('Error al imprimir:', err);
+          return reject(err);
+        }
+
+        console.log('Impresión enviada correctamente con SumatraPDF');
+        resolve();
+      });
+    } catch (error) {
+      console.error('Error general en printCard:', error);
+      reject(error);
+    }
+  });
+}
