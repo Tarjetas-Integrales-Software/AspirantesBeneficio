@@ -42,7 +42,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -602,7 +602,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     doc.addImage(
       `data:image/${imageFormat};base64,${imageBase64}`, // URL base64 de la imagen
       imageFormat,  // Formato de la imagen (JPEG, PNG, WEBP, etc.)
-      3,           // Posición x en milímetros
+      6.2,           // Posición x en milímetros
       10,           // Posición y en milímetros
       24,           // Ancho de la imagen en milímetros
       28            // Alto de la imagen en milímetros
@@ -610,12 +610,12 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     // Agregar datos a la credencial
     doc.setFontSize(6);
-    doc.text(`${data.nombre_completo}`, 30.5, 16, { maxWidth: 120, lineBreak: false });         // Nombre
+    doc.text(`${data.nombre_completo}`, 33, 16, { maxWidth: 120, lineBreak: false });         // Nombre
 
     doc.setFontSize(8);
-    doc.text(`${data.curp}`, 30.5, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
-    doc.text(`${new Date().toISOString().substring(0, 10)}`, 30.5, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
-    doc.text(`${data.telefono}`, 55, 31, { maxWidth: 70, lineBreak: false });      // Telefono
+    doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });         // CURP
+    doc.text(`${new Date().toISOString().substring(0, 10)}`, 33, 31, { maxWidth: 70, lineBreak: false });    // Fecha Expedicion
+    doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });      // Telefono
 
     doc.save(savePath_pdf);
 
@@ -662,77 +662,6 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
 });
 
-ipcMain.on('print-id-card_v2', async (event, data, name) => {
-  const doc = new PDFDocument({ size: [241, 153] });
-  name = data.curp; //VARIABLE PARA EL NOMBRE DEL ARCHIVO PDF
-  const dirPath = path.join(app.getPath("userData"), "credencialesgeneradas");
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath); // Crear carpeta si no existe
-  }
-  const savePath = path.join(dirPath, name + ".pdf");
-
-  // Crear un archivo usando fs.createWriteStream
-  const writeStream = fs.createWriteStream(savePath);
-  doc.pipe(writeStream);
-
-  // Descargar la imagen desde la URL
-  try {
-    console.log(data.photoPath);
-    /*
-    const response = await fetch(data.photoPath);
-    const arrayBuffer = await response.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    */
-
-    const imageUrl = data.photoPath;
-    const imagePath = path.join(app.getPath("userData"), "credencialesgeneradas/" + data.curp + '.jpg');
-    console.log(imagePath, 'imagePath');
-
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-    //console.log(response,'response');
-    fs.writeFileSync(imagePath, response.data);
-
-    //const imageBuffer = Buffer.from(imagePath, 'binary');
-
-    // Insertar la imagen en el PDF
-    //doc.image(imageBuffer, 20, 27, { width: 70, height: 77 }); // Ajusta la posición y tamaño
-
-    const imagePath2 = "C:\\Users\\Juan Pablo\\AppData\\Roaming\\Electron\\credencialesgeneradas\\AAAC031029HJCLLRA4.png";
-
-    if (!fs.existsSync(imagePath2)) {
-      console.error(`Error: La imagen no se encuentra en la ruta: ${imagePath2}`);
-    } else {
-      doc.image(imagePath2, 20, 27, { width: 70, height: 77 });
-    }
-
-
-  } catch (error) {
-    console.error("Error al descargar la imagen:", error);
-  }
-
-  // Agregar datos a la credencial
-  // doc.fontSize(8).text(`${data.cardNumber}`, 167, 17, {maxWidth: 65, align: 'center', lineBreak: false});  // Numero de tarjeta
-  doc.fontSize(6).text(`${data.nombre_completo}`, 99, 40, { maxWidth: 120, align: 'center', lineBreak: false });         // Nombre
-  doc.fontSize(8).text(`${data.curp}`, 99, 60, { maxWidth: 120, align: 'center', lineBreak: false });         // CURP
-  doc.fontSize(8).text(`${new Date().toISOString().substring(0, 10)}`, 99, 82, { maxWidth: 70, align: 'center', lineBreak: false });    // Fecha Expedicion
-  doc.fontSize(8).text(`${data.telefono}`, 169, 82, { maxWidth: 70, align: 'center', lineBreak: false });      // Telefono
-
-  doc.end();
-
-  writeStream.on('finish', () => {
-    // Enviar el archivo a imprimir
-    /*
-    print(savePath, { printer: data.printer })
-    .then(() => console.log('Impresion completada'))
-    .catch(err => console.error('Error al imprimir', err));
-    */
-  });
-
-  writeStream.on('error', (err) => {
-    console.error('Error al escribir el archivo PDF', err);
-  });
-});
-
 ipcMain.on('print-id-card-manual', async (event, data) => {
   try {
     const doc = new jsPDF({
@@ -757,50 +686,30 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
     doc.addImage(
       `data:image/${imageFormat};base64,${imageBase64}`,
       imageFormat,
-      3,
+      6.2,
       10,
       24,
       28
     );
 
     doc.setFontSize(6);
-    doc.text(`${data.nombreBeneficiario}`, 30.5, 16, { maxWidth: 120, lineBreak: false });
+    doc.text(`${data.nombreBeneficiario}`, 33, 16, { maxWidth: 120, lineBreak: false });
 
     doc.setFontSize(8);
-    doc.text(`${data.curp}`, 30.5, 23.5, { maxWidth: 120, lineBreak: false });
-    doc.text(`${data.fechaExpedicion}`, 30.5, 31, { maxWidth: 70, lineBreak: false });
-    doc.text(`${data.telefono}`, 55, 31, { maxWidth: 70, lineBreak: false });
+    doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });
+    doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
+    doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
 
     doc.save(savePath_pdf);
 
     event.reply("pdf-generado", `PDF guardado en: ${savePath_pdf}`);
 
-    const win = new BrowserWindow({ width: 200, height: 200, show: false });
-    win.loadFile(savePath_pdf);
-    win.webContents.on('did-stop-loading', async () => {
-      console.log('Cargó la ventana');
+    const pdfFilePath = path.resolve(savePath_pdf);
+    const pdfFileUrl = 'file://' + pdfFilePath;
 
-      try {
-        console.log('Intentando imprimir silenciosamente...');
-
-        win.webContents.print({
-          silent: true,
-          deviceName: data.printer,
-          pageSize: { width: 54000, height: 85000 },
-          landscape: true,
-          margins: { marginType: 'none' }
-        }, (success, errorType) => {
-          if (!success) console.log(errorType)
-
-          win.close();
-        });
-
-      } catch (error) {
-        console.error('Error en impresión:', error);
-        win.close();
-      }
-    });
-
+    printCard(pdfFilePath, data.printer)
+      .then(() => console.log('Impresión completada'))
+      .catch(err => console.error('Error durante la impresión:', err));
 
     setTimeout(() => {
       if (fs.existsSync(imagePath)) {
@@ -928,11 +837,10 @@ async function printCard(pdfFileUrl, printerName) {
         return reject(new Error('Archivo PDF no encontrado: ' + pdfPath));
       }
 
-      // Ruta relativa al ejecutable de SumatraPDF
-      const sumatraPath = path.join(__dirname, 'tools', 'SumatraPDF.exe');
+      const sumatraPath = path.join(process.resourcesPath, 'SumatraPDF.exe');
 
       if (!fs.existsSync(sumatraPath)) {
-        return reject(new Error('SumatraPDF no encontrado en: ' + sumatraPath));
+        return reject(new Error('No se encontró SumatraPDF en: ' + sumatraPath));
       }
 
       const command = `"${sumatraPath}" -print-to "${printerName}" "${pdfPath}"`;
@@ -945,11 +853,10 @@ async function printCard(pdfFileUrl, printerName) {
           return reject(err);
         }
 
-        console.log('Impresión enviada correctamente con SumatraPDF');
+        console.log('Impresión enviada correctamente');
         resolve();
       });
     } catch (error) {
-      console.error('Error general en printCard:', error);
       reject(error);
     }
   });
