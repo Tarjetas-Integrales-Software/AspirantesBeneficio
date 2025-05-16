@@ -10,4 +10,5 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/pages.routes').then(m => m.pagesRoutes)
   },
   { path: '**', redirectTo: '/auth/login', pathMatch: 'full' }
+  //{ path: '**', redirectTo: '/inicio/digitalizador', pathMatch: 'full' }
 ];

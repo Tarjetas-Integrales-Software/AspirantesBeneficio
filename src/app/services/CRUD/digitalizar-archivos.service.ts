@@ -228,6 +228,9 @@ export class DigitalizarArchivosService {
     });
   }
 
+  get_data_esperados_digitalizados(nombre_archivo_upload: string): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/rep_get_cantidades_por_archivo_upload', { nombre_archivo_upload: nombre_archivo_upload });
+  }
 
 
 }
