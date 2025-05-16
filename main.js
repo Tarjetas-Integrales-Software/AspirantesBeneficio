@@ -42,7 +42,7 @@ function createWindow() {
   });
 
   // Abre consola
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   // Cargar la aplicación Angular
   mainWindow.loadURL(
@@ -507,6 +507,17 @@ function initializeDatabase() {
         deleted_at TEXT
     );
 
+     CREATE TABLE IF NOT EXISTS ct_nombres_archivos_upload (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT UNIQUE NULL,
+        created_id INTEGER,
+        updated_id INTEGER,
+        deleted_id INTEGER,
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -630,29 +641,44 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     // win.once('ready-to-show', () => win.hide())
     win.loadFile(savePath_pdf);
     // if pdf is loaded start printing.
-    win.webContents.on('did-stop-loading', async () => {
-      console.log('Cargó la ventana');
 
-      try {
-        console.log('Intentando imprimir silenciosamente...');
+    // win.webContents.executeJavaScript('document.readyState').then((state) => {
+    //   console.log(state,'state');
+    //   if (state == 'complete') {
 
-        win.webContents.print({
-          silent: true,
-          deviceName: data.printer,
-          pageSize: { width: 54000, height: 85000 },
-          landscape: true,
-          margins: { marginType: 'none' }
-        }, (success, errorType) => {
-          if (!success) console.log(errorType)
 
-          win.close();
+
+        win.webContents.on('did-stop-loading', async () => {
+          console.log('Cargó la ventana');
+
+          try {
+            console.log('Intentando imprimir silenciosamente...');
+
+            win.webContents.print({
+              silent: true,
+              deviceName: data.printer,
+              pageSize: { width: 54000, height: 85000 },
+              landscape: true,
+              margins: { marginType: 'none' },
+              // Nuevas opciones en Electron 20+:
+              pagesPerSheet: 1,
+              duplexMode: 'simplex'
+
+            }, (success, errorType) => {
+              if (!success) console.log(errorType)
+
+              win.close();
+            });
+
+          } catch (error) {
+            console.error('Error en impresión:', error);
+            win.close();
+          }
         });
+      //};
+    // });
 
-      } catch (error) {
-        console.error('Error en impresión:', error);
-        win.close();
-      }
-    });
+
 
     // CODIGO DAVID FIN
 

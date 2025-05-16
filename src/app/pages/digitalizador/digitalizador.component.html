@@ -4,36 +4,88 @@
       class="bg-white border-0 shadow-lg sm:rounded-3xl overflow-hidden w-11/12"
     >
       <div class="grid grid-cols-10 w-full">
-        <div
-          class="col-span-2 *:h-[200px] *:w-full *:border-slate-700"
-        >
+        <div class="col-span-2 *:h-[200px] *:w-full *:border-slate-700">
           <div
             class="bg-gray-300 bg-opacity-80 text-gray-900 flex flex-col justify-center items-center gap-2 border-r border-b border-slate-700"
           >
             <h2 class="text-4xl">Esperados</h2>
-            <span class="text-[37px]">50,000</span>
+            <span class="text-[37px]">{{spanValues[0]?.esperadas | number}}</span>
           </div>
           <div
             class="bg-blue-300 bg-opacity-80 text-blue-900 flex flex-col justify-center items-center gap-2 border-r border-b border-slate-700"
           >
             <h2 class="text-3xl">Digitalizados</h2>
-            <span class="text-[37px]">20,000</span>
+            <span class="text-[37px]"></span>
           </div>
           <div
             class="bg-green-300 bg-opacity-80 text-green-900 flex flex-col justify-center items-center gap-2 border-r border-slate-700"
           >
             <h2 class="text-4xl">Enviados</h2>
-            <span class="text-[37px]">7,500</span>
+            <span class="text-[37px]">{{spanValues[0]?.enviadas_tisa | number}}</span>
           </div>
         </div>
         <div class="col-span-5 px-2 h-[600px]">
-          <div class="h-[125px] flex flex-row items-center justify-start gap-10 text-3xl pt-7">
+          <div class="h-[50px] flex flex-col items-center justify-start gap-10 text-3xl pt-5">
             <b><p>DIGITALIZADOR</p></b>
-            <div [ngClass]="{ 'animate-spin': isMonitoring }">
+          </div>
+
+
+
+          <div class="h-[180px] flex flex-col items-center justify-start gap-10 text-3xl pt-5">
+            <form [formGroup]="formFiltrosDigitalizador"
+                class="flex items-center justify-between flex-wrap gap-2"
+                style="max-width: 100%;">
+
+              <div class="h-[50px] flex items-center justify-start gap-10 text-3xl pt-5" style="max-width: 100%;">
+                <mat-form-field class="w-100">
+                  <mat-label>Fecha de registro</mat-label>
+                  <mat-date-range-input [rangePicker]="picker">
+                    <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
+                    <input matEndDate formControlName="fechaFin" placeholder="Fin" />
+                  </mat-date-range-input>
+                  <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
+                  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-date-range-picker #picker></mat-date-range-picker>
+                </mat-form-field>
+
+                <mat-form-field class="w-100">
+                  <mat-label>Tipo Archivo Digitalizador</mat-label>
+                  <mat-select formControlName="tiposArchivoDigitalizador">
+                    <mat-option value="">- Selecciona una opción -</mat-option>
+                    @for (tdd of tipos_documento_dig; track tdd) {
+                    <mat-option [value]="tdd.id">{{tdd.tipo_doc_dig}}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="h-[50px] w-full flex flex-col items-center justify-start gap-10 text-3xl pt-5">
+                <mat-form-field class="w-full">
+                  <mat-label>Nombre Archivo Upload</mat-label>
+                  <mat-select class="w-full" formControlName="nombresArchivosUpload"
+                  (selectionChange)="onChangeOption_NombreArchivoUpload($event)">
+                    <mat-option value="">- Selecciona una opción -</mat-option>
+                    @for (nau of nombres_archivos_upload; track nau) {
+                    <mat-option [value]="nau.nombre">{{nau.nombre}}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </form>
+          </div>
+
+          <div
+            class="chart-container h-[300px] flex flex-col items-center justify-end gap-10 pt-5"
+          >
+            <canvas #myBarChart class="w-full h-full" id="myBarChart"> {{ chart }} </canvas>
+          </div>
+          <div *ngIf="isMonitoring" class="h-[50px] flex flex-row items-center justify-center gap-10 text-2xl pt-2">
+
+            <div  [ngClass]="{ 'animate-spin': isMonitoring }" class="justify-start">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="50"
-                height="50"
+                width="35"
+                height="35"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -46,14 +98,9 @@
                 <path d="M4.05 11a8 8 0 1 1 .5 4m-.5 5v-5h5" />
               </svg>
             </div>
-            <p>
-              Monitoreando <br /> Directorio
+            <p class="bg-green-300 color:white justify-end">
+              MONITORENDO Y DIGITALIZANDO
             </p>
-          </div>
-          <div
-            class="chart-container h-[400px] flex flex-col items-center justify-end gap-10 pt-5"
-          >
-            <canvas class="w-full h-full" id="myBarChart"> {{ chart }} </canvas>
           </div>
         </div>
         <div class="col-span-3">
