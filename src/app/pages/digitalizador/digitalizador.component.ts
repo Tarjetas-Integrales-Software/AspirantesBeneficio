@@ -8,6 +8,7 @@ import {
   signal,
   type OnInit,
   OnDestroy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import {
   FormControl,
@@ -20,8 +21,10 @@ import {
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { Observable, startWith, map, interval, Subscription } from 'rxjs';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile } from 'rxjs';
 import { MatListModule } from '@angular/material/list';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
@@ -51,6 +54,8 @@ export interface Curp {
     //AsyncPipe,
     MatListModule,
     MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     CommonModule,
   ],
   templateUrl: './digitalizador.component.html',
@@ -58,6 +63,11 @@ export interface Curp {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DigitalizadorComponent implements OnInit, OnDestroy {
+
+  @ViewChild('myBarChart') myBarChart!: ElementRef;
+  chart!: Chart;
+  chartData: any[] = []; // Tus datos vendrán aquí
+  chartData_construida: any[] = []; // Tus datos vendrán aquí
 
   private monitorSubscription: Subscription = Subscription.EMPTY;
   //private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados';
@@ -70,7 +80,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
 
   filteredOptions?: Observable<Curp[]>;
-  chart: any;
+  //chart: any;
   showModal_configuraciones = false;
   showModal_upload_esperados_tipo_archivo = false;
 
@@ -80,11 +90,22 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   private fs: any;
   private path: any;
 
+  formFiltrosDigitalizador: FormGroup;
+  nombres_archivos_upload: any[] = [];
+
+
+  spanValues: any = {};
+  private updateSubscription: Subscription = new Subscription();
+  private isAlive = true; // Flag para controlar la suscripción
+
+  private nombre_archivo_upload_selected = ''
+
   readonly targetDirectory = 'C:\\ExpedientesBeneficiarios';
   readonly targetDirectory_Digitalizados = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
   readonly targetDirectory_Enviados = 'C:\\ExpedientesBeneficiarios\\Enviados';
 
   constructor(
+    private cdr: ChangeDetectorRef,
     private fileSystemService: FileSystemService,
     private electronService: ElectronService,
     private snackBar: MatSnackBar,
@@ -96,6 +117,82 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   ) {
     this.fs = window.require('fs');
     this.path = window.require('path');
+
+    this.formFiltrosDigitalizador = this.fb.nonNullable.group({
+      tiposArchivoDigitalizador: '',
+      nombresArchivosUpload: '',
+      fechaInicio: new Date(),
+      fechaFin: new Date(),
+    });
+
+    Chart.register(...registerables); // Registra todos los componentes de Chart.js
+  }
+
+  async ngOnInit() {
+    const online = this.networkStatusService.checkConnection();
+    if (online) {
+      try {
+        await this.syncDataBase();
+
+        this.getNombresArchivosUploadDigitalizador();
+        this.getContenedores();
+        this.getTiposDocDig();
+        this.getExtensiones();
+
+
+        this.initializeChart();
+
+
+        // Carga inicial
+        this.updateData();
+
+        // Configurar intervalo de 5 segundos usando RxJS (mejor práctica)
+        this.updateSubscription = interval(5000)
+          .pipe(takeWhile(() => this.isAlive))
+          .subscribe(() => {
+            this.updateData();
+          });
+
+      } catch (error) {
+
+      }
+    }
+
+//    this.chart = new Chart('myBarChart', this.bar);
+
+    if (this.electronService.isElectron) {
+      console.log('Running in Electron!');
+    }
+
+    // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
+    this.creaCarpetaExpedientes();
+    this.creaCarpetaExpedientes_Digitalizados();
+    this.creaCarpetaExpedientes_Enviados();
+
+    // Asegurar que el README.txt exista al iniciar el componente
+    this.fileSystemService.ensureFileExists(
+      'README.txt',
+      this.targetDirectory_Digitalizados
+    );
+    this.fileSystemService.ensureFileExists(
+      'README.txt',
+      this.targetDirectory_Enviados
+    );
+
+    // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
+    this.configDigitalizadorService.CreateConfigInicialDigitalizador();
+  }
+
+  onChangeOption_NombreArchivoUpload(event: MatSelectChange): void{
+    const optionSelected = event.value;
+    console.log('Opcion seleccionada:', optionSelected);
+
+    // Aquí puedes ejecutar cualquier lógica necesaria
+    if (optionSelected) {
+     this.nombre_archivo_upload_selected = optionSelected;
+    } else {
+      this.nombre_archivo_upload_selected = '';
+    }
   }
 
   myForm: FormGroup = this.fb.group({
@@ -136,77 +233,197 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.showModal_upload_esperados_tipo_archivo = !this.showModal_upload_esperados_tipo_archivo;
   }
 
-  ngOnInit() {
 
-    const online = this.networkStatusService.checkConnection();
-    if (online) {
-      this.syncDataBase();
-      this.getContenedores();
-      this.getTiposDocDig();
-      this.getExtensiones();
-
-
-
+  initializeChart(): void {
+    if (this.chart) {
+      this.chart.destroy(); // Destruye el gráfico anterior si existe
     }
 
+    //this.chart = new Chart('myBarChart', this.bar);
 
+    const ctx = this.myBarChart.nativeElement.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.chartData.map(item => item.label), // Ajusta según tu estructura de datos
+        datasets: [{
+          label: '',
+          data: this.chartData.map(item => item.value), // Ajusta según tu estructura
+          backgroundColor: [
+            'rgba(209, 212, 219, 0.5)',
+            'rgba(123, 241, 168, 1)',
+          ]
+          ,
+          borderColor: [
+            'rgba(158, 173, 164, 0.5)',
+            'rgba(75, 217, 129, 1)',
+          ],
+          borderWidth: 1
+        }]
+      },
 
-    this.chart = new Chart('myBarChart', this.bar);
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        aspectRatio: 1, // Esto establece la relación 1:1
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              // Mostrar solo valores enteros
+              stepSize: 1,
+              precision: 0 // No mostrar decimales
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: false,
+            text: 'Grafica Cantidad Expedientes por Status',
+          },
+        },
+      },
+    });
+  }
 
-    if (this.electronService.isElectron) {
-      console.log('Running in Electron!');
+  // Método para actualizar los datos
+  updateChartData(newData: any[]): void {
+    this.chartData = [...newData];
+    console.log(this.chartData,'Chart-Data');
+
+    this.chartData_construida = [
+      {
+        label : 'esperadas',
+        value : this.chartData[0]?.esperadas
+      },
+      {
+        label : 'enviadas_tisa',
+        value : this.chartData[0]?.enviadas_tisa
+      }
+  ]
+
+    if (this.chart) {
+      this.chart.data.labels = this.chartData_construida.map(item => item.label);
+      this.chart.data.datasets[0].data = this.chartData_construida.map(item => item.value);
+      this.chart.update(); // Actualiza el gráfico con los nuevos datos
+    } else {
+      this.initializeChart();
     }
 
-    // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
-    this.creaCarpetaExpedientes();
-    this.creaCarpetaExpedientes_Digitalizados();
-    this.creaCarpetaExpedientes_Enviados();
+    // Forzar detección de cambios si es necesario
+    this.cdr.detectChanges();
+  }
 
-    // Asegurar que el README.txt exista al iniciar el componente
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Digitalizados
-    );
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Enviados
-    );
 
-    // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
-    this.configDigitalizadorService.CreateConfigInicialDigitalizador();
+  async updateData(): Promise<void> {
+    try {
+      // Obtener datos actualizados
+      //let nombre_archivo_upload = 'ArchivosEsperadosDigitalizar_20250509_170514.pdf';
+      let nombre_archivo_upload = this.nombre_archivo_upload_selected;
+
+      if(this.nombre_archivo_upload_selected != ''){
+        const newData = await this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).toPromise();
+        console.log(newData);
+
+        // Actualizar valores para los spans
+        this.spanValues = { ...newData.data  || [] } ;
+        console.log(this.spanValues);
+
+        if (this.spanValues.length === 0) {
+          this.spanValues.push({ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 });
+        }
+
+
+        this.updateChartData(newData.data);
+
+
+
+        // Actualizar arreglo para el chart
+        //this.chartData = [...newData.chartInfo];
+
+        // Forzar detección de cambios si es necesario
+         this.cdr.detectChanges();
+      }
+
+
+    } catch (error) {
+      console.error('Error al actualizar datos:', error);
+      this.spanValues = [{ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 }];
+    }
   }
 
   ngOnDestroy(): void {
     this.detenerMonitor();
+
+    // Limpieza para evitar memory leaks
+    this.isAlive = false;
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+
   }
 
-  syncDataBase(): void {
-    this.configDigitalizadorService.getTiposDocsDigitalizador().subscribe({
-      next: (response) => {
-        this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(response.data);
-      },
-      error: (error) => {
-        console.error('Error al obtener Tipos Documentos Digitalizacion:', error);
-      }
-    });
+  async syncDataBase(): Promise<void> {
+    try {
 
-    this.configDigitalizadorService.getContenedores().subscribe({
-      next: (response) => {
-        this.configDigitalizadorService.syncLocalDataBase_Contenedores(response.data);
-      },
-      error: (error) => {
-        console.error('Error al obtener Contenedores:', error);
-      }
-    });
 
-    this.configDigitalizadorService.getExtensiones().subscribe({
-      next: (response) => {
-        this.configDigitalizadorService.syncLocalDataBase_Extensiones(response.data);
-      },
-      error: (error) => {
-        console.error('Error al obtener Extensiones:', error);
-      }
-    });
+          // Convertimos cada observable a promesa con lastValueFrom (de RxJS)
+    const nombresArchivos = await lastValueFrom(this.configDigitalizadorService.getNombresArchivosUploadDigitalizador());
+    await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
+
+    const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
+    await this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(tiposDocs.data);
+
+    const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
+    await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
+
+    const extensiones = await lastValueFrom(this.configDigitalizadorService.getExtensiones());
+    await this.configDigitalizadorService.syncLocalDataBase_Extensiones(extensiones.data);
+
+      // this.configDigitalizadorService.getNombresArchivosUploadDigitalizador().subscribe({
+      //   next: (response) => {
+      //     this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(response.data);
+      //   },
+      //   error: (error) => {
+      //     console.error('Error al obtener Nombres Archivos Upload:', error);
+      //   }
+      // });
+
+      // this.configDigitalizadorService.getTiposDocsDigitalizador().subscribe({
+      //   next: (response) => {
+      //     this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(response.data);
+      //   },
+      //   error: (error) => {
+      //     console.error('Error al obtener Tipos Documentos Digitalizacion:', error);
+      //   }
+      // });
+
+      // this.configDigitalizadorService.getContenedores().subscribe({
+      //   next: (response) => {
+      //     this.configDigitalizadorService.syncLocalDataBase_Contenedores(response.data);
+      //   },
+      //   error: (error) => {
+      //     console.error('Error al obtener Contenedores:', error);
+      //   }
+      // });
+
+      // this.configDigitalizadorService.getExtensiones().subscribe({
+      //   next: (response) => {
+      //     this.configDigitalizadorService.syncLocalDataBase_Extensiones(response.data);
+      //   },
+      //   error: (error) => {
+      //     console.error('Error al obtener Extensiones:', error);
+      //   }
+      // });
+    } catch (error) {
+      console.error('Error en sincronización:', error);
+      throw error; // Opcional: re-lanzar el error si quieres manejarlo fuera
+    }
+
+
   }
 
   async creaCarpetaExpedientes() {
@@ -685,6 +902,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       default:
         break;
     }
+  }
+
+
+
+  getNombresArchivosUploadDigitalizador(): void {
+    this.configDigitalizadorService
+      .consultarNombresArchivosUpload()
+      .then((nombres_archivos_upload) => {
+        this.nombres_archivos_upload = nombres_archivos_upload;
+      })
+      .catch((error) => console.error('Error al obtener los nombres archivos upload:', error));
   }
 
   getTiposDocDig(): void {
