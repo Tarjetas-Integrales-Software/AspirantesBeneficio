@@ -100,7 +100,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   getReporte(): void {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(false);
     const body = this.getBody(true);
 
     this.loading = true;
@@ -113,7 +113,13 @@ export class ReportesComponent implements OnInit, AfterViewInit {
           this.displayedColumns = Object.keys(primerElemento);
 
           this.dataSource.data = response.data;
-          this.dataSource.paginator = this.paginator;
+
+          const { currentPage, lastPage, perPage, total } = response["pagination"];
+
+          this.currentPage = currentPage - 1;
+          this.lastPage = lastPage;
+          this.perPage = perPage;
+          this.total = total;
         }
       }),
       complete: () => {
@@ -142,7 +148,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   downloadPdf() {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(true);
     const body = this.getBody();
 
     this.reportesService.getReporte(url, body).subscribe(response => {
@@ -164,7 +170,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   downloadExcel() {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(true);
     const body = this.getBody();
 
     this.reportesService.getReporte(url, body).subscribe(response => {
@@ -188,7 +194,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   getFileName(): string {
-    return this.getUrlReporte();
+    return this.getUrlReporte(false);
   }
 
   getBody(paginated: boolean = false): {
@@ -212,8 +218,12 @@ export class ReportesComponent implements OnInit, AfterViewInit {
     return body;
   }
 
-  getUrlReporte(): string {
-    return this.formConsulta.get('reporte')?.value;
+  getUrlReporte(all: boolean): string {
+    const url = this.formConsulta.get('reporte')?.value;
+
+    if (all) return url + "_all";
+
+    return url;
   }
 
   onPaginateChange(event: PageEvent): void {
