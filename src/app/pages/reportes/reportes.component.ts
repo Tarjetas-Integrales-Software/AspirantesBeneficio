@@ -164,7 +164,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
           body: prepare,
           bodyStyles: { fontSize: 8 }
         });
-        doc.save(`${this.getFileName()}`);
+        doc.save(`${this.getFileNameExport(true)}`);
       }
     });
   }
@@ -188,7 +188,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Aspirantes');
 
         // Genera el archivo y lo descarga
-        XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
+        XLSX.writeFile(workbook, `${this.getFileNameExport(true)}.xlsx`);
       }
     });
   }
@@ -224,6 +224,24 @@ export class ReportesComponent implements OnInit, AfterViewInit {
     if (all) return url + "_all";
 
     return url;
+  }
+
+  getFileNameExport(all: boolean): string {
+    const url = this.formConsulta.get('reporte')?.value;
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+
+    const timestamp = `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+
+    if (all) return `${url}_all_${timestamp}`;
+
+    return `${url}_${timestamp}`;
   }
 
   onPaginateChange(event: PageEvent): void {
