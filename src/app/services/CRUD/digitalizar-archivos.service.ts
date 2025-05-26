@@ -3,7 +3,7 @@ import { environment } from '../../../environments/environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, forkJoin, from, Observable, of, switchMap } from 'rxjs';
 import { DatabaseService } from '../database.service';
-import { PDFDocument, PDFImage  } from 'pdf-lib';
+import { PDFDocument, PDFImage } from 'pdf-lib';
 import { PdfCompressService } from '../pdf-compress.service';
 
 const { ipcRenderer } = (window as any).require("electron");
@@ -27,9 +27,9 @@ export class DigitalizarArchivosService {
   ) {
 
   }
-
-
-
+  getArchivosEsperados(body: { search: string }): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion_all', body);
+  }
 
   BulkInsert_InBatches(data: any[], batchSize: number = 100): Observable<any> {
     const batches = [];
@@ -94,14 +94,14 @@ export class DigitalizarArchivosService {
       .map((file: string) => path.join(carpetaOrigen, file));
   }
 
-  private procesarArchivo2(archivo: string,): Observable<boolean>{
-    console.log(archivo,'archivo_actual');
+  private procesarArchivo2(archivo: string,): Observable<boolean> {
+    console.log(archivo, 'archivo_actual');
     return of(true);
   }
 
   private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string): Observable<boolean> {
     try {
-      const curp = path.basename(archivo,'.pdf').toUpperCase();
+      const curp = path.basename(archivo, '.pdf').toUpperCase();
 
       const ahora = new Date();
       const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
@@ -116,7 +116,7 @@ export class DigitalizarArchivosService {
       let documento = {
         archivo: archivo,
         fecha: fechaFormateada,
-        tipo:'expediente_beneficiario'
+        tipo: 'expediente_beneficiario'
       }
 
       return from(this.subirArchivo(beneficiario, documento)).pipe(
@@ -125,11 +125,11 @@ export class DigitalizarArchivosService {
             try {
 
               //actualizar el status a 1 para indicar que ya fue digitalizado y enviado a TISA, en la tabla ct_archivos_esperados_digitalizados
-              console.log(curp,'antes de edit_archivo_esperado');
-              this.edit_archivo_esperado(curp,1).subscribe({
-                next:(data)=>{
+              console.log(curp, 'antes de edit_archivo_esperado');
+              this.edit_archivo_esperado(curp, 1).subscribe({
+                next: (data) => {
 
-                },error:(error)=>{
+                }, error: (error) => {
 
                 }
               });
@@ -164,45 +164,45 @@ export class DigitalizarArchivosService {
   }
 
   async subirArchivo(beneficiario: any, documento: any) {
-      // Leer el documento desde el main process
+    // Leer el documento desde el main process
     const { archivo, fecha, tipo } = documento;
     const { id, curp } = beneficiario;
 
     try {
-        // Leer el archivo PDF desde el proceso principal
-        const fileData = await this.getFileFromMainProcess(curp);
+      // Leer el archivo PDF desde el proceso principal
+      const fileData = await this.getFileFromMainProcess(curp);
 
-        // Optimizar el PDF
-        const pdfDoc = await PDFDocument.load(fileData);
+      // Optimizar el PDF
+      const pdfDoc = await PDFDocument.load(fileData);
 
-        // Configurar opciones de optimización
-        const optimizedPdfBytes = await pdfDoc.save({
-            useObjectStreams: true,  // Reduce tamaño
-            // Otras opciones de optimización:
-            // useCompression: true,
-            // reduceFileSize: true
-        });
+      // Configurar opciones de optimización
+      const optimizedPdfBytes = await pdfDoc.save({
+        useObjectStreams: true,  // Reduce tamaño
+        // Otras opciones de optimización:
+        // useCompression: true,
+        // reduceFileSize: true
+      });
 
-        // Crear el FormData
-        const formData = new FormData();
-        formData.append('fecha', fecha);
-        formData.append('tipo', tipo);
-        formData.append('curp', curp);
-        formData.append('id_beneficiario', id.toString());
+      // Crear el FormData
+      const formData = new FormData();
+      formData.append('fecha', fecha);
+      formData.append('tipo', tipo);
+      formData.append('curp', curp);
+      formData.append('id_beneficiario', id.toString());
 
-        // Convertir el buffer a un archivo Blob con el tipo correcto
-        const blob = new Blob([optimizedPdfBytes], { type: 'application/pdf' });
-        formData.append('file', blob, archivo);
+      // Convertir el buffer a un archivo Blob con el tipo correcto
+      const blob = new Blob([optimizedPdfBytes], { type: 'application/pdf' });
+      formData.append('file', blob, archivo);
 
-        // Enviar la petición POST al backend
-        return await this.http.post(environment.apiUrl + '/lic/aspben/digitalizar_archivos/registrar-archivo', formData, {
-            headers: new HttpHeaders({
-                'Accept': 'application/json'
-            })
-        }).toPromise();
+      // Enviar la petición POST al backend
+      return await this.http.post(environment.apiUrl + '/lic/aspben/digitalizar_archivos/registrar-archivo', formData, {
+        headers: new HttpHeaders({
+          'Accept': 'application/json'
+        })
+      }).toPromise();
     } catch (error) {
-        console.error("Error al registrar el archivo:", error);
-        throw error;
+      console.error("Error al registrar el archivo:", error);
+      throw error;
     }
   }
 
