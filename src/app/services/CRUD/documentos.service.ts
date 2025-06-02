@@ -4,8 +4,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-const { ipcRenderer } = (window as any).require("electron");
-
 @Injectable({
   providedIn: 'root'
 })
@@ -81,42 +79,37 @@ export class DocumentosService {
     const { id, curp } = aspirante;
 
     try {
-        // Leer el archivo PDF desde el proceso principal
-        const fileData = await this.getFileFromMainProcess(curp);
+      // Leer el archivo PDF desde el proceso principal
+      const fileData = await this.getFileFromMainProcess(curp);
 
-        // Crear el FormData
-        const formData = new FormData();
-        formData.append('fecha', fecha);
-        formData.append('tipo', tipo);
-        formData.append('curp', curp);
-        formData.append('id_aspirante_beneficio', id.toString());
+      // Crear el FormData
+      const formData = new FormData();
+      formData.append('fecha', fecha);
+      formData.append('tipo', tipo);
+      formData.append('curp', curp);
+      formData.append('id_aspirante_beneficio', id.toString());
 
-        // Convertir el buffer a un archivo Blob con el tipo correcto
-        const blob = new Blob([fileData], { type: 'application/pdf' });
-        formData.append('file', blob, archivo);
+      // Convertir el buffer a un archivo Blob con el tipo correcto
+      const blob = new Blob([fileData], { type: 'application/pdf' });
+      formData.append('file', blob, archivo);
 
-        // Enviar la petición POST al backend
-        return await this.http.post(environment.apiUrl + '/lic/aspben/registrar-documentos', formData, {
-            headers: new HttpHeaders({
-                'Accept': 'application/json'
-            })
-        }).toPromise();
+      // Enviar la petición POST al backend
+      return await this.http.post(environment.apiUrl + '/lic/aspben/registrar-documentos', formData, {
+        headers: new HttpHeaders({
+          'Accept': 'application/json'
+        })
+      }).toPromise();
     } catch (error) {
-        console.error("Error al registrar el documento:", error);
-        throw error;
+      console.error("Error al registrar el documento:", error);
+      throw error;
     }
-}
+  }
 
   private getFileFromMainProcess(fileName: string): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      ipcRenderer.send('get-pdf', fileName);
-      ipcRenderer.once('pdf-read-success', (event: any, data: any) => {
-        resolve(data);
-      });
-      ipcRenderer.once('pdf-read-error', (event: any, err: any) => {
-        reject(err);
-      });
-    });
+    if (!window.electronAPI) {
+      return Promise.reject('Electron API no disponible');
+    }
+    return window.electronAPI.getFile(fileName);
   }
 
   deleteDocumento(id: number): Observable<any> {

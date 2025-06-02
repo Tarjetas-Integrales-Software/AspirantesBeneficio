@@ -36,32 +36,27 @@ function createWindow() {
     width: 1366,
     height: 768,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,       // Debe ser false
+      contextIsolation: true,       // Debe ser true
+      preload: path.join(__dirname, 'preload.js'), // Ruta absoluta
+      sandbox: true,                // Seguridad adicional (opcional)
     },
   });
 
-  // Abre consola
-   mainWindow.webContents.openDevTools();
-
-  // Cargar la aplicación Angular
-  mainWindow.loadURL(
-    url.format({
-      pathname: path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html'),
-      protocol: 'file:',
-      slashes: true,
-    })
+  // Cargar la aplicación Angular desde la build
+  mainWindow.loadFile(
+    path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html')
   );
 
-  Menu.setApplicationMenu(null);
+  // Abre consola (para debug)
+  mainWindow.webContents.openDevTools();
 
-  mainWindow.on('closed', function () {
+  // Elimina esta línea (remote está obsoleto):
+  // remote.enable(mainWindow.webContents); 
+
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  // Habilitar remote para esta ventana
-  remote.enable(win.webContents);
-
 }
 
 async function sendAppInfo() {
@@ -872,3 +867,10 @@ async function printCard(pdfFileUrl, printerName) {
     }
   });
 }
+
+ipcMain.handle('dialog:selectFolder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  })
+  return result.filePaths[0] || null
+})

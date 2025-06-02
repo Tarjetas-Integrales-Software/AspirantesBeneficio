@@ -38,4 +38,13 @@ export class ElectronService {
   get dialog(): import('electron').Dialog | undefined {
     return this.isElectron ? this.electron?.dialog : undefined;
   }
+
+  async selectFolder(): Promise<string | null> {
+    try {
+      return await window.electronAPI?.selectFolder() ?? null
+    } catch (error) {
+      console.error('Error:', error)
+      return null
+    }
+  }
 }

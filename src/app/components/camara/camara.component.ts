@@ -7,7 +7,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import Swal from 'sweetalert2';
 
-const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'app-camara',
   imports: [CommonModule, FormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
@@ -92,9 +91,21 @@ export class CamaraComponent implements OnInit {
     }
   }
 
-  savePhoto(name: string, path: string) {
-    if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name, path);
+  savePhoto(name: string, path: string): void {
+    if (!this.capturedImage) {
+      console.warn('No hay imagen capturada para guardar');
+      return;
+    }
+
+    if (!window.electronAPI) {
+      console.error('Electron API no disponible');
+      return;
+    }
+
+    try {
+      window.electronAPI.savePhoto(this.capturedImage, name, path);
+    } catch (error) {
+      console.error('Error al enviar imagen para guardar:', error);
     }
   }
 

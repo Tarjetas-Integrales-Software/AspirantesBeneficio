@@ -6,7 +6,6 @@ import { DatabaseService } from '../database.service';
 import { PDFDocument, PDFImage } from 'pdf-lib';
 import { PdfCompressService } from '../pdf-compress.service';
 
-const { ipcRenderer } = (window as any).require("electron");
 const path = (window as any).require('path');
 const fs = (window as any).require('fs');
 
@@ -28,7 +27,7 @@ export class DigitalizarArchivosService {
 
   }
   getArchivosEsperados(body: { search: string }): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion_all', body);
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion_search', body);
   }
 
   BulkInsert_InBatches(data: any[], batchSize: number = 100): Observable<any> {
@@ -106,9 +105,7 @@ export class DigitalizarArchivosService {
       const ahora = new Date();
       const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
 
-      console.log(curp);
-
-      let beneficiario = {
+      const beneficiario = {
         id: 1,
         curp: curp
       }
@@ -206,31 +203,24 @@ export class DigitalizarArchivosService {
     }
   }
 
-  private getFileFromMainProcess(fileName: string): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
+  async getFileFromMainProcess(fileName: string): Promise<ArrayBuffer> {
+    const requestId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    const successEvent = `pdf-read-success-${requestId}`;
+    const errorEvent = `pdf-read-error-${requestId}`;
 
-      const requestId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      const successEvent = `pdf-read-success-${requestId}`;
-      const errorEvent = `pdf-read-error-${requestId}`;
+    if (!window.electronAPI) {
+      throw new Error('Electron API no disponible');
+    }
 
-      // Escucha respuestas con IDs únicos
-      ipcRenderer.once(successEvent, (_event: any, data: any) => {
-        resolve(data);
-      });
-
-      ipcRenderer.once(errorEvent, (_event: any, err: any) => {
-        reject(err);
-      });
-
-      // Enviar la solicitud al proceso principal con el ID incluido
-      ipcRenderer.send('get-archivo-digitalizado', { fileName, requestId });
-
-    });
+    try {
+      return await window.electronAPI.getDigitalizedFile(fileName);
+    } catch (error: any) {
+      console.error('Error al obtener archivo digitalizado:', error);
+      throw new Error(`Error al procesar ${fileName}: ${error.message}`);
+    }
   }
 
   get_data_esperados_digitalizados(nombre_archivo_upload: string): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/rep_get_cantidades_por_archivo_upload', { nombre_archivo_upload: nombre_archivo_upload });
   }
-
-
 }

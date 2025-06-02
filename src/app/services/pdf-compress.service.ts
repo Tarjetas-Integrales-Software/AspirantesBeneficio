@@ -2,8 +2,6 @@ import { Injectable } from '@angular/core';
 import { PDFDocument, PDFImage } from 'pdf-lib';
 import { createCanvas, loadImage } from 'canvas';
 
-const { ipcRenderer } = (window as any).require("electron");
-
 interface SaveOptions {
   useObjectStreams?: boolean;
   useSmallerObjectStreams?: boolean;
@@ -29,12 +27,7 @@ interface PDFImageExtended extends PDFImage {
   providedIn: 'root'
 })
 export class PdfCompressService {
-  private ipcRenderer: typeof ipcRenderer;
-
   constructor() {
-    if (window.require) {
-      this.ipcRenderer = window.require('electron').ipcRenderer;
-    }
   }
 
   // public async compressPDF(inputBytes: Uint8Array, options = {

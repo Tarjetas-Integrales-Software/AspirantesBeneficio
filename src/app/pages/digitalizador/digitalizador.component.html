@@ -106,15 +106,15 @@
 
         <div class="numeros">
           <div class="numeros__item">
-            <span class="">{{spanValues[0]?.esperadas | number}}</span>
+            <span class="">{{ esperadas | number}}</span>
             <span>Esperadas</span>
           </div>
           <div class="numeros__item">
-            <span class=""></span>
+            <span class="">{{ digitalizadas | number }}</span>
             <span>Digitalizadas</span>
           </div>
           <div class="numeros__item">
-            <span class="">{{spanValues[0]?.enviadas_tisa | number}}</span>
+            <span class="">{{ enviadas | number}}</span>
             <span>Enviadas</span>
           </div>
         </div>
@@ -171,49 +171,65 @@
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
               Configuraciones
             </h3>
-            <form [formGroup]="myForm_Config" class="my-2 w-full">
-              <mat-form-field class="w-full">
-                <mat-label>Tipo Documento a Digitalizar</mat-label>
-                <mat-select class="w-full" [ngStyle]="{ height: '25px' }" formControlName="id_tipo_doc_dig"
-                  (selectionChange)="selectedValue2()">
-                  <mat-option class="w-full" [ngStyle]="{ height: '25px' }" *ngFor="let tipo of tipos_documento_dig"
-                    [value]="tipo.id">{{ tipo.tipo_doc_dig }}</mat-option>
-                </mat-select>
-              </mat-form-field>
+
+            <form [formGroup]="formConfiguracion" class="form busqueda__form">
+              <div class="form__row">
+                <div class="form__item">
+                  <input formControlName="rutaOrigen" type="file" webkitdirectory directory id="sourceInput" hidden
+                    readonly />
+                  <button mat-raised-button matSuffix (click)="selectFolder('rutaOrigen')">
+                    <mat-icon>folder</mat-icon>
+                    <span>Seleccionar ruta origen</span>
+                  </button>
+                </div>
+                <div class="form__item">
+                  <input formControlName="rutaDestino" type="file" webkitdirectory directory id="destinationInput"
+                    hidden readonly />
+                  <button mat-raised-button matSuffix (click)="selectFolder('rutaDestino')">
+                    <mat-icon>folder</mat-icon>
+                    <span>Seleccionar ruta destino</span>
+                  </button>
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="form__item">
+                  <span class="ruta" *ngIf="true || formConfiguracion.get('rutaOrigen')?.value">
+                    Ruta origen: {{ formConfiguracion.get('rutaOrigen')?.value.substring(11) }}
+                  </span>
+                </div>
+                <div class="form__item">
+                  <span class="ruta" *ngIf="true || formConfiguracion.get('rutaDestino')?.value">
+                    Ruta origen: {{ formConfiguracion.get('rutaDestino')?.value.substring(11) }}
+                  </span>
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="form__item">
+                  <div class="form__item">
+                    <mat-form-field class="w-full">
+                      <mat-label>Extension</mat-label>
+                      <mat-select class="" formControlName="extension">
+                        <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
+                          extension.nombre }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Intervalo de sincronización (s)</mat-label>
+                    <input matInput formControlName="intervaloSincronizacion" placeholder="Tiempo en segundos" min="10">
+                  </mat-form-field>
+                </div>
+              </div>
             </form>
 
             <div class="mt-2">
               <div class="input-group">
-                <label for="sourceInput">Ruta Origen:</label>
-                <div class="file-input-wrapper">
-                  <input type="text" [value]="sourcePath()" readonly placeholder="Seleccione directorio de origen"
-                    (click)="openFileSelector('sourceInput')" />
-                  <button type="button" class="button" (click)="openFileSelector('sourceInput')">
-                    Examinar
-                  </button>
-                </div>
-                <input type="file" id="sourceInput" webkitdirectory directory (change)="onSourcePathSelected($event)"
+                <input type="file" webkitdirectory directory (change)="onSourcePathSelected($event)"
                   style="display: none" />
-              </div>
-
-              <div class="input-group">
-                <label for="destinationInput">Ruta Destino:</label>
-                <div class="file-input-wrapper">
-                  <input type="text" [value]="destinationPath()" readonly placeholder="Seleccione directorio de destino"
-                    (click)="openFileSelector('destinationInput')" />
-                  <button type="button" class="button" (click)="openFileSelector('destinationInput')">
-                    Examinar
-                  </button>
-                </div>
-                <input type="file" id="destinationInput" webkitdirectory directory
-                  (change)="onDestinationPathSelected($event)" style="display: none" />
-              </div>
-
-              <div class="input-group w-full">
-                <label for="tiempoSyncSeg">Tiempo Sync Segundos</label>
-                <div class="file-input-wrapper">
-                  <input #tiempoSyncSeg id="tiempoSyncSeg" type="number" [value]="10" />
-                </div>
+                <input type="file" id="" webkitdirectory directory (change)="onDestinationPathSelected($event)"
+                  style="display: none" />
               </div>
             </div>
           </div>
@@ -263,15 +279,6 @@
                   (selectionChange)="selectedValue3()">
                   <mat-option class="w-full" [ngStyle]="{ height: '25px' }" *ngFor="let tipo of tipos_documento_dig"
                     [value]="tipo.id">{{ tipo.tipo_doc_dig }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field class="w-full">
-                <mat-label>Extension</mat-label>
-                <mat-select class="w-full" [ngStyle]="{ height: '25px' }" formControlName="id_extension"
-                  (selectionChange)="selectedValue5()">
-                  <mat-option class="w-full" [ngStyle]="{ height: '25px' }" *ngFor="let extension of extensiones"
-                    [value]="extension.nombre">{{ extension.nombre }}</mat-option>
                 </mat-select>
               </mat-form-field>
 

@@ -10,10 +10,17 @@ import { ImpresionManualService } from "./impresionManual.service";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
 import { Router } from "@angular/router";
 
-const { ipcRenderer } = (window as any).require("electron");
+interface Printer {
+  name: string;
+  displayName: string;
+  description?: string;
+  status: number;
+  isDefault: boolean;
+}
+
 @Component({
   selector: 'app-impresion-manual',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule , MatInputModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
   templateUrl: './impresionManual.component.html',
   styles: `
     :host {
@@ -53,8 +60,8 @@ export class ImpresionManualComponent implements OnInit {
       ]],
       fechaExpedicion: [{ value: this.getFechaActual(), disabled: true }],
       telefono: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
-      noTarjeta: [null ,{ value: '', disabled: true }],
-      foto: [null, ]
+      noTarjeta: [null, { value: '', disabled: true }],
+      foto: [null,]
     });
   }
 
@@ -84,42 +91,41 @@ export class ImpresionManualComponent implements OnInit {
 
   ngOnInit() {
     this.modulo_actual = this.configuracionesService.getSelectedValueModu();
-        if (!this.modulo_actual) {
-          let timerInterval: NodeJS.Timeout;
-          Swal.fire({
-            icon: 'info',
-            title: 'Aún no seleccionás un módulo...',
-            html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            timer: 3000,
-            timerProgressBar: true,
-            didOpen: () => {
-              Swal.showLoading();
-              const container = Swal.getHtmlContainer();
-              if (!container) return; // Verifica que no sea null
-              const b = container.querySelector('b') as HTMLElement | null;
-              if (!b) return; // Verifica que 'b' exista
+    if (!this.modulo_actual) {
+      let timerInterval: NodeJS.Timeout;
+      Swal.fire({
+        icon: 'info',
+        title: 'Aún no seleccionás un módulo...',
+        html: 'Por favor, seleccioné un módulo y vuelva a intentar <br> Redirigiendo en <b></b> segundos.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: () => {
+          Swal.showLoading();
+          const container = Swal.getHtmlContainer();
+          if (!container) return; // Verifica que no sea null
+          const b = container.querySelector('b') as HTMLElement | null;
+          if (!b) return; // Verifica que 'b' exista
 
-              timerInterval = setInterval(() => {
-                const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
-                if (typeof timerLeft === 'number') { // Verifica si es un número
-                  b.textContent = Math.ceil(timerLeft / 1000).toString();
-                }
-              }, 1000);
-            },
-            willClose: () => {
-              clearInterval(timerInterval);
+          timerInterval = setInterval(() => {
+            const timerLeft = Swal.getTimerLeft(); // Puede ser undefined
+            if (typeof timerLeft === 'number') { // Verifica si es un número
+              b.textContent = Math.ceil(timerLeft / 1000).toString();
             }
-          }).then((result) => {
-            if (result.dismiss === Swal.DismissReason.timer) {
-              this.router.navigateByUrl('/inicio/configuraciones');
-            }
-          });
+          }, 1000);
+        },
+        willClose: () => {
+          clearInterval(timerInterval);
         }
+      }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.timer) {
+          this.router.navigateByUrl('/inicio/configuraciones');
+        }
+      });
+    }
     this.getAvailableCameras();
     this.getAvailablePrinters();
-    this.getPrinters();
     this.formulario.get('noTarjeta')?.disable();
   }
 
@@ -136,22 +142,25 @@ export class ImpresionManualComponent implements OnInit {
     }
   }
 
-  async getAvailablePrinters() {
-    try {
-      const printers = await ipcRenderer.invoke('get-printers');
-      this.printers = printers;
-      console.log("Available printers:", this.printers);
-    } catch (error) {
-      console.error("Error accessing printers:", error);
+  async getAvailablePrinters(): Promise<Printer[]> {
+    if (!window.electronAPI) {
+      console.warn('Electron API no disponible - Modo navegador');
+      return []; // Fallback para desarrollo
     }
-  }
 
-  async getPrinters() {
-    this.printers = await ipcRenderer.invoke('get-printers');
-    console.log(this.printers.length, 'printer-lenght');
-    if (this.printers.length > 0) {
-      // this.selectedPrinter = this.printers[0].name;
-      console.log(this.printers, 'printers');
+    try {
+      this.printers = await window.electronAPI.getPrinters();
+
+      if (this.printers.length > 0) {
+        console.log('Impresoras disponibles:', this.printers);
+      } else {
+        console.warn('No se encontraron impresoras');
+      }
+
+      return this.printers;
+    } catch (error) {
+      console.error('Error al obtener impresoras:', error);
+      return []; // Fallback seguro
     }
   }
 
@@ -199,9 +208,21 @@ export class ImpresionManualComponent implements OnInit {
 
   }
 
-  savePhoto(name: string, path: string) {
-    if (this.capturedImage()) {
-      ipcRenderer.send("save-image", this.capturedImage(), name, path);
+  savePhoto(name: string, path: string): void {
+    if (!this.capturedImage() || this.capturedImage() === null) {
+      console.warn('No hay imagen capturada para guardar');
+      return;
+    }
+
+    if (!window.electronAPI) {
+      console.error('Electron API no disponible');
+      return;
+    }
+
+    try {
+      window.electronAPI.savePhoto(this.capturedImage() as string, name, path);
+    } catch (error) {
+      console.error('Error al enviar imagen para guardar:', error);
     }
   }
 
@@ -268,11 +289,28 @@ export class ImpresionManualComponent implements OnInit {
           modulo: this.modulo_actual,
         }
 
-        ipcRenderer.send('print-id-card-manual', {
-          ...aspirante,
-          photoPath: photoPath,
-          printer: this.selectedPrinter()
-        });
+        if (!window.electronAPI) {
+          throw new Error('Funcionalidad de impresión solo disponible en Electron');
+        }
+
+        try {
+          const printer = this.selectedPrinter(); // Tu método para obtener la impresora seleccionada
+
+          if (!printer) {
+            throw new Error('No se ha seleccionado ninguna impresora');
+          }
+
+          await window.electronAPI.printIdCard({
+            ...aspirante,
+            photoPath: photoPath || '',
+            printer: printer
+          });
+
+          console.log('Impresión de carnet iniciada correctamente');
+        } catch (error) {
+          console.error('Error al imprimir carnet:', error);
+          throw error; // Relanzar para manejo en el componente
+        }
 
         // Llamar al servicio para registrar la impresión
         this.impresionManualService.registerImpresion(

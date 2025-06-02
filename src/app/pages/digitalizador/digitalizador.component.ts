@@ -27,6 +27,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -58,6 +59,7 @@ export interface Curp {
     MatDatepickerModule,
     MatNativeDateModule,
     MatButtonModule,
+    MatIconModule,
     CommonModule,
   ],
   templateUrl: './digitalizador.component.html',
@@ -94,11 +96,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   formFiltrosDigitalizador: FormGroup;
   formBusqueda: FormGroup;
+  formConfiguracion: FormGroup;
+
   nombres_archivos_upload: any[] = [];
 
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
 
-  spanValues: any = {};
+  esperadas: number = 0;
+  digitalizadas: number = 0;
+  enviadas: number = 0;
+
+
   private updateSubscription: Subscription = new Subscription();
   private isAlive = true; // Flag para controlar la suscripción
 
@@ -131,6 +139,13 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.formBusqueda = this.fb.nonNullable.group({
       search: '',
+    });
+
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: '',
+      rutaOrigen: '',
+      rutaDestino: '',
+      intervaloSincronizacion: 10,
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -317,32 +332,24 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
       if (this.nombre_archivo_upload_selected != '') {
         const newData = await this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).toPromise();
-        console.log(newData);
 
-        // Actualizar valores para los spans
-        this.spanValues = { ...newData.data || [] };
-        console.log(this.spanValues);
+        if (newData.data) {
+          const { esperadas, enviadas_tisa } = newData.data[0]
 
-        if (this.spanValues.length === 0) {
-          this.spanValues.push({ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 });
+          this.esperadas = esperadas;
+          this.enviadas = enviadas_tisa;
+        } else {
+          this.esperadas = 0;
+          this.enviadas = 0;
         }
-
 
         this.updateChartData(newData.data);
 
-
-
-        // Actualizar arreglo para el chart
-        //this.chartData = [...newData.chartInfo];
-
-        // Forzar detección de cambios si es necesario
         this.cdr.detectChanges();
       }
-
-
     } catch (error) {
-      console.error('Error al actualizar datos:', error);
-      this.spanValues = [{ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 }];
+      this.esperadas = 0;
+      this.enviadas = 0;
     }
   }
 
@@ -572,13 +579,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   onSourcePathSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      console.log('entre al if');
       // Obtenemos la ruta del directorio seleccionado
       // Nota: debido a restricciones de seguridad del navegador, solo obtenemos el nombre
       // del directorio, no la ruta completa del sistema de archivos
       this.sourcePath.set(input.files[0].webkitRelativePath.split('/')[0]);
     } else {
-      console.log('entre al else');
       // Caso cuando el directorio está vacío
       // Esto solo funciona en algunos navegadores
       const path = input.value;
@@ -589,14 +594,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.sourcePath.set(path.split('/').slice(0, -1).join('/'));
       }
     }
-    console.log(this.sourcePath);
   }
 
   // Método para manejar la selección de la ruta de destino
   onDestinationPathSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      console.log('entre al if');
       this.destinationPath.set(input.files[0].webkitRelativePath.split('/')[0]);
     } else {
       console.log('entre al else');
@@ -610,7 +613,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.destinationPath.set(path.split('/').slice(0, -1).join('/'));
       }
     }
-    console.log(this.destinationPath);
   }
 
   // Método para guardar las rutas
@@ -624,7 +626,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.targetDirectory,
         this.destinationPath()
       );
-      const tiempo_sync = this.getTiempoSyncSegValue();
+      const tiempo_sync = this.formConfiguracion.get('intervaloSincronizacion')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       await this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
@@ -673,23 +675,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       });
       console.error('Error al obtener configuración:', error);
     }
-
-    //console.log("Ruta origen:", this.sourcePath())
-    //console.log("Ruta destino:", this.destinationPath())
-    //alert(`Rutas guardadas:\nOrigen: ${this.sourcePath()}\nDestino: ${this.destinationPath()}`)
-  }
-
-  // Método para obtener el valor
-  getTiempoSyncSegValue() {
-    const value = this.tiempoSyncSegRef.nativeElement.valueAsNumber;
-    console.log('Valor numérico:', value);
-    return value;
-  }
-
-  // Método para el evento change
-  onTiempoSyncSegChange() {
-    const value = this.tiempoSyncSegRef.nativeElement.value;
-    console.log('Valor como string:', value);
   }
 
   // Método para abrir el selector de archivos programáticamente
@@ -698,27 +683,13 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   toggleMonitoreo() {
+    if (this.isMonitoring)
+      this.iniciarMonitor();
+    else
+      this.detenerMonitor();
+
     this.isMonitoring = !this.isMonitoring;
-    if (this.isMonitoring) {
-      this.startMonitoreo();
-    } else {
-      this.stopMonitoreo();
-    }
   }
-
-  startMonitoreo() {
-    this.isMonitoring = true;
-    console.log('START Presionado');
-    this.iniciarMonitor();
-  }
-
-  stopMonitoreo() {
-    this.isMonitoring = false;
-    console.log('STOP Presionado');
-    this.detenerMonitor();
-  }
-
-  buscarCurps() { }
 
   isValidField(fieldName: string): boolean | null {
     return (
@@ -821,28 +792,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         break;
     }
   }
-
-  selectedValue5() {
-    this.selectedValue_5 = this.myForm_Upload.get('id_extension')?.value;
-
-    switch (Number(this.selectedValue_5)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-
 
   getNombresArchivosUploadDigitalizador(): void {
     this.configDigitalizadorService
@@ -1022,5 +971,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       },
       error: error => { }
     })
+  }
+
+  async selectFolder(field: 'rutaOrigen' | 'rutaDestino') {
+    const folderPath = await this.electronService.selectFolder();
+    if (folderPath) {
+      this.formConfiguracion.get(field)?.setValue(folderPath);
+    }
   }
 }
