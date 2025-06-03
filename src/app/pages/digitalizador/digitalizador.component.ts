@@ -127,8 +127,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private digitalizarArchivosService: DigitalizarArchivosService,
     //private logger: NGXLogger
   ) {
-    this.fs = window.require('fs');
-    this.path = window.require('path');
+    const electronAPI = (window as any).electronAPI;
+
+    this.path = electronAPI?.path;
+    this.fs = electronAPI?.fs;
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
       tiposArchivoDigitalizador: '',

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron'); // Added ipcMain
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const url = require('url');
@@ -24,22 +24,16 @@ if (require('electron-squirrel-startup')) app.quit();
 
 app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
 
-
-// para poder usar el sistema de archivos de windows
-const remote = require('@electron/remote/main');
-// Inicializar @electron/remote
-remote.initialize();
-
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
     webPreferences: {
-      nodeIntegration: false,       // Debe ser false
-      contextIsolation: true,       // Debe ser true
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      // enableRemoteModule: true,
       preload: path.join(__dirname, 'preload.js'), // Ruta absoluta
-      sandbox: true,                // Seguridad adicional (opcional)
     },
   });
 
@@ -50,9 +44,6 @@ function createWindow() {
 
   // Abre consola (para debug)
   mainWindow.webContents.openDevTools();
-
-  // Elimina esta línea (remote está obsoleto):
-  // remote.enable(mainWindow.webContents); 
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -868,9 +859,14 @@ async function printCard(pdfFileUrl, printerName) {
   });
 }
 
-ipcMain.handle('dialog:selectFolder', async () => {
+ipcMain.handle('select-folder', async (event, operation) => {
+  const properties = operation === 'export' ? ['openDirectory', 'createDirectory'] : ['openDirectory'];
   const result = await dialog.showOpenDialog({
-    properties: ['openDirectory']
-  })
-  return result.filePaths[0] || null
-})
+    properties: properties
+  });
+
+  if (result.canceled)
+    return null;
+  else
+    return result.filePaths[0];
+});

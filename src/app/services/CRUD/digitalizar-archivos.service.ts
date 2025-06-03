@@ -6,8 +6,10 @@ import { DatabaseService } from '../database.service';
 import { PDFDocument, PDFImage } from 'pdf-lib';
 import { PdfCompressService } from '../pdf-compress.service';
 
-const path = (window as any).require('path');
-const fs = (window as any).require('fs');
+const electronAPI = (window as any).electronAPI;
+
+const path = electronAPI?.path;
+const fs = electronAPI?.fs;
 
 //import { NGXLogger } from 'ngx-logger';
 
@@ -78,9 +80,10 @@ export class DigitalizarArchivosService {
   }
 
   private async verificarYCargarArchivos(carpetaOrigen: string): Promise<string[]> {
-    // En Electron, usaríamos el módulo 'fs' para acceder al sistema de archivos
-    const fs = (window as any).require('fs');
-    const path = (window as any).require('path');
+    const electronAPI = (window as any).electronAPI;
+
+    const path = electronAPI?.path;
+    const fs = electronAPI?.fs;
 
     if (!fs.existsSync(carpetaOrigen)) {
       //this.logger.error(`Carpeta no existe: ${carpetaOrigen}`);

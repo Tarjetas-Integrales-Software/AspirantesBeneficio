@@ -1,4 +1,10 @@
+console.log('✅ preload.js cargado');
+global.fromPreload = true;
+
+
 const { contextBridge, ipcRenderer } = require('electron')
+const fs = require('fs');
+const path = require('path');
 
 contextBridge.exposeInMainWorld('ipcRenderer', {
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
@@ -8,7 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   send: (channel, ...args) => ipcRenderer.send(channel, ...args),
   on: (channel, listener) => ipcRenderer.on(channel, listener),
-  selectFolder: () => ipcRenderer.invoke('dialog:selectFolder'),
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
   getImage: (imageName, path) => {
     return new Promise((resolve, reject) => {
       ipcRenderer.send('get-image', imageName, path);
@@ -55,4 +61,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.once('print-id-card-error', reject);
     });
   },
+  fs: {
+    readFileSync: (filePath, encoding = 'utf8') => fs.readFileSync(filePath, encoding),
+    writeFileSync: (filePath, data) => fs.writeFileSync(filePath, data),
+    existsSync: (filePath) => fs.existsSync(filePath),
+    mkdirSync: (dirPath, options) => fs.mkdirSync(dirPath, options),
+    // expón las funciones de fs que necesites
+  },
+  path: {
+    join: (...args) => path.join(...args),
+    basename: (p) => path.basename(p),
+    // expón las funciones de path que necesites
+  }
 });

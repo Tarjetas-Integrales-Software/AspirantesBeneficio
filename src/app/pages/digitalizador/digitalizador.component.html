@@ -175,16 +175,12 @@
             <form [formGroup]="formConfiguracion" class="form busqueda__form">
               <div class="form__row">
                 <div class="form__item">
-                  <input formControlName="rutaOrigen" type="file" webkitdirectory directory id="sourceInput" hidden
-                    readonly />
                   <button mat-raised-button matSuffix (click)="selectFolder('rutaOrigen')">
                     <mat-icon>folder</mat-icon>
                     <span>Seleccionar ruta origen</span>
                   </button>
                 </div>
                 <div class="form__item">
-                  <input formControlName="rutaDestino" type="file" webkitdirectory directory id="destinationInput"
-                    hidden readonly />
                   <button mat-raised-button matSuffix (click)="selectFolder('rutaDestino')">
                     <mat-icon>folder</mat-icon>
                     <span>Seleccionar ruta destino</span>
@@ -193,14 +189,20 @@
               </div>
               <div class="form__row">
                 <div class="form__item">
-                  <span class="ruta" *ngIf="true || formConfiguracion.get('rutaOrigen')?.value">
-                    Ruta origen: {{ formConfiguracion.get('rutaOrigen')?.value.substring(11) }}
-                  </span>
+                  <mat-form-field class="w-full">
+                    <mat-label>Ruta origen</mat-label>
+                    <input matInput formControlName="rutaOrigen" webkitdirectory directory id="sourceInput" readonly />
+
+                  </mat-form-field>
                 </div>
+              </div>
+              <div class="form__row">
                 <div class="form__item">
-                  <span class="ruta" *ngIf="true || formConfiguracion.get('rutaDestino')?.value">
-                    Ruta origen: {{ formConfiguracion.get('rutaDestino')?.value.substring(11) }}
-                  </span>
+                  <mat-form-field class="w-full">
+                    <mat-label>Ruta destino</mat-label>
+                    <input matInput formControlName="rutaDestino" webkitdirectory directory id="destinationInput"
+                      readonly />
+                  </mat-form-field>
                 </div>
               </div>
               <div class="form__row">
