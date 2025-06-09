@@ -29,16 +29,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.once('pdf-read-error', (event, err) => reject(err));
     });
   },
-  getDigitalizedFile: (fileName) => {
+  getDigitalizedFile: (fullPath) => {
     return new Promise((resolve, reject) => {
       const requestId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+      ipcRenderer.once(`pdf-read-success-${requestId}`, (_event, data) => resolve(data));
+      ipcRenderer.once(`pdf-read-error-${requestId}`, (_event, err) => reject(err));
+
 
       ipcRenderer.once(`pdf-read-success-${requestId}`, resolve);
       ipcRenderer.once(`pdf-read-error-${requestId}`, reject);
 
       ipcRenderer.send('get-archivo-digitalizado', {
-        fileName,
-        requestId
+        fullPath, requestId
       });
     });
   },
@@ -66,7 +69,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     writeFileSync: (filePath, data) => fs.writeFileSync(filePath, data),
     existsSync: (filePath) => fs.existsSync(filePath),
     mkdirSync: (dirPath, options) => fs.mkdirSync(dirPath, options),
-    // expón las funciones de fs que necesites
+    readdirSync: (dirPath) => fs.readdirSync(dirPath),
+    statSync: (filePath) => fs.statSync(filePath),
+    renameSync: (oldPath, newPath) => fs.renameSync(oldPath, newPath),
   },
   path: {
     join: (...args) => path.join(...args),

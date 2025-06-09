@@ -46,7 +46,7 @@
             <path d="M9.5 13.5l2.5 -2.5l2.5 2.5" />
           </svg>
         </button>
-        <button mat-raised-button (click)="toggleModal_Configuraciones()">
+        <button mat-raised-button (click)="toggleModalConfiguraciones()">
           <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             class="icon icon-tabler icons-tabler-outline icon-tabler-settings">
@@ -153,7 +153,7 @@
 <!-- Modal -->
 <!-- Button to open the modal -->
 <!-- Background overlay -->
-<div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModal_Configuraciones()">
+<div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModalConfiguraciones()">
   <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
 </div>
 <!-- Modal -->
@@ -188,16 +188,15 @@
                 </div>
               </div>
               <div class="form__row">
-                <div class="form__item">
+                <div class="form__item" (click)="selectFolder('rutaOrigen')">
                   <mat-form-field class="w-full">
                     <mat-label>Ruta origen</mat-label>
                     <input matInput formControlName="rutaOrigen" webkitdirectory directory id="sourceInput" readonly />
-
                   </mat-form-field>
                 </div>
               </div>
               <div class="form__row">
-                <div class="form__item">
+                <div class="form__item" (click)="selectFolder('rutaDestino')">
                   <mat-form-field class="w-full">
                     <mat-label>Ruta destino</mat-label>
                     <input matInput formControlName="rutaDestino" webkitdirectory directory id="destinationInput"
@@ -220,7 +219,13 @@
                 <div class="form__item">
                   <mat-form-field class="w-full">
                     <mat-label>Intervalo de sincronización (s)</mat-label>
-                    <input matInput formControlName="intervaloSincronizacion" placeholder="Tiempo en segundos" min="10">
+                    <input matInput formControlName="intervaloSincronizacion" placeholder="Tiempo en segundos" min="1">
+                  </mat-form-field>
+                </div>
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Peso mínimo (KB)</mat-label>
+                    <input matInput formControlName="pesoMinimo" placeholder="Peso minimo en kilobytes" min="1">
                   </mat-form-field>
                 </div>
               </div>
@@ -238,12 +243,11 @@
         </div>
       </div>
       <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button (click)="saveDirectories()" [disabled]="!sourcePath() || !destinationPath() || !timeSync()"
-          type="button"
+        <button (click)="saveConfig()" type="button"
           class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
           Guardar
         </button>
-        <button (click)="toggleModal_Configuraciones()" type="button"
+        <button (click)="toggleModalConfiguraciones()" type="button"
           class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Cancel
         </button>

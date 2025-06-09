@@ -62,8 +62,8 @@ export class DigitalizarArchivosService {
     this._token = token;
   }
 
-  procesarArchivosEnParalelo(carpetaOrigen: string, carpetaDestino: string): Observable<boolean[]> {
-    return from(this.verificarYCargarArchivos(carpetaOrigen)).pipe(
+  procesarArchivosEnParalelo(carpetaOrigen: string, carpetaDestino: string, pesoMinimo: number, extension: string): Observable<boolean[]> {
+    return from(this.verificarYCargarArchivos(carpetaOrigen, pesoMinimo, extension)).pipe(
       switchMap(archivos => {
         const procesos = archivos.map(archivo =>
           this.procesarArchivo(archivo, carpetaOrigen, carpetaDestino)
@@ -79,26 +79,25 @@ export class DigitalizarArchivosService {
     );
   }
 
-  private async verificarYCargarArchivos(carpetaOrigen: string): Promise<string[]> {
+  private async verificarYCargarArchivos(carpetaOrigen: string, pesoMinimo: number, extension: string): Promise<string[]> {
     const electronAPI = (window as any).electronAPI;
 
     const path = electronAPI?.path;
     const fs = electronAPI?.fs;
 
     if (!fs.existsSync(carpetaOrigen)) {
-      //this.logger.error(`Carpeta no existe: ${carpetaOrigen}`);
       console.log(`Carpeta no existe: ${carpetaOrigen}`);
       return [];
     }
 
     return fs.readdirSync(carpetaOrigen)
-      .filter((file: string) => file.endsWith('.pdf'))
+      .filter((file: string) => {
+        const fullPath = path.join(carpetaOrigen, file);
+        const isPDF = file.toLowerCase().endsWith(extension.toLowerCase() || extension.toUpperCase());
+        const sizeKB = fs.existsSync(fullPath) ? fs.statSync(fullPath).size / 1024 : 0;
+        return isPDF && sizeKB >= pesoMinimo;
+      })
       .map((file: string) => path.join(carpetaOrigen, file));
-  }
-
-  private procesarArchivo2(archivo: string,): Observable<boolean> {
-    console.log(archivo, 'archivo_actual');
-    return of(true);
   }
 
   private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string): Observable<boolean> {
@@ -119,7 +118,7 @@ export class DigitalizarArchivosService {
         tipo: 'expediente_beneficiario'
       }
 
-      return from(this.subirArchivo(beneficiario, documento)).pipe(
+      return from(this.subirArchivo(beneficiario, documento, carpetaOrigen)).pipe(
         switchMap(exito => {
           if (exito) {
             try {
@@ -137,12 +136,10 @@ export class DigitalizarArchivosService {
               // Se mueve el archivo de digitalizados a enviados para que ya no se tome de nuevo
               const destino = path.join(carpetaDestino, path.basename(archivo));
               fs.renameSync(archivo, destino);
-              //this.logger.info(`Archivo movido a enviados: ${archivo}`);
               console.log(`Archivo movido a enviados: ${archivo}`);
               return of(true);
             } catch (ex) {
               const error = ex as Error;
-              //this.logger.error(`Error al mover archivo ${archivo}: ${ex.message}`);
               console.log(`Error al mover archivo ${archivo}: ${error.message}`);
               return of(false);
             }
@@ -163,14 +160,23 @@ export class DigitalizarArchivosService {
     }
   }
 
-  async subirArchivo(beneficiario: any, documento: any) {
+  async subirArchivo(beneficiario: any, documento: any, carpetaOrigen: string) {
     // Leer el documento desde el main process
     const { archivo, fecha, tipo } = documento;
     const { id, curp } = beneficiario;
 
     try {
+      const fileData = await this.getFileFromMainProcess(curp, carpetaOrigen);
+
       // Leer el archivo PDF desde el proceso principal
-      const fileData = await this.getFileFromMainProcess(curp);
+      if (!(fileData && (fileData.constructor === ArrayBuffer || fileData.constructor === Uint8Array))) {
+        console.log(fileData);
+
+        throw new Error("Archivo inválido: no es un buffer");
+      }
+
+      console.log('fileData: ', fileData);
+
 
       // Optimizar el PDF
       const pdfDoc = await PDFDocument.load(fileData);
@@ -178,9 +184,6 @@ export class DigitalizarArchivosService {
       // Configurar opciones de optimización
       const optimizedPdfBytes = await pdfDoc.save({
         useObjectStreams: true,  // Reduce tamaño
-        // Otras opciones de optimización:
-        // useCompression: true,
-        // reduceFileSize: true
       });
 
       // Crear el FormData
@@ -206,7 +209,7 @@ export class DigitalizarArchivosService {
     }
   }
 
-  async getFileFromMainProcess(fileName: string): Promise<ArrayBuffer> {
+  async getFileFromMainProcess(fileName: string, path: string): Promise<ArrayBuffer> {
     const requestId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const successEvent = `pdf-read-success-${requestId}`;
     const errorEvent = `pdf-read-error-${requestId}`;
@@ -216,7 +219,7 @@ export class DigitalizarArchivosService {
     }
 
     try {
-      return await window.electronAPI.getDigitalizedFile(fileName);
+      return await window.electronAPI.getDigitalizedFile(path + '\\' + fileName);
     } catch (error: any) {
       console.error('Error al obtener archivo digitalizado:', error);
       throw new Error(`Error al procesar ${fileName}: ${error.message}`);

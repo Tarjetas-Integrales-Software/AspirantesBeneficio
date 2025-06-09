@@ -43,10 +43,6 @@ main.container {
 }
 
 .busqueda {
-
-
-  &__busqueda {}
-
   &__list {
     overflow-y: scroll;
     max-height: 400px;
@@ -67,7 +63,9 @@ main.container {
     }
   }
 
-
+  &__form {
+    margin-top: 20px;
+  }
 }
 
 .form {
@@ -123,7 +121,4 @@ main.container {
     justify-content: flex-start;
     line-height: 1;
   }
-}
-
-.ruta {
 }

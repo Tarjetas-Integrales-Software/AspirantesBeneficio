@@ -74,11 +74,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   chartData_construida: any[] = []; // Tus datos vendrán aquí
 
   private monitorSubscription: Subscription = Subscription.EMPTY;
-  //private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados';
-  private carpetaOrigen: string = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
-  private carpetaDestino: string = 'C:\\ExpedientesBeneficiarios\\Enviados';
-  private intervalo: number = 5000; // 3 segundos
-
 
   private fb = inject(FormBuilder);
   @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
@@ -148,6 +143,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       rutaOrigen: '',
       rutaDestino: '',
       intervaloSincronizacion: 10,
+      pesoMinimo: 300
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -172,7 +168,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         // Carga inicial
         this.updateData();
 
-        // Configurar intervalo de 5 segundos usando RxJS (mejor práctica)
         this.updateSubscription = interval(5000)
           .pipe(takeWhile(() => this.isAlive))
           .subscribe(() => {
@@ -182,12 +177,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       } catch (error) {
 
       }
-    }
-
-    //    this.chart = new Chart('myBarChart', this.bar);
-
-    if (this.electronService.isElectron) {
-      console.log('Running in Electron!');
     }
 
     // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
@@ -211,7 +200,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   onChangeOption_NombreArchivoUpload(event: MatSelectChange): void {
     const optionSelected = event.value;
-    console.log('Opcion seleccionada:', optionSelected);
 
     // Aquí puedes ejecutar cualquier lógica necesaria
     if (optionSelected) {
@@ -251,7 +239,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
 
 
-  toggleModal_Configuraciones() {
+  toggleModalConfiguraciones() {
     this.showModal_configuraciones = !this.showModal_configuraciones;
   }
 
@@ -300,7 +288,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   // Método para actualizar los datos
   updateChartData(newData: any[]): void {
     this.chartData = [...newData];
-    console.log(this.chartData, 'Chart-Data');
 
     this.chartData_construida = [
       {
@@ -402,7 +389,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           this.targetDirectory
         );
         if (created) {
-          console.log(`Directorio creado: ${this.targetDirectory}`);
           this.snackBar.open(
             `Directorio creado: ${this.targetDirectory}`,
             'Cerrar',
@@ -412,7 +398,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           );
         }
       } else {
-        console.log(`El directorio ya existe: ${this.targetDirectory}`);
         this.snackBar.open(
           `Directorio ya existe: ${this.targetDirectory}`,
           'Cerrar',
@@ -441,9 +426,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           this.targetDirectory_Digitalizados
         );
         if (created) {
-          console.log(
-            `Directorio creado: ${this.targetDirectory_Digitalizados}`
-          );
           this.snackBar.open(
             `Directorio creado: ${this.targetDirectory_Digitalizados}`,
             'Cerrar',
@@ -453,9 +435,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           );
         }
       } else {
-        console.log(
-          `El directorio ya existe: ${this.targetDirectory_Digitalizados}`
-        );
         this.snackBar.open(
           `Directorio ya existe: ${this.targetDirectory_Digitalizados}`,
           'Cerrar',
@@ -484,7 +463,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           this.targetDirectory_Enviados
         );
         if (created) {
-          console.log(`Directorio creado: ${this.targetDirectory_Enviados}`);
           this.snackBar.open(
             `Directorio creado: ${this.targetDirectory_Enviados}`,
             'Cerrar',
@@ -494,9 +472,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           );
         }
       } else {
-        console.log(
-          `El directorio ya existe: ${this.targetDirectory_Enviados}`
-        );
         this.snackBar.open(
           `Directorio ya existe: ${this.targetDirectory_Enviados}`,
           'Cerrar',
@@ -515,20 +490,18 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   showDialog() {
-    if (this.electronService.isElectron) {
-      console.log('SI es electron');
-      this.electronService.dialog
-        ?.showOpenDialog({
-          properties: ['openFile'],
-        })
-        .then((result) => {
-          if (!result.canceled) {
-            console.log('Archivo seleccionado:', result.filePaths[0]);
-          }
-        });
-    } else {
-      console.log('NO es electron');
-    }
+    if (!this.electronService.isElectron) return;
+
+    this.electronService.dialog
+      ?.showOpenDialog({
+        properties: ['openFile'],
+      })
+      .then((result) => {
+        if (!result.canceled) {
+          console.log('Archivo seleccionado:', result.filePaths[0]);
+        }
+      });
+
   }
 
   displayFn(curp: Curp): string {
@@ -589,7 +562,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       // Caso cuando el directorio está vacío
       // Esto solo funciona en algunos navegadores
       const path = input.value;
-      console.log(path);
       if (path.includes('\\')) {
         this.sourcePath.set(path.split('\\').slice(0, -1).join('\\'));
       } else if (path.includes('/')) {
@@ -604,11 +576,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     if (input.files && input.files.length > 0) {
       this.destinationPath.set(input.files[0].webkitRelativePath.split('/')[0]);
     } else {
-      console.log('entre al else');
-      // Caso cuando el directorio está vacío
-      // Esto solo funciona en algunos navegadores
       const path = input.value;
-      console.log(path);
       if (path.includes('\\')) {
         this.destinationPath.set(path.split('\\').slice(0, -1).join('\\'));
       } else if (path.includes('/')) {
@@ -618,29 +586,30 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   // Método para guardar las rutas
-  async saveDirectories(): Promise<void> {
+  async saveConfig(): Promise<void> {
+    console.log('Guardandooo');
+
+    this.toggleModalConfiguraciones();
+    
     try {
-      const ruta_origen = this.path.join(
-        this.targetDirectory,
-        this.sourcePath()
-      );
-      const ruta_destino = this.path.join(
-        this.targetDirectory,
-        this.destinationPath()
-      );
-      const tiempo_sync = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+      const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+      const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+      const extension = this.formConfiguracion.get('extension')?.value;
+      const intervaloSincronizacion = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+      const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       await this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
-        ruta_digitalizados: ruta_origen,
-        ruta_enviados: ruta_destino,
-        tiempo_sync: tiempo_sync,
+        ruta_digitalizados: rutaOrigen,
+        ruta_enviados: rutaDestino,
+        tiempo_sync: intervaloSincronizacion,
+        extension: extension,
+        peso_minimo: pesoMinimo
       });
 
       // Obtener configuración
       const config =
         await this.configDigitalizadorService.consultarConfigDigitalizador();
-      console.log(config);
       if (config) {
         Swal.fire({
           title: 'Configuracion Almacenada Correctamente',
@@ -658,7 +627,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           showConfirmButton: false,
           confirmButtonText: 'Aceptar',
         });
-        console.log('Configuración actual:', config);
       } else {
         Swal.fire({
           title: 'Configuración no encontrada',
@@ -666,7 +634,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           icon: 'warning',
           confirmButtonText: 'Aceptar',
         });
-        console.log('No existe configuración guardada');
       }
     } catch (error) {
       Swal.fire({
@@ -686,9 +653,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   toggleMonitoreo() {
     if (this.isMonitoring)
-      this.iniciarMonitor();
-    else
       this.detenerMonitor();
+    else
+      this.iniciarMonitor();
 
     this.isMonitoring = !this.isMonitoring;
   }
@@ -855,7 +822,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
-    console.log(file, 'file');
     if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       this.lblUploadingFile = file.name;
       this.documentFile.file = file;
@@ -889,7 +855,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       await this.utilService.leerExcel_ArchivosDigitalizar(archivo, tipo_doc, ext).then(
         (response) => {
           if (response) {
-            console.log('Respuesta del servidor:', response);
             this.mensaje = 'Datos importados exitosamente.';
 
             this.datosExcel = [];
@@ -932,8 +897,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
 
   iniciarMonitor(): void {
-    //this.logger.info('Iniciando monitor de directorios...');
-    this.monitorSubscription = interval(this.intervalo).subscribe(() => {
+    const intervalo = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+
+    this.monitorSubscription = interval(intervalo * 1000).subscribe(() => {
       this.procesarArchivos();
     });
 
@@ -944,17 +910,19 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   detenerMonitor(): void {
     if (this.monitorSubscription) {
       this.monitorSubscription.unsubscribe();
-      //this.logger.info('Monitor de directorios detenido');
     }
   }
 
   procesarArchivos(): void {
-    //this.logger.info('Buscando archivos para procesar...');
-    this.digitalizarArchivosService.procesarArchivosEnParalelo(this.carpetaOrigen, this.carpetaDestino)
+    const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+    const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+    const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
+    const extension = this.formConfiguracion.get('extension')?.value;
+
+    this.digitalizarArchivosService.procesarArchivosEnParalelo(rutaOrigen, rutaDestino, pesoMinimo, extension)
       .subscribe({
         next: (resultados) => {
           const exitosos = resultados.filter(r => r).length;
-          //this.logger.info(`Proceso completado. ${exitosos}/${resultados.length} archivos procesados con éxito.`);
         },
         error: (error) => {
           //this.logger.error(`Error en el proceso general: ${error.message}`);
