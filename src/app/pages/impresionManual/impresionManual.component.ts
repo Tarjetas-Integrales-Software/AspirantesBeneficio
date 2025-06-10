@@ -304,7 +304,7 @@ export class ImpresionManualComponent implements OnInit {
             ...aspirante,
             photoPath: photoPath || '',
             printer: printer
-          });
+          }, true);
 
           console.log('Impresión de carnet iniciada correctamente');
         } catch (error) {

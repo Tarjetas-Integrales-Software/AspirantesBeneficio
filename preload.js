@@ -57,9 +57,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     });
   },
   getPrinters: () => ipcRenderer.invoke('get-printers'),
-  printIdCard: (data) => {
+  printIdCard: (data, manual) => {
+    console.log('Printing: ', data);
+
+
     return new Promise((resolve, reject) => {
-      ipcRenderer.send('print-id-card-manual', data);
+      if (manual)
+        ipcRenderer.send('print-id-card-manual', data);
+      else
+        ipcRenderer.send('print-id-card', data);
+
       ipcRenderer.once('print-id-card-success', resolve);
       ipcRenderer.once('print-id-card-error', reject);
     });

@@ -18,6 +18,14 @@ const si = require('systeminformation');
 let mainWindow;
 let db; // Declare db as a global variable
 
+if (process.platform === 'win32') {
+  const sumatraPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'SumatraPDF.exe')
+    : path.join(__dirname, '../tools/SumatraPDF.exe');
+
+  app.commandLine.appendSwitch('pdf-viewer-path', sumatraPath);
+}
+
 updateElectronApp();
 
 if (require('electron-squirrel-startup')) app.quit();

@@ -28,7 +28,7 @@ declare global {
             savePhoto: (imageData: ArrayBuffer | string, name: string, path: string) => void;
             savePdf: (pdfData: ArrayBuffer, fileName: string) => Promise<string>;
             getPrinters: () => Promise<Printer[]>;
-            printIdCard: (data: DataImpresionCredencial) => Promise<void>;
+            printIdCard: (data: DataImpresionCredencial, manual: boolean) => Promise<void>;
         };
     }
 }

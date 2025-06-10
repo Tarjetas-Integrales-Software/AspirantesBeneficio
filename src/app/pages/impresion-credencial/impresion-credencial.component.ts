@@ -348,7 +348,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
         ...aspirante,
         photoPath: photoPath || '',
         printer: _impresora
-      });
+      }, false);
 
       this.editAspiranteImpreso(aspirante);
 
