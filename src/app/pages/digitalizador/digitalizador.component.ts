@@ -85,6 +85,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
+  sinConfiguracion: boolean = true;
 
   private fs: any;
   private path: any;
@@ -106,10 +107,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   private isAlive = true; // Flag para controlar la suscripción
 
   private nombre_archivo_upload_selected = ''
-
-  readonly targetDirectory = 'C:\\ExpedientesBeneficiarios';
-  readonly targetDirectory_Digitalizados = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
-  readonly targetDirectory_Enviados = 'C:\\ExpedientesBeneficiarios\\Enviados';
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -151,6 +148,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     const online = this.networkStatusService.checkConnection();
+
     if (online) {
       try {
         await this.syncDataBase();
@@ -179,23 +177,27 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
-    this.creaCarpetaExpedientes();
-    this.creaCarpetaExpedientes_Digitalizados();
-    this.creaCarpetaExpedientes_Enviados();
+    const config =
+      await this.configDigitalizadorService.consultarConfigDigitalizador();
 
-    // Asegurar que el README.txt exista al iniciar el componente
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Digitalizados
-    );
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Enviados
-    );
+    if (config === undefined) {
+      this.sinConfiguracion = true;
 
-    // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
-    this.configDigitalizadorService.CreateConfigInicialDigitalizador();
+      this.detenerMonitor();
+      this.isMonitoring = false;
+
+      return;
+    } else this.sinConfiguracion = false;
+
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync } = await config
+
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: extension,
+      rutaOrigen: ruta_digitalizados,
+      rutaDestino: ruta_enviados,
+      intervaloSincronizacion: tiempo_sync,
+      pesoMinimo: peso_minimo
+    });
   }
 
   onChangeOption_NombreArchivoUpload(event: MatSelectChange): void {
@@ -241,6 +243,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   toggleModalConfiguraciones() {
     this.showModal_configuraciones = !this.showModal_configuraciones;
+
+    if(this.showModal_configuraciones) this.detenerMonitor();
   }
 
   toggleModal_UploadEsperadosTipoArchivo() {
@@ -373,120 +377,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       console.error('Error en sincronización:', error);
       throw error; // Opcional: re-lanzar el error si quieres manejarlo fuera
     }
-
-
-  }
-
-  async creaCarpetaExpedientes() {
-    try {
-
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory
-        );
-        if (created) {
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
-  }
-
-  async creaCarpetaExpedientes_Digitalizados() {
-    try {
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory_Digitalizados
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory_Digitalizados
-        );
-        if (created) {
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory_Digitalizados}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory_Digitalizados}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
-  }
-
-  async creaCarpetaExpedientes_Enviados() {
-    try {
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory_Enviados
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory_Enviados
-        );
-        if (created) {
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory_Enviados}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory_Enviados}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
   }
 
   showDialog() {
@@ -587,10 +477,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   // Método para guardar las rutas
   async saveConfig(): Promise<void> {
-    console.log('Guardandooo');
-
     this.toggleModalConfiguraciones();
-    
+
     try {
       const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
       const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
@@ -599,42 +487,23 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
-      await this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
+      this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
         ruta_digitalizados: rutaOrigen,
         ruta_enviados: rutaDestino,
         tiempo_sync: intervaloSincronizacion,
         extension: extension,
         peso_minimo: pesoMinimo
-      });
+      }).then(() => {
+        this.sinConfiguracion = false;
 
-      // Obtener configuración
-      const config =
-        await this.configDigitalizadorService.consultarConfigDigitalizador();
-      if (config) {
         Swal.fire({
           title: 'Configuracion Almacenada Correctamente',
-          html: `
-            <b>Ruta Digitalizados:</b> ${config.ruta_digitalizados || 'No definida'
-            }<br>
-            <b>Ruta Enviados:</b> ${config.ruta_enviados || 'No definida'}<br>
-            <b>Intervalo Sync:</b> ${config.tiempo_sync
-              ? config.tiempo_sync + ' segundos'
-              : 'No definido'
-            }
-          `,
           icon: 'success',
           timer: 5000,
           showConfirmButton: false,
           confirmButtonText: 'Aceptar',
-        });
-      } else {
-        Swal.fire({
-          title: 'Configuración no encontrada',
-          text: 'No existe configuración guardada',
-          icon: 'warning',
-          confirmButtonText: 'Aceptar',
-        });
-      }
+        })
+      });
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -651,13 +520,33 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     document.getElementById(inputId)?.click();
   }
 
+  iniciarMonitor(): void {
+    const intervalo = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+
+    this.monitorSubscription = interval(intervalo * 1000).subscribe(() => {
+      this.procesarArchivos();
+    });
+
+    // Procesar inmediatamente al iniciar
+    this.procesarArchivos();
+    this.isMonitoring = true;
+  }
+
+  detenerMonitor(): void {
+    if (this.monitorSubscription) {
+      this.monitorSubscription.unsubscribe();
+      this.isMonitoring = false;
+    }
+  }
+
   toggleMonitoreo() {
+    if (this.sinConfiguracion)
+      return this.detenerMonitor();
+
     if (this.isMonitoring)
       this.detenerMonitor();
     else
       this.iniciarMonitor();
-
-    this.isMonitoring = !this.isMonitoring;
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -895,24 +784,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
   ////////////////////////////////////////////////////
 
-
-  iniciarMonitor(): void {
-    const intervalo = this.formConfiguracion.get('intervaloSincronizacion')?.value;
-
-    this.monitorSubscription = interval(intervalo * 1000).subscribe(() => {
-      this.procesarArchivos();
-    });
-
-    // Procesar inmediatamente al iniciar
-    this.procesarArchivos();
-  }
-
-  detenerMonitor(): void {
-    if (this.monitorSubscription) {
-      this.monitorSubscription.unsubscribe();
-    }
-  }
-
   procesarArchivos(): void {
     const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
     const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
@@ -923,9 +794,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (resultados) => {
           const exitosos = resultados.filter(r => r).length;
+
+          console.log('Resultados: ', resultados);
+          console.log('Exitosos: ', exitosos);
         },
         error: (error) => {
-          //this.logger.error(`Error en el proceso general: ${error.message}`);
+          console.log(error);
         }
       });
   }

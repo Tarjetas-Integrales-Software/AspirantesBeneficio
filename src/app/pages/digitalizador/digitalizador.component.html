@@ -3,7 +3,7 @@
     <div class="digitalizador__toolbar">
       <div class="toolbar__side">
         <div>
-          <button mat-raised-button (click)="toggleMonitoreo()" class="btn">
+          <button mat-raised-button (click)="toggleMonitoreo()" class="btn" [disabled]="sinConfiguracion" [title]="sinConfiguracion ? 'Falta configuración' : 'Iniciar / Detener monitoreo'">
             <div>
               <svg class="button-icon" *ngIf="isMonitoring; else notMonitoring" xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 384 512">
@@ -162,6 +162,7 @@
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <!-- Modal Configuraciones Globales -->
     <div
+      style="min-width: 800px;"
       class="w-full inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
       role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

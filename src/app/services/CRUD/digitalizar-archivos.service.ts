@@ -102,14 +102,14 @@ export class DigitalizarArchivosService {
 
   private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string): Observable<boolean> {
     try {
-      const curp = path.basename(archivo, '.pdf').toUpperCase();
+      const [curp, extension] = path.basename(archivo).split('.')
 
       const ahora = new Date();
       const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
 
       const beneficiario = {
         id: 1,
-        curp: curp
+        curp: curp.toUpperCase()
       }
 
       let documento = {
@@ -118,14 +118,12 @@ export class DigitalizarArchivosService {
         tipo: 'expediente_beneficiario'
       }
 
-      return from(this.subirArchivo(beneficiario, documento, carpetaOrigen)).pipe(
+      return from(this.subirArchivo(beneficiario, documento, carpetaOrigen, extension)).pipe(
         switchMap(exito => {
           if (exito) {
             try {
-
               //actualizar el status a 1 para indicar que ya fue digitalizado y enviado a TISA, en la tabla ct_archivos_esperados_digitalizados
-              console.log(curp, 'antes de edit_archivo_esperado');
-              this.edit_archivo_esperado(curp, 1).subscribe({
+              this.edit_archivo_esperado(curp.toUpperCase(), 1).subscribe({
                 next: (data) => {
 
                 }, error: (error) => {
@@ -136,7 +134,6 @@ export class DigitalizarArchivosService {
               // Se mueve el archivo de digitalizados a enviados para que ya no se tome de nuevo
               const destino = path.join(carpetaDestino, path.basename(archivo));
               fs.renameSync(archivo, destino);
-              console.log(`Archivo movido a enviados: ${archivo}`);
               return of(true);
             } catch (ex) {
               const error = ex as Error;
@@ -160,23 +157,18 @@ export class DigitalizarArchivosService {
     }
   }
 
-  async subirArchivo(beneficiario: any, documento: any, carpetaOrigen: string) {
+  async subirArchivo(beneficiario: any, documento: any, carpetaOrigen: string, extension: string) {
     // Leer el documento desde el main process
     const { archivo, fecha, tipo } = documento;
     const { id, curp } = beneficiario;
 
     try {
-      const fileData = await this.getFileFromMainProcess(curp, carpetaOrigen);
+      const fileData = await this.getFileFromMainProcess(curp, carpetaOrigen, extension);
 
       // Leer el archivo PDF desde el proceso principal
       if (!(fileData && (fileData.constructor === ArrayBuffer || fileData.constructor === Uint8Array))) {
-        console.log(fileData);
-
         throw new Error("Archivo inválido: no es un buffer");
       }
-
-      console.log('fileData: ', fileData);
-
 
       // Optimizar el PDF
       const pdfDoc = await PDFDocument.load(fileData);
@@ -209,7 +201,7 @@ export class DigitalizarArchivosService {
     }
   }
 
-  async getFileFromMainProcess(fileName: string, path: string): Promise<ArrayBuffer> {
+  async getFileFromMainProcess(fileName: string, path: string, extension: string): Promise<ArrayBuffer> {
     const requestId = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     const successEvent = `pdf-read-success-${requestId}`;
     const errorEvent = `pdf-read-error-${requestId}`;
@@ -219,7 +211,7 @@ export class DigitalizarArchivosService {
     }
 
     try {
-      return await window.electronAPI.getDigitalizedFile(path + '\\' + fileName);
+      return await window.electronAPI.getDigitalizedFile(path + '\\' + fileName + '.' + extension);
     } catch (error: any) {
       console.error('Error al obtener archivo digitalizado:', error);
       throw new Error(`Error al procesar ${fileName}: ${error.message}`);

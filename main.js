@@ -50,6 +50,8 @@ function createWindow() {
     path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html')
   );
 
+  mainWindow.removeMenu();
+
   // Abre consola (para debug)
   mainWindow.webContents.openDevTools();
 

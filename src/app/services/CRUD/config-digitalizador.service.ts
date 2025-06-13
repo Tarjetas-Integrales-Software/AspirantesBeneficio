@@ -15,26 +15,12 @@ export class ConfigDigitalizadorService {
 
   constructor(private databaseService: DatabaseService) { }
 
-  async CreateConfigInicialDigitalizador() {
-    let config = {
-      ruta_digitalizados: 'C:\\ExpedientesBeneficiarios\\Digitalizados',
-      ruta_enviados: 'C:\\ExpedientesBeneficiarios\\Enviados',
-      tiempo_sync: 10,
-      extension: 'pdf',
-      peso_minimo: 300
-    };
-    await this.localCreateOrUpdate_ConfigDigitalizador(config);
-
-    return config;
-  }
-
   async consultarConfigDigitalizador(): Promise<any> {
     try {
       const sql = `SELECT * FROM sy_config_digitalizador WHERE id = 1;`;
       const result = await this.databaseService.query(sql);
 
-      // Si `result` es un array, devuelve el primer registro (índice 0)
-      return result[0]; // ✅ Correcto (asumiendo que `result` es un array)
+      return result[0];
     } catch (error) {
       console.error('Error al consultar configuración:', error);
       throw error; // Opcional: Relanza el error para manejarlo fuera
@@ -68,7 +54,6 @@ export class ConfigDigitalizadorService {
     ];
     return await this.databaseService.execute(insertSql, params);
   }
-
 
   // TIPOS DOCUMENTOS - DIGITALIZADOR PARA ASPBEN
 
