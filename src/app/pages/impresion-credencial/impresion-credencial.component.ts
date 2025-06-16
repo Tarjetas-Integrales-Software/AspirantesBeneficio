@@ -8,7 +8,6 @@ import {
   ChangeDetectorRef,
   ElementRef,
 } from '@angular/core';
-const { ipcRenderer } = (window as any).require('electron');
 import { FormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { DatePipe, CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -50,8 +49,18 @@ export interface AspiranteBeneficio {
   id: number;
   id_foto: string;
   name: string;
-  progress: string;
-  fruit: string;
+  curp: string;
+  nombreBeneficiario: string;
+  fechaExpedicion: string;
+  telefono: string;
+}
+
+interface Printer {
+  name: string;
+  displayName: string;
+  description?: string;
+  status: number;
+  isDefault: boolean;
 }
 
 @Component({
@@ -298,24 +307,48 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     this.getAspirantesBeneficio();
   }
 
-  async getPrinters() {
-    this.printers = await ipcRenderer.invoke('get-printers');
-    console.log(this.printers.length, 'printer-lenght');
-    if (this.printers.length > 0) {
-      this.selectedPrinter = this.printers[0].name;
-      console.log(this.printers, 'printers');
+  async getPrinters(): Promise<Printer[]> {
+    if (!window.electronAPI) {
+      console.warn('Electron API no disponible - Modo navegador');
+      return []; // Fallback para desarrollo
+    }
+
+    try {
+      this.printers = await window.electronAPI.getPrinters();
+
+      if (this.printers.length > 0) {
+        this.selectedPrinter = this.printers[0].name;
+        console.log(this.printers, 'printers');
+      } else {
+        console.warn('No se encontraron impresoras');
+      }
+
+      return this.printers;
+    } catch (error) {
+      console.error('Error al obtener impresoras:', error);
+      return []; // Fallback seguro
     }
   }
 
   async print(aspirante: AspiranteBeneficio) {
     const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
 
+    if (!window.electronAPI) {
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
+    }
+
     try {
-      ipcRenderer.send('print-id-card', {
+      const _impresora = this.formImpresion.get('impresora')?.value;
+
+      if (!_impresora) {
+        throw new Error('No se ha seleccionado ninguna impresora');
+      }
+
+      await window.electronAPI.printIdCard({
         ...aspirante,
-        photoPath: photoPath,
-        printer: this.selectedPrinter
-      });
+        photoPath: photoPath || '',
+        printer: _impresora
+      }, false);
 
       this.editAspiranteImpreso(aspirante);
 
@@ -485,7 +518,7 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
-    console.log(file,'file');
+    console.log(file, 'file');
     if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       this.lblUploadingFile = file.name;
       this.documentFile.file = file;
@@ -557,31 +590,31 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     const archivo = file; //event.target.files[0];
     if (archivo) {
       await this.utilService.leerExcel_v2(archivo).then(
-      (response) => {
-        if(response){
-          console.log('Respuesta del servidor:', response);
-          this.mensaje = 'Datos importados exitosamente.';
+        (response) => {
+          if (response) {
+            console.log('Respuesta del servidor:', response);
+            this.mensaje = 'Datos importados exitosamente.';
 
-          this.datosExcel = [];
-          this.resetForm();
+            this.datosExcel = [];
+            this.resetForm();
 
-          Swal.fire({
-            title: 'Importacion Generada con Éxito !!!',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }else{
-          console.error('Error al enviar los datos:', response);
-          this.mensaje = 'Hubo un error al importar los datos.';
-          Swal.fire({
-            title: 'Ocurrio un Error en la Importacion',
-            icon: 'error',
-            timer: 2000,
-            showConfirmButton: false
-          });
+            Swal.fire({
+              title: 'Importacion Generada con Éxito !!!',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            console.error('Error al enviar los datos:', response);
+            this.mensaje = 'Hubo un error al importar los datos.';
+            Swal.fire({
+              title: 'Ocurrio un Error en la Importacion',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
         }
-      }
       );
 
     }

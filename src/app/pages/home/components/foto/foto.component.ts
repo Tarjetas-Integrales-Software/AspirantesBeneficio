@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from "@angular/router";
 import { switchMap } from "rxjs";
 import { environment } from "../../../../../environments/environment";
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DocumentosService } from "../../../../services/CRUD/documentos.service";
 import { AspirantesBeneficioDocumentosService } from "../../../../services/CRUD/aspirantes-beneficio-documentos.service";
 
@@ -67,23 +67,23 @@ export class FotoComponent implements OnInit {
     });
 
     this.activatedRoute.params
-            .pipe(
-              switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
-            ).subscribe(aspirante => {
-              if (!aspirante) {
-                this.router.navigateByUrl('/');
-                return;
-              }
-              const imgfoto = aspirante.data;
+      .pipe(
+        switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
+      ).subscribe(aspirante => {
+        if (!aspirante) {
+          this.router.navigateByUrl('/');
+          return;
+        }
+        const imgfoto = aspirante.data;
 
-              this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
-                next: (response) => {
-                  this.imgFoto.set(environment.baseUrl + '/' + response.data);
-                },
-                error: (err) => {
-                  console.error('Error fetching photo:', err);
-                }
-                });
+        this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
+          next: (response) => {
+            this.imgFoto.set(environment.baseUrl + '/' + response.data);
+          },
+          error: (err) => {
+            console.error('Error fetching photo:', err);
+          }
+        });
 
       });
 
@@ -158,21 +158,49 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  savePhoto(name: string) {
-    if (this.capturedImage) {
-      ipcRenderer.send("save-image", this.capturedImage, name, 'imagenesBeneficiarios');
+  savePhoto(name: string, path: string = 'imagenesBeneficiarios'): void {
+    if (!this.capturedImage) {
+      console.warn('No hay imagen capturada para guardar');
+      return;
+    }
+
+    if (!window.electronAPI) {
+      console.error('Electron API no disponible');
+      return;
+    }
+
+    try {
+      window.electronAPI.savePhoto(this.capturedImage, name, path);
+    } catch (error) {
+      console.error('Error al enviar imagen para guardar:', error);
     }
   }
 
-  savePdf(name: string) {
-    if (this.documentFile.file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const arrayBuffer = reader.result as ArrayBuffer;
-        ipcRenderer.send("save-pdf", Buffer.from(arrayBuffer), name);
-      };
-      reader.readAsArrayBuffer(this.documentFile.file);
+  async savePdf(name: string): Promise<string> {
+    if (!this.documentFile?.file) {
+      throw new Error('No hay documento PDF seleccionado');
     }
+
+    if (!window.electronAPI) {
+      throw new Error('Electron API no disponible');
+    }
+
+    try {
+      const arrayBuffer = await this.readFileAsArrayBuffer(this.documentFile.file);
+      return await window.electronAPI.savePdf(arrayBuffer, name);
+    } catch (error: any) {
+      console.error('Error al guardar PDF:', error);
+      throw new Error(`No se pudo guardar el PDF: ${error.message}`);
+    }
+  }
+
+  private readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as ArrayBuffer);
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
   }
 
   toggleImageFormat() {

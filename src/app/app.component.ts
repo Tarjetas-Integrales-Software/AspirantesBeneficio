@@ -19,7 +19,6 @@ import { switchMap, filter, take } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { GeolocationService } from './services/geolocation.service';
 import { MonitorEquiposService } from './services/CRUD/monitor-equipos.service';
-const { ipcRenderer } = (window as any).require("electron");
 import { cs_monitor_equipos } from './services/CRUD/monitor-equipos.service';
 
 interface Location {
@@ -496,6 +495,19 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
+  async getDeviceSerial(): Promise<string> {
+    if (!window.electronAPI) {
+      throw new Error('Electron API no disponible');
+    }
+
+    try {
+      return await window.electronAPI.getSerialNumber();
+    } catch (error) {
+      console.error('Error al obtener número de serie:', error);
+      throw new Error('No se pudo obtener el número de serie del dispositivo');
+    }
+  }
+
   async sendInfo_MonitorEquipo(): Promise<void> {
 
     try {
@@ -504,7 +516,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const app_version_actual = environment.gitversion;
 
       // obtener el serial number desde un metodo en main.js
-      let serial_number = await ipcRenderer.invoke("get-serial-number");
+      let serial_number = await this.getDeviceSerial();
 
       // obtener el usuario logueado desde el storage
       let usuario = '';

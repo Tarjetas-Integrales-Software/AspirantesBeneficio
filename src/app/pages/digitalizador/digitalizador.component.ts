@@ -1,16 +1,47 @@
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal, type OnInit } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  inject,
+  ViewChild,
+  ElementRef,
+  Component,
+  signal,
+  type OnInit,
+  OnDestroy,
+  ChangeDetectorRef,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+  FormBuilder,
+} from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Observable, startWith, map } from 'rxjs';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
 import { Chart, registerables } from 'chart.js';
+import { FileSystemService } from '../../services/file-system.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ElectronService } from '../../services/electron.service';
+import Swal from 'sweetalert2';
+import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitalizador.service';
+import { NetworkStatusService } from '../../services/network-status.service';
+import { UtilService } from '../../services/util.service';
+import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
 
 Chart.register(...registerables);
 
-export interface User {
+export interface Curp {
+  value: string;
   name: string;
 }
 
@@ -22,199 +53,716 @@ export interface User {
     MatInputModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
-    AsyncPipe,
+    //AsyncPipe,
     MatListModule,
-    CommonModule
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatButtonModule,
+    MatIconModule,
+    CommonModule,
   ],
   templateUrl: './digitalizador.component.html',
-  styles: `
-    :host {
-      display: block;
-    }
-    .directory-selector-container {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      background-color: #fff;
-    }
-
-    h2 {
-      color: #333;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .input-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: bold;
-      color: #555;
-    }
-
-    .file-input-wrapper {
-      display: flex;
-      gap: 10px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
-      cursor: pointer;
-    }
-
-    .button {
-      padding: 10px 15px;
-      background-color: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .button:hover {
-      background-color: #e0e0e0;
-    }
-
-    .button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 30px;
-    }
-
-    .save-button {
-      padding: 12px 30px;
-      background-color: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .save-button:hover {
-      background-color: #45a049;
-    }
-
-    .save-button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-
-  `,
+  styleUrl: './digitalizador.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DigitalizadorComponent implements OnInit {
-  myControl = new FormControl<string | User>('');
-  options: User[] = [{ name: 'Manzana' }, { name: 'Uva' }, { name: 'Naranja' }];
-  filteredOptions?: Observable<User[]>;
-  chart: any;
-  showModal = false;
+export class DigitalizadorComponent implements OnInit, OnDestroy {
 
-  toggleModal() {
-    this.showModal = !this.showModal;
+  @ViewChild('myBarChart') myBarChart!: ElementRef;
+  chart!: Chart;
+  chartData: any[] = []; // Tus datos vendrán aquí
+  chartData_construida: any[] = []; // Tus datos vendrán aquí
+
+  private monitorSubscription: Subscription = Subscription.EMPTY;
+
+  private fb = inject(FormBuilder);
+  @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
+
+  filteredOptions?: Observable<Curp[]>;
+  //chart: any;
+  showModal_configuraciones = false;
+  showModal_upload_esperados_tipo_archivo = false;
+
+  curpsesControl = new FormControl();
+  isMonitoring: boolean = false;
+  sinConfiguracion: boolean = true;
+
+  private fs: any;
+  private path: any;
+
+  formFiltrosDigitalizador: FormGroup;
+  formBusqueda: FormGroup;
+  formConfiguracion: FormGroup;
+
+  grupos: any[] = [];
+
+  archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
+
+  esperadas: number = 0;
+  digitalizadas: number = 0;
+  enviadas: number = 0;
+
+
+  private updateSubscription: Subscription = new Subscription();
+  private isAlive = true; // Flag para controlar la suscripción
+
+  private nombre_archivo_upload_selected = ''
+
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private fileSystemService: FileSystemService,
+    private electronService: ElectronService,
+    private snackBar: MatSnackBar,
+    private configDigitalizadorService: ConfigDigitalizadorService,
+    private networkStatusService: NetworkStatusService,
+    private utilService: UtilService,
+    private digitalizarArchivosService: DigitalizarArchivosService,
+    //private logger: NGXLogger
+  ) {
+    const electronAPI = (window as any).electronAPI;
+
+    this.path = electronAPI?.path;
+    this.fs = electronAPI?.fs;
+
+    this.formFiltrosDigitalizador = this.fb.nonNullable.group({
+      tipo: '',
+      grupo: '',
+      fechaInicio: new Date(),
+      fechaFin: new Date(),
+    });
+
+    this.formBusqueda = this.fb.nonNullable.group({
+      search: '',
+    });
+
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: '',
+      rutaOrigen: '',
+      rutaDestino: '',
+      intervaloSincronizacion: 10,
+      pesoMinimo: 300
+    });
+
+    Chart.register(...registerables); // Registra todos los componentes de Chart.js
   }
 
-  ngOnInit() {
-    this.filteredOptions = this.myControl.valueChanges.pipe(
-      startWith(''),
-      map(value => {
-        const name = typeof value === 'string' ? value : value?.name;
-        return name ? this._filter(name as string) : this.options.slice();
-      }),
-    );
-    this.chart = new Chart('myBarChart', this.bar);
+  async ngOnInit() {
+    const online = this.networkStatusService.checkConnection();
+
+    if (online) {
+      try {
+        await this.syncDataBase();
+
+        this.getContenedores();
+        this.getTipos();
+        this.getExtensiones();
+        this.getArchivosEsperados();
+
+
+        this.initializeChart();
+
+
+        // Carga inicial
+        this.updateData();
+
+        this.updateSubscription = interval(5000)
+          .pipe(takeWhile(() => this.isAlive))
+          .subscribe(() => {
+            this.updateData();
+          });
+
+      } catch (error) {
+
+      }
+    }
+
+    const config =
+      await this.configDigitalizadorService.consultarConfigDigitalizador();
+
+    if (config === undefined) {
+      this.sinConfiguracion = true;
+
+      this.detenerMonitor();
+      this.isMonitoring = false;
+
+      return;
+    } else this.sinConfiguracion = false;
+
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync } = await config
+
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: extension,
+      rutaOrigen: ruta_digitalizados,
+      rutaDestino: ruta_enviados,
+      intervaloSincronizacion: tiempo_sync,
+      pesoMinimo: peso_minimo
+    });
+
+    this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
+      if (tipoId) {
+        const fechaDigitalizacion = this.formFiltrosDigitalizador.get('fechaDigitalizacion')?.value;
+
+        this.getGrupos({ tipo: tipoId, fecha: fechaDigitalizacion?.toISOString().substring(0, 10) });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('fechaInicio')?.valueChanges.subscribe(fecha => {
+      if (fecha) {
+        const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+
+        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), tipo: tipo });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('grupo')?.valueChanges.subscribe(grupo => {
+      if (grupo) {
+
+      }
+    });
   }
 
-  displayFn(user: User): string {
-    return user && user.name ? user.name : '';
+  myForm: FormGroup = this.fb.group({
+    curp: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(18),
+        Validators.pattern(
+          /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/
+        ),
+      ],
+    ],
+    curpses: this.curpsesControl,
+  });
+
+  myForm_Config: FormGroup = this.fb.group({
+    id_tipo_doc_dig: ['', [Validators.required]],
+  });
+
+  myForm_Upload: FormGroup = this.fb.group({
+    id_tipo_doc_dig: ['', [Validators.required]],
+    id_extension: ['', [Validators.required]],
+    file: ''
+  });
+
+  myForm_Footer: FormGroup = this.fb.group({
+    id_contenedor: ['', [Validators.required]],
+  });
+
+
+
+  toggleModalConfiguraciones() {
+    this.showModal_configuraciones = !this.showModal_configuraciones;
+
+    if (this.showModal_configuraciones) this.detenerMonitor();
   }
 
-  private _filter(name: string): User[] {
-    const filterValue = name.toLowerCase();
+  toggleModal_UploadEsperadosTipoArchivo() {
+    this.showModal_upload_esperados_tipo_archivo = !this.showModal_upload_esperados_tipo_archivo;
+  }
 
-    return this.options.filter(option => option.name.toLowerCase().includes(filterValue));
+
+  initializeChart(): void {
+    if (this.chart) {
+      this.chart.destroy(); // Destruye el gráfico anterior si existe
+    }
+
+    //this.chart = new Chart('myBarChart', this.bar);
+
+    const ctx = this.myBarChart.nativeElement.getContext('2d');
+    this.chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: this.chartData.map(item => item.label), // Ajusta según tu estructura de datos
+        datasets: [{
+          label: '',
+          data: this.chartData.map(item => item.value), // Ajusta según tu estructura
+          backgroundColor: [
+            '#6B7280',
+            '#14B8A6',
+          ],
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: false
+          }
+        }
+      },
+    });
+  }
+
+  // Método para actualizar los datos
+  updateChartData(newData: any[]): void {
+    this.chartData = [...newData];
+
+    this.chartData_construida = [
+      {
+        label: 'Esperadas',
+        value: this.chartData[0]?.esperadas
+      },
+      {
+        label: 'Enviadas',
+        value: this.chartData[0]?.enviadas_tisa
+      }
+    ]
+
+    if (this.chart) {
+      this.chart.data.labels = this.chartData_construida.map(item => item.label);
+      this.chart.data.datasets[0].data = this.chartData_construida.map(item => item.value);
+      this.chart.update(); // Actualiza el gráfico con los nuevos datos
+    } else {
+      this.initializeChart();
+    }
+
+    // Forzar detección de cambios si es necesario
+    this.cdr.detectChanges();
+  }
+
+
+  async updateData(): Promise<void> {
+    try {
+      // Obtener datos actualizados
+      //let nombre_archivo_upload = 'ArchivosEsperadosDigitalizar_20250509_170514.pdf';
+      let nombre_archivo_upload = this.nombre_archivo_upload_selected;
+
+      if (this.nombre_archivo_upload_selected != '') {
+        const newData = await this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).toPromise();
+
+        if (newData.data) {
+          const { esperadas, enviadas_tisa } = newData.data[0]
+
+          this.esperadas = esperadas;
+          this.enviadas = enviadas_tisa;
+        } else {
+          this.esperadas = 0;
+          this.enviadas = 0;
+        }
+
+        this.updateChartData(newData.data);
+
+        this.cdr.detectChanges();
+      }
+    } catch (error) {
+      this.esperadas = 0;
+      this.enviadas = 0;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.detenerMonitor();
+
+    // Limpieza para evitar memory leaks
+    this.isAlive = false;
+    if (this.updateSubscription) {
+      this.updateSubscription.unsubscribe();
+    }
+
+  }
+
+  async syncDataBase(): Promise<void> {
+    try {
+
+
+      // Convertimos cada observable a promesa con lastValueFrom (de RxJS)
+      const nombresArchivos = await lastValueFrom(this.configDigitalizadorService.getNombresArchivosUploadDigitalizador());
+      await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
+
+      const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
+      await this.configDigitalizadorService.syncTipos(tiposDocs.data);
+
+      const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
+      await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
+
+      const extensiones = await lastValueFrom(this.configDigitalizadorService.getExtensiones());
+      await this.configDigitalizadorService.syncLocalDataBase_Extensiones(extensiones.data);
+    } catch (error) {
+      console.error('Error en sincronización:', error);
+      throw error; // Opcional: re-lanzar el error si quieres manejarlo fuera
+    }
+  }
+
+  showDialog() {
+    if (!this.electronService.isElectron) return;
+
+    this.electronService.dialog
+      ?.showOpenDialog({
+        properties: ['openFile'],
+      })
+      .then((result) => {
+        if (!result.canceled) {
+          console.log('Archivo seleccionado:', result.filePaths[0]);
+        }
+      });
+
+  }
+
+  displayFn(curp: Curp): string {
+    return curp && curp.name ? curp.name : '';
   }
 
   public bar: any = {
     type: 'bar',
     data: {
-      labels: ['Red', 'Blue', 'Yellow'],
-      datasets: [{
-        label: 'My First Dataset',
-        data: [300, 50, 100],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)'
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)'
-        ],
-        borderWidth: 1
-      }]
+      labels: ['Esperados', 'Digitalizados', 'Enviados'],
+      datasets: [
+        {
+          label: '',
+          data: [50000, 20000, 7500],
+          backgroundColor: [
+            'rgba(129, 125, 126, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(148, 226, 152, 0.2)',
+          ],
+          borderColor: [
+            'rgba(129, 125, 126, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(148, 226, 152, 1)',
+          ],
+          borderWidth: 1,
+        },
+      ],
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           position: 'top',
         },
         title: {
-          display: true,
-          text: 'Chart.js Doughnut Chart'
-        }
-      }
+          display: false,
+          text: 'Grafica Cantidad Expedientes por Status',
+        },
+      },
     },
   };
 
   // Signals para almacenar las rutas
-  sourcePath = signal<string>("")
-  destinationPath = signal<string>("")
+  sourcePath = signal<string>('');
+  destinationPath = signal<string>('');
+  timeSync = signal<number>(10);
 
   // Método para manejar la selección de la ruta de origen
   onSourcePathSelected(event: Event): void {
-    const input = event.target as HTMLInputElement
+    const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       // Obtenemos la ruta del directorio seleccionado
       // Nota: debido a restricciones de seguridad del navegador, solo obtenemos el nombre
       // del directorio, no la ruta completa del sistema de archivos
-      this.sourcePath.set(input.files[0].webkitRelativePath.split("/")[0])
+      this.sourcePath.set(input.files[0].webkitRelativePath.split('/')[0]);
+    } else {
+      // Caso cuando el directorio está vacío
+      // Esto solo funciona en algunos navegadores
+      const path = input.value;
+      if (path.includes('\\')) {
+        this.sourcePath.set(path.split('\\').slice(0, -1).join('\\'));
+      } else if (path.includes('/')) {
+        this.sourcePath.set(path.split('/').slice(0, -1).join('/'));
+      }
     }
   }
 
   // Método para manejar la selección de la ruta de destino
   onDestinationPathSelected(event: Event): void {
-    const input = event.target as HTMLInputElement
+    const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.destinationPath.set(input.files[0].webkitRelativePath.split("/")[0])
+      this.destinationPath.set(input.files[0].webkitRelativePath.split('/')[0]);
+    } else {
+      const path = input.value;
+      if (path.includes('\\')) {
+        this.destinationPath.set(path.split('\\').slice(0, -1).join('\\'));
+      } else if (path.includes('/')) {
+        this.destinationPath.set(path.split('/').slice(0, -1).join('/'));
+      }
     }
   }
 
   // Método para guardar las rutas
-  saveDirectories(): void {
-    console.log("Ruta origen:", this.sourcePath())
-    console.log("Ruta destino:", this.destinationPath())
+  async saveConfig(): Promise<void> {
+    this.toggleModalConfiguraciones();
 
-    // Aquí puedes implementar la lógica para guardar o procesar las rutas
-    // Por ejemplo, enviar a un servicio, almacenar en localStorage, etc.
-    alert(`Rutas guardadas:\nOrigen: ${this.sourcePath()}\nDestino: ${this.destinationPath()}`)
+    try {
+      const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+      const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+      const extension = this.formConfiguracion.get('extension')?.value;
+      const intervaloSincronizacion = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+      const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
+
+      // Guardar informacion de configuracion de digitalizador en la db Local
+      this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
+        ruta_digitalizados: rutaOrigen,
+        ruta_enviados: rutaDestino,
+        tiempo_sync: intervaloSincronizacion,
+        extension: extension,
+        peso_minimo: pesoMinimo
+      }).then(() => {
+        this.sinConfiguracion = false;
+
+        Swal.fire({
+          title: 'Configuracion Almacenada Correctamente',
+          icon: 'success',
+          timer: 5000,
+          showConfirmButton: false,
+          confirmButtonText: 'Aceptar',
+        })
+      });
+    } catch (error) {
+      Swal.fire({
+        title: 'Error',
+        text: 'Ocurrió un error al obtener la configuración',
+        icon: 'error',
+        confirmButtonText: 'Aceptar',
+      });
+      console.error('Error al obtener configuración:', error);
+    }
   }
 
   // Método para abrir el selector de archivos programáticamente
   openFileSelector(inputId: string): void {
-    document.getElementById(inputId)?.click()
+    document.getElementById(inputId)?.click();
+  }
+
+  iniciarMonitor(): void {
+    const intervalo = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+
+    this.monitorSubscription = interval(intervalo * 1000).subscribe(() => {
+      this.procesarArchivos();
+    });
+
+    // Procesar inmediatamente al iniciar
+    this.procesarArchivos();
+    this.isMonitoring = true;
+  }
+
+  detenerMonitor(): void {
+    if (this.monitorSubscription) {
+      this.monitorSubscription.unsubscribe();
+      this.isMonitoring = false;
+    }
+  }
+
+  toggleMonitoreo() {
+    if (this.sinConfiguracion)
+      return this.detenerMonitor();
+
+    if (this.isMonitoring)
+      this.detenerMonitor();
+    else
+      this.iniciarMonitor();
+  }
+
+  isValidField(fieldName: string): boolean | null {
+    return (
+      this.myForm.controls[fieldName].errors &&
+      this.myForm.controls[fieldName].touched
+    );
+  }
+
+  getFieldError(fieldName: string): string | null {
+    if (!this.myForm.controls[fieldName].errors) return null;
+
+    const errors = this.myForm.controls[fieldName].errors ?? {};
+
+    for (const key of Object.keys(errors)) {
+      switch (key) {
+        case 'required':
+          return 'Este campo es requerido';
+        case 'email':
+          return 'El email no es válido';
+        case 'minlength':
+          return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
+        case 'pattern':
+          return 'El formato de la curp no es correcto';
+      }
+    }
+    return null;
+  }
+
+  toUpperCaseCurp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.toUpperCase();
+    this.myForm.get('curp')?.setValue(input.value);
+  }
+
+  tipos: any[] = [];
+  contenedores: any[] = [];
+  extensiones: any[] = [];
+
+  getGrupos(body: { tipo?: number, fecha?: string | null | undefined }): void {
+    this.configDigitalizadorService
+      .consultarNombresArchivosUpload()
+      .then((grupos) => {
+        this.grupos = grupos;
+      })
+      .catch((error) => console.error('Error al obtener los nombres archivos upload:', error));
+  }
+
+  getTipos(): void {
+    this.configDigitalizadorService
+      .contultarTipos()
+      .then((tipos) => {
+        this.tipos = tipos;
+      })
+      .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
+  }
+
+  getContenedores(): void {
+    this.configDigitalizadorService
+      .consultarContenedores()
+      .then((contenedores) => {
+        this.contenedores = contenedores;
+      })
+      .catch((error) => console.error('Error al obtener los contenedores:', error));
+  }
+
+  getExtensiones(): void {
+    this.configDigitalizadorService
+      .consultarExtensiones()
+      .then((extensiones) => {
+        this.extensiones = extensiones;
+      })
+      .catch((error) => console.error('Error al obtener los extensiones:', error));
+  }
+
+  rolesUsuario: Array<{ fkRole: number }> = [];
+  rolesConPermisoAdmin: number[] = [104];
+
+  //IMPORTAR EXCEL
+  lblUploadingFile: string = '';
+  documentFileLoaded: boolean = false;
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
+
+  datosExcel: any[] = [];
+  mensaje: string = '';
+
+  get permisoAccionesAdmin(): boolean {
+    // Verifica si algún perfil tiene un role que esté en el arreglo rolesConPermiso
+    return this.rolesUsuario.some(
+      (perfil) =>
+        perfil.fkRole && this.rolesConPermisoAdmin.includes(Number(perfil.fkRole))
+    );
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+    }
+  }
+
+
+
+
+
+  async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
+    const archivo = file; //event.target.files[0];
+    if (archivo) {
+      await this.utilService.leerExcel_ArchivosDigitalizar(archivo, tipo_doc, ext).then(
+        (response) => {
+          if (response) {
+            this.mensaje = 'Datos importados exitosamente.';
+
+            this.datosExcel = [];
+            this.resetForm();
+
+            Swal.fire({
+              title: 'Importacion Generada con Éxito !!!',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            console.error('Error al enviar los datos:', response);
+            this.mensaje = 'Hubo un error al importar los datos.';
+            Swal.fire({
+              title: 'Ocurrio un Error en la Importacion',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        }
+      );
+
+    }
+  }
+
+  @ViewChild('fileInput') fileInput!: ElementRef;
+
+  resetForm() {
+    this.myForm_Upload.reset();
+    this.lblUploadingFile = '';
+    this.fileInput.nativeElement.value = ''; // Resetear solo el input file
+  }
+
+
+  ////////////////////////////////////////////////////
+  /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
+  ////////////////////////////////////////////////////
+
+  procesarArchivos(): void {
+    const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+    const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+    const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
+    const extension = this.formConfiguracion.get('extension')?.value;
+
+    this.digitalizarArchivosService.procesarArchivosEnParalelo(rutaOrigen, rutaDestino, pesoMinimo, extension)
+      .subscribe({
+        next: (resultados) => {
+          const exitosos = resultados.filter(r => r).length;
+
+          console.log('Resultados: ', resultados);
+          console.log('Exitosos: ', exitosos);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      });
+  }
+
+  getArchivosEsperados() {
+    const searchValue = this.formBusqueda.get('search')?.value || '';
+
+    this.digitalizarArchivosService.getArchivosEsperados({ search: searchValue }).subscribe({
+      next: response => {
+        this.archivosEsperados = response.data;
+
+        this.cdr.detectChanges();
+      },
+      error: error => { }
+    })
+  }
+
+  async selectFolder(field: 'rutaOrigen' | 'rutaDestino') {
+    const folderPath = await this.electronService.selectFolder();
+    if (folderPath) {
+      this.formConfiguracion.get(field)?.setValue(folderPath);
+    }
   }
 }

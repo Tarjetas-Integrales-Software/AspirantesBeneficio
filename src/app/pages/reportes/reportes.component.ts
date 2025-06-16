@@ -100,7 +100,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   getReporte(): void {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(false);
     const body = this.getBody(true);
 
     this.loading = true;
@@ -113,7 +113,13 @@ export class ReportesComponent implements OnInit, AfterViewInit {
           this.displayedColumns = Object.keys(primerElemento);
 
           this.dataSource.data = response.data;
-          this.dataSource.paginator = this.paginator;
+
+          const { currentPage, lastPage, perPage, total } = response["pagination"];
+
+          this.currentPage = currentPage - 1;
+          this.lastPage = lastPage;
+          this.perPage = perPage;
+          this.total = total;
         }
       }),
       complete: () => {
@@ -142,7 +148,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   downloadPdf() {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(true);
     const body = this.getBody();
 
     this.reportesService.getReporte(url, body).subscribe(response => {
@@ -158,13 +164,13 @@ export class ReportesComponent implements OnInit, AfterViewInit {
           body: prepare,
           bodyStyles: { fontSize: 8 }
         });
-        doc.save(`${this.getFileName()}`);
+        doc.save(`${this.getFileNameExport(true)}`);
       }
     });
   }
 
   downloadExcel() {
-    const url = this.getUrlReporte();
+    const url = this.getUrlReporte(true);
     const body = this.getBody();
 
     this.reportesService.getReporte(url, body).subscribe(response => {
@@ -182,13 +188,13 @@ export class ReportesComponent implements OnInit, AfterViewInit {
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Aspirantes');
 
         // Genera el archivo y lo descarga
-        XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
+        XLSX.writeFile(workbook, `${this.getFileNameExport(true)}.xlsx`);
       }
     });
   }
 
   getFileName(): string {
-    return this.getUrlReporte();
+    return this.getUrlReporte(false);
   }
 
   getBody(paginated: boolean = false): {
@@ -212,8 +218,30 @@ export class ReportesComponent implements OnInit, AfterViewInit {
     return body;
   }
 
-  getUrlReporte(): string {
-    return this.formConsulta.get('reporte')?.value;
+  getUrlReporte(all: boolean): string {
+    const url = this.formConsulta.get('reporte')?.value;
+
+    if (all) return url + "_all";
+
+    return url;
+  }
+
+  getFileNameExport(all: boolean): string {
+    const url = this.formConsulta.get('reporte')?.value;
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+
+    const timestamp = `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+
+    if (all) return `${url}_all_${timestamp}`;
+
+    return `${url}_${timestamp}`;
   }
 
   onPaginateChange(event: PageEvent): void {
