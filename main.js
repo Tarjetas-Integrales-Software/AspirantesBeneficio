@@ -124,7 +124,6 @@ function dropTablesIfExists() {
   }
 
 }
-
 function addColumnIfNotExists() {
   try {
     // Ruta de la base de datos en la carpeta de datos del usuario
