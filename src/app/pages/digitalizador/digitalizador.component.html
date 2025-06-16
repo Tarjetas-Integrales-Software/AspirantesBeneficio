@@ -3,7 +3,8 @@
     <div class="digitalizador__toolbar">
       <div class="toolbar__side">
         <div>
-          <button mat-raised-button (click)="toggleMonitoreo()" class="btn" [disabled]="sinConfiguracion" [title]="sinConfiguracion ? 'Falta configuración' : 'Iniciar / Detener monitoreo'">
+          <button mat-raised-button (click)="toggleMonitoreo()" class="btn" [disabled]="sinConfiguracion"
+            [title]="sinConfiguracion ? 'Falta configuración' : 'Iniciar / Detener monitoreo'">
             <div>
               <svg class="button-icon" *ngIf="isMonitoring; else notMonitoring" xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 384 512">
@@ -62,7 +63,7 @@
       <form [formGroup]="formFiltrosDigitalizador" class="form" style="max-width: 100%;">
         <div class="form__row">
           <div class="form__item"><mat-form-field class="w-100">
-              <mat-label>Fecha de registro</mat-label>
+              <mat-label>Fecha digitalización</mat-label>
               <mat-date-range-input [rangePicker]="picker">
                 <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
                 <input matEndDate formControlName="fechaFin" placeholder="Fin" />
@@ -73,10 +74,10 @@
             </mat-form-field></div>
           <div class="form__item">
             <mat-form-field class="w-100">
-              <mat-label>Tipo Archivo Digitalizador</mat-label>
-              <mat-select formControlName="tiposArchivoDigitalizador">
+              <mat-label>Tipo</mat-label>
+              <mat-select formControlName="tipo">
                 <mat-option value="">- Selecciona una opción -</mat-option>
-                @for (tdd of tipos_documento_dig; track tdd) {
+                @for (tdd of tipos; track tdd) {
                 <mat-option [value]="tdd.id">{{tdd.tipo_doc_dig}}</mat-option>
                 }
               </mat-select>
@@ -86,11 +87,10 @@
         <div class="form__row">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Nombre Archivo Upload</mat-label>
-              <mat-select class="w-full" formControlName="nombresArchivosUpload"
-                (selectionChange)="onChangeOption_NombreArchivoUpload($event)">
+              <mat-label>Grupo</mat-label>
+              <mat-select class="w-full" formControlName="grupo">
                 <mat-option value="">- Selecciona una opción -</mat-option>
-                @for (nau of nombres_archivos_upload; track nau) {
+                @for (nau of grupos; track nau) {
                 <mat-option [value]="nau.nombre">{{nau.nombre}}</mat-option>
                 }
               </mat-select>
@@ -161,8 +161,7 @@
   class="fixed z-10 inset-0 overflow-y-auto" x-cloak>
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <!-- Modal Configuraciones Globales -->
-    <div
-      style="min-width: 800px;"
+    <div style="min-width: 800px;"
       class="w-full inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
       role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -282,14 +281,12 @@
 
               <mat-form-field class="w-full">
                 <mat-label>Tipo Documento a Digitalizar</mat-label>
-                <mat-select class="w-full" [ngStyle]="{ height: '25px' }" formControlName="id_tipo_doc_dig"
-                  (selectionChange)="selectedValue3()">
-                  <mat-option class="w-full" [ngStyle]="{ height: '25px' }" *ngFor="let tipo of tipos_documento_dig"
+                <mat-select class="w-full" formControlName="id_tipo_doc_dig">
+                  <mat-option class="w-full" *ngFor="let tipo of tipos"
                     [value]="tipo.id">{{ tipo.tipo_doc_dig }}</mat-option>
                 </mat-select>
               </mat-form-field>
 
-              <!-- @if (permisoAccionesAdmin) { -->
               <div class="card">
                 <div class="card-body">
                   <div class="d-flex flex-column flex-md-row align-items-center justify-content-between"
@@ -312,11 +309,7 @@
                   </div>
                 </div>
               </div>
-              <!-- } -->
-
             </form>
-
-
 
           </div>
         </div>

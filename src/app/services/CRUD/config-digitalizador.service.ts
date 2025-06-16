@@ -85,7 +85,7 @@ export class ConfigDigitalizadorService {
     });
   }
 
-  async syncLocalDataBase_TiposDocsDigitalizador(datos: any[]): Promise<void> {
+  async syncTipos(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
         INSERT OR REPLACE INTO ct_tipos_documentos_digitalizador (
@@ -108,7 +108,7 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async consultarTiposDocsDigitalizador(): Promise<{ id: number; modalidad: string }[]> {
+  async contultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
       SELECT id, tipo_doc_dig
       FROM ct_tipos_documentos_digitalizador

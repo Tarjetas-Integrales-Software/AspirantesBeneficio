@@ -94,7 +94,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   formBusqueda: FormGroup;
   formConfiguracion: FormGroup;
 
-  nombres_archivos_upload: any[] = [];
+  grupos: any[] = [];
 
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
 
@@ -125,8 +125,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.fs = electronAPI?.fs;
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
-      tiposArchivoDigitalizador: '',
-      nombresArchivosUpload: '',
+      tipo: '',
+      grupo: '',
       fechaInicio: new Date(),
       fechaFin: new Date(),
     });
@@ -153,9 +153,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       try {
         await this.syncDataBase();
 
-        this.getNombresArchivosUploadDigitalizador();
         this.getContenedores();
-        this.getTiposDocDig();
+        this.getTipos();
         this.getExtensiones();
         this.getArchivosEsperados();
 
@@ -198,17 +197,32 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       intervaloSincronizacion: tiempo_sync,
       pesoMinimo: peso_minimo
     });
-  }
 
-  onChangeOption_NombreArchivoUpload(event: MatSelectChange): void {
-    const optionSelected = event.value;
+    this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
+      if (tipoId) {
+        const fechaDigitalizacion = this.formFiltrosDigitalizador.get('fechaDigitalizacion')?.value;
 
-    // Aquí puedes ejecutar cualquier lógica necesaria
-    if (optionSelected) {
-      this.nombre_archivo_upload_selected = optionSelected;
-    } else {
-      this.nombre_archivo_upload_selected = '';
-    }
+        this.getGrupos({ tipo: tipoId, fecha: fechaDigitalizacion?.toISOString().substring(0, 10) });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('fechaInicio')?.valueChanges.subscribe(fecha => {
+      if (fecha) {
+        const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+
+        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), tipo: tipo });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('grupo')?.valueChanges.subscribe(grupo => {
+      if (grupo) {
+
+      }
+    });
   }
 
   myForm: FormGroup = this.fb.group({
@@ -244,7 +258,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   toggleModalConfiguraciones() {
     this.showModal_configuraciones = !this.showModal_configuraciones;
 
-    if(this.showModal_configuraciones) this.detenerMonitor();
+    if (this.showModal_configuraciones) this.detenerMonitor();
   }
 
   toggleModal_UploadEsperadosTipoArchivo() {
@@ -366,7 +380,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
 
       const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
-      await this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(tiposDocs.data);
+      await this.configDigitalizadorService.syncTipos(tiposDocs.data);
 
       const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
       await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
@@ -582,89 +596,24 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.myForm.get('curp')?.setValue(input.value);
   }
 
-  tipos_documento_dig: any[] = [];
+  tipos: any[] = [];
   contenedores: any[] = [];
   extensiones: any[] = [];
 
-  selectedValue_2: string = '';
-  selectedValue_3: string = '';
-  selectedValue_4: string = '';
-  selectedValue_5: string = '';
-
-  selectedValue2() {
-    this.selectedValue_2 = this.myForm_Config.get('id_tipo_doc_dig')?.value;
-
-    switch (Number(this.selectedValue_2)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  selectedValue3() {
-    this.selectedValue_3 = this.myForm_Upload.get('id_tipo_doc_dig')?.value;
-
-    switch (Number(this.selectedValue_3)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  selectedValue4() {
-    this.selectedValue_4 = this.myForm_Footer.get('id_contenedor')?.value;
-
-    switch (Number(this.selectedValue_4)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  getNombresArchivosUploadDigitalizador(): void {
+  getGrupos(body: { tipo?: number, fecha?: string | null | undefined }): void {
     this.configDigitalizadorService
       .consultarNombresArchivosUpload()
-      .then((nombres_archivos_upload) => {
-        this.nombres_archivos_upload = nombres_archivos_upload;
+      .then((grupos) => {
+        this.grupos = grupos;
       })
       .catch((error) => console.error('Error al obtener los nombres archivos upload:', error));
   }
 
-  getTiposDocDig(): void {
+  getTipos(): void {
     this.configDigitalizadorService
-      .consultarTiposDocsDigitalizador()
-      .then((tipos_documento_dig) => {
-        this.tipos_documento_dig = tipos_documento_dig;
+      .contultarTipos()
+      .then((tipos) => {
+        this.tipos = tipos;
       })
       .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
   }
@@ -717,13 +666,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       // No establecer el valor del campo de entrada de archivo directamente
       // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
       this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
-      if (this.selectedValue_3 != null) {
-        let tipo_doc = Number(this.selectedValue_3);
-        let ext = this.selectedValue_5;
-        this.importarExcel_ArchivosDigitalizar(this.documentFile.file, tipo_doc, ext);
-      } else {
-        Swal.fire('Error', 'Por favor Selecciona el tipo de documento', 'error');
-      }
     } else {
       Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
       this.lblUploadingFile = '';
