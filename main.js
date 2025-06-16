@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron'); // Added ipcMain
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const url = require('url');
@@ -18,50 +18,46 @@ const si = require('systeminformation');
 let mainWindow;
 let db; // Declare db as a global variable
 
+if (process.platform === 'win32') {
+  const sumatraPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'SumatraPDF.exe')
+    : path.join(__dirname, '../tools/SumatraPDF.exe');
+
+  app.commandLine.appendSwitch('pdf-viewer-path', sumatraPath);
+}
+
 updateElectronApp();
 
 if (require('electron-squirrel-startup')) app.quit();
 
 app.setAppUserModelId("com.squirrel.tisa.aspirantesbeneficio");
 
-
-// para poder usar el sistema de archivos de windows
-const remote = require('@electron/remote/main');
-// Inicializar @electron/remote
-remote.initialize();
-
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      // enableRemoteModule: true,
+      preload: path.join(__dirname, 'preload.js'), // Ruta absoluta
     },
   });
 
-  // Abre consola
-   mainWindow.webContents.openDevTools();
-
-  // Cargar la aplicación Angular
-  mainWindow.loadURL(
-    url.format({
-      pathname: path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html'),
-      protocol: 'file:',
-      slashes: true,
-    })
+  // Cargar la aplicación Angular desde la build
+  mainWindow.loadFile(
+    path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html')
   );
 
-  Menu.setApplicationMenu(null);
+  mainWindow.removeMenu();
 
-  mainWindow.on('closed', function () {
+  // Abre consola (para debug)
+  // mainWindow.webContents.openDevTools();
+
+  mainWindow.on('closed', () => {
     mainWindow = null;
   });
-
-  // Habilitar remote para esta ventana
-  remote.enable(win.webContents);
-
 }
 
 async function sendAppInfo() {
@@ -128,19 +124,17 @@ function dropTablesIfExists() {
   }
 
 }
+
 function addColumnIfNotExists() {
   try {
     // Ruta de la base de datos en la carpeta de datos del usuario
     const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
 
-    console.log('Database path:', dbPath);
-
     db = new Database(dbPath);
 
-    const rows = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
-
-    // Verificar si la columna 'modulo' ya existe
-    const columnExists_modulo = rows.some(row => row.name === 'modulo');
+    // Verificar y agregar columna 'modulo' en ct_aspirantes_beneficio
+    const rowsAspirantes = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
+    const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
     if (!columnExists_modulo) {
       console.log("Agregando la columna 'modulo'...");
       db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
@@ -148,10 +142,33 @@ function addColumnIfNotExists() {
     } else {
       console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
     }
+
+    // Verificar y agregar columnas en sy_config_digitalizador
+    const rowsConfig = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
+
+    // Verificar columna 'extension'
+    const columnExists_extension = rowsConfig.some(row => row.name === 'extension');
+    if (!columnExists_extension) {
+      console.log("Agregando la columna 'extension'...");
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN extension TEXT NULL;").run();
+      console.log("Columna 'extension' agregada con éxito.");
+    } else {
+      console.log("La columna 'extension' ya existe. No es necesario agregarla.");
+    }
+
+    // Verificar columna 'peso_minimo'
+    const columnExists_peso_minimo = rowsConfig.some(row => row.name === 'peso_minimo');
+    if (!columnExists_peso_minimo) {
+      console.log("Agregando la columna 'peso_minimo'...");
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN peso_minimo REAL NULL;").run();
+      console.log("Columna 'peso_minimo' agregada con éxito.");
+    } else {
+      console.log("La columna 'peso_minimo' ya existe. No es necesario agregarla.");
+    }
+
   } catch (error) {
     console.error('Error altering table:', error);
   }
-
 }
 
 function initializeDatabase() {
@@ -813,20 +830,15 @@ ipcMain.on("get-pdf", (event, name) => {
 });
 
 ipcMain.on("get-archivo-digitalizado", (event, args) => {
+  const { fullPath, requestId } = args;
 
-  const { fileName, requestId } = args;
-
-  //const dirPath = path.join(app.getPath("userData"), "ArchivosDigitalizados");
-  const dirPath = "C:\\ExpedientesBeneficiarios\\Digitalizados";
-  const filePath = path.join(dirPath, fileName + ".pdf");
-
-  fs.readFile(filePath, (err, data) => {
+  fs.readFile(fullPath, (err, data) => {
     if (err) {
       console.error("Error al leer el archivoo PDF:", err);
       event.sender.send(`pdf-read-error-${requestId}`, err.message);
       return;
     } else {
-      event.sender.send(`pdf-read-success-${requestId}`, data);
+      event.sender.send(`pdf-read-success-${requestId}`, new Uint8Array(data));
     }
   });
 });
@@ -872,3 +884,15 @@ async function printCard(pdfFileUrl, printerName) {
     }
   });
 }
+
+ipcMain.handle('select-folder', async (event, operation) => {
+  const properties = operation === 'export' ? ['openDirectory', 'createDirectory'] : ['openDirectory'];
+  const result = await dialog.showOpenDialog({
+    properties: properties
+  });
+
+  if (result.canceled)
+    return null;
+  else
+    return result.filePaths[0];
+});

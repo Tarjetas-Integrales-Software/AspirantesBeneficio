@@ -4,8 +4,6 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatabaseService } from './../database.service';
 
-const { ipcRenderer } = (window as any).require("electron");
-
 @Injectable({
   providedIn: 'root'
 })
@@ -67,15 +65,11 @@ export class CajerosFotosService {
   }
 
   private getImageFromMainProcess(imageName: string, path: string): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      ipcRenderer.send('get-image', imageName, path);
-      ipcRenderer.once('image-read-success', (event: any, data: any) => {
-        resolve(data);
-      });
-      ipcRenderer.once('image-read-error', (event: any, err: any) => {
-        reject(err);
-      });
-    });
+    if (!window.electronAPI) {
+      return Promise.reject('Electron API no disponible (ejecutando en navegador)');
+    }
+
+    return window.electronAPI.getImage(imageName, path);
   }
 
   // REMOTOS FIN

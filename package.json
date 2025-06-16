@@ -21,12 +21,22 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "build-start": "ng build --configuration production && electron .",
-    "build-devs": "ng build --configuration development && electron ."
+    "build-devs": "ng build --configuration development && electron .",
+    "sumatra": "copy tools\\SumatraPDF.exe node_modules\\electron\\dist\\resources\\"
   },
   "private": true,
   "build": {
     "appId": "com.tisa.aspirantesbeneficio",
     "productName": "Aspirantes Beneficio",
+    "extraFiles": [
+      {
+        "from": "tools/SumatraPDF.exe",
+        "to": "resources/SumatraPDF.exe",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "src/assets/icon.ico"

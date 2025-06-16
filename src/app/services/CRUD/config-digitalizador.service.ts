@@ -13,54 +13,17 @@ export class ConfigDigitalizadorService {
   private http = inject(HttpClient);
   private networkStatusService = inject(NetworkStatusService);
 
-  constructor(private databaseService: DatabaseService) {}
+  constructor(private databaseService: DatabaseService) { }
 
-  async CreateConfigInicialDigitalizador() {
-    //let config = await this.consultarConfigDigitalizador();
-    //console.log(config,'config_1');
-
-    //if (!config) {
-      let config = {
-        ruta_digitalizados: 'C:\\ExpedientesBeneficiarios\\Digitalizados',
-        ruta_enviados: 'C:\\ExpedientesBeneficiarios\\Enviados',
-        tiempo_sync: 10
-      };
-      await this.localCreateOrUpdate_ConfigDigitalizador(config);
-    //}
-    console.log('getOrCreateConfig');
-    console.log(config,'config');
-    return config;
-
-  }
-
-  async consultarConfigDigitalizador(): Promise<{
-    ruta_digitalizados: string;
-    ruta_enviados: string;
-    tiempo_sync: number;
-  } > {
-    const defaultConfig = {
-      ruta_digitalizados: '',
-      ruta_enviados: '',
-      tiempo_sync: 10
-    };
-
-    try{
+  async consultarConfigDigitalizador(): Promise<any> {
+    try {
       const sql = `SELECT * FROM sy_config_digitalizador WHERE id = 1;`;
-      const result = await this.databaseService.execute(sql);
+      const result = await this.databaseService.query(sql);
 
-      // if (!result || !result.rows || result.rows.length === 0) {
-      //   return defaultConfig;
-      // }
-
-      const config = result.rows.item(1);
-      return {
-        ruta_digitalizados: config.ruta_digitalizados || defaultConfig.ruta_digitalizados,
-        ruta_enviados: config.ruta_enviados || defaultConfig.ruta_enviados,
-        tiempo_sync: config.tiempo_sync || defaultConfig.tiempo_sync
-      };
-    }catch (error) {
+      return result[0];
+    } catch (error) {
       console.error('Error al consultar configuración:', error);
-      return defaultConfig;
+      throw error; // Opcional: Relanza el error para manejarlo fuera
     }
   }
 
@@ -68,27 +31,29 @@ export class ConfigDigitalizadorService {
     ruta_digitalizados: string;
     ruta_enviados: string;
     tiempo_sync: number;
+    extension: string;
+    peso_minimo: number
   }): Promise<any> {
-    // Primero verifica si existe el registro
-    const checkSql = `SELECT 1 FROM sy_config_digitalizador WHERE id = 1;`;
-    const exists = await this.databaseService.execute(checkSql);
-
-      // Actualiza el registro existente
-      const updateSql = `
-        UPDATE sy_config_digitalizador
-        SET ruta_digitalizados = ?,
-            ruta_enviados = ?,
-            tiempo_sync = ?
-        WHERE id = 1;
-      `;
-      const params = [
-        config.ruta_digitalizados,
-        config.ruta_enviados,
-        config.tiempo_sync
-      ];
-      return await this.databaseService.execute(updateSql, params);
+    const insertSql = `
+    INSERT OR REPLACE INTO sy_config_digitalizador (
+      id,
+      ruta_digitalizados,
+      ruta_enviados,
+      tiempo_sync,
+      extension,
+      peso_minimo
+    ) VALUES (?, ?, ?, ?, ?, ?);
+  `;
+    const params = [
+      1,
+      config.ruta_digitalizados,
+      config.ruta_enviados,
+      config.tiempo_sync,
+      config.extension,
+      config.peso_minimo
+    ];
+    return await this.databaseService.execute(insertSql, params);
   }
-
 
   // TIPOS DOCUMENTOS - DIGITALIZADOR PARA ASPBEN
 
@@ -120,7 +85,7 @@ export class ConfigDigitalizadorService {
     });
   }
 
-  async syncLocalDataBase_TiposDocsDigitalizador(datos: any[]): Promise<void> {
+  async syncTipos(datos: any[]): Promise<void> {
     for (const item of datos) {
       const sql = `
         INSERT OR REPLACE INTO ct_tipos_documentos_digitalizador (
@@ -143,7 +108,7 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async consultarTiposDocsDigitalizador(): Promise<{ id: number; modalidad: string }[]> {
+  async contultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
       SELECT id, tipo_doc_dig
       FROM ct_tipos_documentos_digitalizador

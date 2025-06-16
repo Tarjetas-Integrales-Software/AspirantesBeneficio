@@ -12,8 +12,10 @@ export class FileSystemService {
 
   constructor(private electronService: ElectronService) {
     if (this.electronService.isElectron) {
-      this.fs = window.require('fs');
-      this.path = window.require('path');
+      const electronAPI = (window as any).electronAPI;
+
+      this.path = electronAPI?.path;
+      this.fs = electronAPI?.fs;
     }
   }
 

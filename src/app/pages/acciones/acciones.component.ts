@@ -8,7 +8,6 @@ import { AspirantesBeneficioService } from "../../services/CRUD/aspirantes-benef
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-const { ipcRenderer } = (window as any).require("electron");
 import { StorageService } from "../../services/storage.service";
 
 export interface cs_monitor_ejecucion_acciones {
@@ -48,13 +47,13 @@ export class AccionesComponent implements OnInit {
     this.accionesService.habilitarReenvioCurps().subscribe(res => {
       if (res.response && res.data.length > 0) {
         this.habilitarReenvioCurps.set(res.data[0].valor);
-        console.log(this.habilitarReenvioCurps,'habilitarReenvioCurps');
-        console.log(typeof(this.habilitarReenvioCurps),'typeof_habilitarReenvioCurps');
+        console.log(this.habilitarReenvioCurps, 'habilitarReenvioCurps');
+        console.log(typeof (this.habilitarReenvioCurps), 'typeof_habilitarReenvioCurps');
       }
     });
   }
 
-   obtenerSoloCurps(arreglo: any[]): string[] {
+  obtenerSoloCurps(arreglo: any[]): string[] {
     return arreglo.map(item => item.curp);
 
   }
@@ -66,7 +65,7 @@ export class AccionesComponent implements OnInit {
     for (const curp of curps_reenviar_tisa) {
       const row = await this.aspirantesBeneficioService.consultarAspirantePorCurpDbLocal(curp);
       if (row && row.id !== undefined) {
-      const idNumerico = Number(row.id);
+        const idNumerico = Number(row.id);
         if (!isNaN(idNumerico)) {
           ids.push(idNumerico);
         } else {
@@ -80,56 +79,69 @@ export class AccionesComponent implements OnInit {
     return ids;
   }
 
+  async getDeviceSerial(): Promise<string> {
+    if (!window.electronAPI) {
+      throw new Error('Electron API no disponible');
+    }
+
+    try {
+      return await window.electronAPI.getSerialNumber();
+    } catch (error) {
+      console.error('Error al obtener número de serie:', error);
+      throw new Error('No se pudo obtener el número de serie del dispositivo');
+    }
+  }
+
   async enviarMonitorEjecucionAccion(): Promise<void> {
 
-      try {
+    try {
 
-        // obtener la version de la aplicacion desde enviroment
-        const app_version_actual = environment.gitversion;
+      // obtener la version de la aplicacion desde enviroment
+      const app_version_actual = environment.gitversion;
 
-        // obtener el serial number desde un metodo en main.js
-        let serial_number = await ipcRenderer.invoke("get-serial-number");
+      // obtener el serial number desde un metodo en main.js
+      let serial_number = await this.getDeviceSerial();
 
-        // obtener el usuario logueado desde el storage
-        let usuario = '';
-        let usuario_activo = '';
+      // obtener el usuario logueado desde el storage
+      let usuario = '';
+      let usuario_activo = '';
 
-        if (this.storageService.exists("user")) {
-          const user = this.storageService.get("user");
-          this.user = user.email; //nombre del usuario
+      if (this.storageService.exists("user")) {
+        const user = this.storageService.get("user");
+        this.user = user.email; //nombre del usuario
 
-          usuario = this.user;
-          usuario_activo = '1';
-        } else {
-          usuario = '';
-          usuario_activo = '0';
-        }
-
-        let fecha = new Date();
-        fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset()); // Ajusta a la zona horaria local
-        let fecha_actual = fecha.toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
-
-        //construir el objeto
-        const obj_monitor_ejecucion_accion: cs_monitor_ejecucion_acciones = {
-          numero_serial: serial_number,
-          usuario_ejecutando_app: usuario,
-          tipo_accion: 'Reenvio Curps TISA',
-          fecha_evento: fecha_actual
-
-        }
-
-        // enviar todo por medio de un servicio a TISA
-        this.accionesService.registrarMonitorEjecucionAcciones(obj_monitor_ejecucion_accion).subscribe({
-          next: ((response) => {
-            console.log("Se sincronizo la informacion de monitor equipos");
-          }),
-          error: ((error) => { })
-        });
-      } catch (error) {
-        console.error("Error en sendInfo_MonitorEquipo: ", error);
+        usuario = this.user;
+        usuario_activo = '1';
+      } else {
+        usuario = '';
+        usuario_activo = '0';
       }
 
+      let fecha = new Date();
+      fecha.setMinutes(fecha.getMinutes() - fecha.getTimezoneOffset()); // Ajusta a la zona horaria local
+      let fecha_actual = fecha.toISOString().replace('T', ' ').substring(0, 19).padEnd(23, '.000');
+
+      //construir el objeto
+      const obj_monitor_ejecucion_accion: cs_monitor_ejecucion_acciones = {
+        numero_serial: serial_number,
+        usuario_ejecutando_app: usuario,
+        tipo_accion: 'Reenvio Curps TISA',
+        fecha_evento: fecha_actual
+
+      }
+
+      // enviar todo por medio de un servicio a TISA
+      this.accionesService.registrarMonitorEjecucionAcciones(obj_monitor_ejecucion_accion).subscribe({
+        next: ((response) => {
+          console.log("Se sincronizo la informacion de monitor equipos");
+        }),
+        error: ((error) => { })
+      });
+    } catch (error) {
+      console.error("Error en sendInfo_MonitorEquipo: ", error);
     }
+
+  }
 
 
   async onSubmit(event: Event): Promise<void> {
@@ -146,15 +158,15 @@ export class AccionesComponent implements OnInit {
 
       // Obtener un arreglo de curps solamente
       const arr_curps_reeanviar_tisa: string[] = this.obtenerSoloCurps(this.curps_reenviar_a_tisa);
-      console.log(arr_curps_reeanviar_tisa,'arr_curps_reeanviar_tisa');
+      console.log(arr_curps_reeanviar_tisa, 'arr_curps_reeanviar_tisa');
 
 
       // Obtener los id_aspirante_beneficio de las base local de las curps obtenidas anteriormente, en caso de existir en dicho equipo
       const ids: number[] = await this.obtenerIdsDeAspirantes(arr_curps_reeanviar_tisa);
-      console.log(ids,'ids');
+      console.log(ids, 'ids');
 
       const idsFiltrados = ids.filter(id => typeof id === 'number' && !isNaN(id));
-      console.log(idsFiltrados,'idsFiltrados');
+      console.log(idsFiltrados, 'idsFiltrados');
 
       // Iteracion por cada id_aspirante_beneficio para actualizar el campo confirmado = null en la relacion para volver a realizar el intento de envio hacia TISA
       for (const id of idsFiltrados) {
@@ -162,7 +174,7 @@ export class AccionesComponent implements OnInit {
 
           //Obtener la curp del id de aspirante actual
           let curp_actual = await this.aspirantesBeneficioService.consultarAspirantePorId(id);
-          console.log(curp_actual,'curp_actual');
+          console.log(curp_actual, 'curp_actual');
 
           // se actualiza en TISA el campo encontrada, para saber cuales si se enviaran o se debieron haber enviado
           this.accionesService.updateCurpEncontrada(curp_actual.curp).subscribe({

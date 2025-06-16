@@ -25,7 +25,9 @@ import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -56,6 +58,8 @@ export interface Curp {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatButtonModule,
+    MatIconModule,
     CommonModule,
   ],
   templateUrl: './digitalizador.component.html',
@@ -70,11 +74,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   chartData_construida: any[] = []; // Tus datos vendrán aquí
 
   private monitorSubscription: Subscription = Subscription.EMPTY;
-  //private carpetaOrigen: string = 'C:\\Users\\Juan Pablo\\AppData\\Roaming\\Aspirantes Beneficio\\ArchivosDigitalizados';
-  private carpetaOrigen: string = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
-  private carpetaDestino: string = 'C:\\ExpedientesBeneficiarios\\Enviados';
-  private intervalo: number = 5000; // 3 segundos
-
 
   private fb = inject(FormBuilder);
   @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
@@ -86,23 +85,28 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
+  sinConfiguracion: boolean = true;
 
   private fs: any;
   private path: any;
 
   formFiltrosDigitalizador: FormGroup;
-  nombres_archivos_upload: any[] = [];
+  formBusqueda: FormGroup;
+  formConfiguracion: FormGroup;
+
+  grupos: any[] = [];
+
+  archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
+
+  esperadas: number = 0;
+  digitalizadas: number = 0;
+  enviadas: number = 0;
 
 
-  spanValues: any = {};
   private updateSubscription: Subscription = new Subscription();
   private isAlive = true; // Flag para controlar la suscripción
 
   private nombre_archivo_upload_selected = ''
-
-  readonly targetDirectory = 'C:\\ExpedientesBeneficiarios';
-  readonly targetDirectory_Digitalizados = 'C:\\ExpedientesBeneficiarios\\Digitalizados';
-  readonly targetDirectory_Enviados = 'C:\\ExpedientesBeneficiarios\\Enviados';
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -115,14 +119,28 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private digitalizarArchivosService: DigitalizarArchivosService,
     //private logger: NGXLogger
   ) {
-    this.fs = window.require('fs');
-    this.path = window.require('path');
+    const electronAPI = (window as any).electronAPI;
+
+    this.path = electronAPI?.path;
+    this.fs = electronAPI?.fs;
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
-      tiposArchivoDigitalizador: '',
-      nombresArchivosUpload: '',
+      tipo: '',
+      grupo: '',
       fechaInicio: new Date(),
       fechaFin: new Date(),
+    });
+
+    this.formBusqueda = this.fb.nonNullable.group({
+      search: '',
+    });
+
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: '',
+      rutaOrigen: '',
+      rutaDestino: '',
+      intervaloSincronizacion: 10,
+      pesoMinimo: 300
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -130,14 +148,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     const online = this.networkStatusService.checkConnection();
+
     if (online) {
       try {
         await this.syncDataBase();
 
-        this.getNombresArchivosUploadDigitalizador();
         this.getContenedores();
-        this.getTiposDocDig();
+        this.getTipos();
         this.getExtensiones();
+        this.getArchivosEsperados();
 
 
         this.initializeChart();
@@ -146,7 +165,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         // Carga inicial
         this.updateData();
 
-        // Configurar intervalo de 5 segundos usando RxJS (mejor práctica)
         this.updateSubscription = interval(5000)
           .pipe(takeWhile(() => this.isAlive))
           .subscribe(() => {
@@ -158,41 +176,53 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       }
     }
 
-//    this.chart = new Chart('myBarChart', this.bar);
+    const config =
+      await this.configDigitalizadorService.consultarConfigDigitalizador();
 
-    if (this.electronService.isElectron) {
-      console.log('Running in Electron!');
-    }
+    if (config === undefined) {
+      this.sinConfiguracion = true;
 
-    // Crea Carpeta Expedientes Beneficiarios en disco C, para poder garantizar que las rutas Digitalizador y Enviados puedan existir al momento del procesamiento de archivos.
-    this.creaCarpetaExpedientes();
-    this.creaCarpetaExpedientes_Digitalizados();
-    this.creaCarpetaExpedientes_Enviados();
+      this.detenerMonitor();
+      this.isMonitoring = false;
 
-    // Asegurar que el README.txt exista al iniciar el componente
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Digitalizados
-    );
-    this.fileSystemService.ensureFileExists(
-      'README.txt',
-      this.targetDirectory_Enviados
-    );
+      return;
+    } else this.sinConfiguracion = false;
 
-    // Insertar Configuracion Inicial en la tabla de sy_config_digitalizador
-    this.configDigitalizadorService.CreateConfigInicialDigitalizador();
-  }
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync } = await config
 
-  onChangeOption_NombreArchivoUpload(event: MatSelectChange): void{
-    const optionSelected = event.value;
-    console.log('Opcion seleccionada:', optionSelected);
+    this.formConfiguracion = this.fb.nonNullable.group({
+      extension: extension,
+      rutaOrigen: ruta_digitalizados,
+      rutaDestino: ruta_enviados,
+      intervaloSincronizacion: tiempo_sync,
+      pesoMinimo: peso_minimo
+    });
 
-    // Aquí puedes ejecutar cualquier lógica necesaria
-    if (optionSelected) {
-     this.nombre_archivo_upload_selected = optionSelected;
-    } else {
-      this.nombre_archivo_upload_selected = '';
-    }
+    this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
+      if (tipoId) {
+        const fechaDigitalizacion = this.formFiltrosDigitalizador.get('fechaDigitalizacion')?.value;
+
+        this.getGrupos({ tipo: tipoId, fecha: fechaDigitalizacion?.toISOString().substring(0, 10) });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('fechaInicio')?.valueChanges.subscribe(fecha => {
+      if (fecha) {
+        const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+
+        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), tipo: tipo });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('grupo')?.valueChanges.subscribe(grupo => {
+      if (grupo) {
+
+      }
+    });
   }
 
   myForm: FormGroup = this.fb.group({
@@ -225,8 +255,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
 
 
-  toggleModal_Configuraciones() {
+  toggleModalConfiguraciones() {
     this.showModal_configuraciones = !this.showModal_configuraciones;
+
+    if (this.showModal_configuraciones) this.detenerMonitor();
   }
 
   toggleModal_UploadEsperadosTipoArchivo() {
@@ -250,41 +282,23 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           label: '',
           data: this.chartData.map(item => item.value), // Ajusta según tu estructura
           backgroundColor: [
-            'rgba(209, 212, 219, 0.5)',
-            'rgba(123, 241, 168, 1)',
-          ]
-          ,
-          borderColor: [
-            'rgba(158, 173, 164, 0.5)',
-            'rgba(75, 217, 129, 1)',
+            '#6B7280',
+            '#14B8A6',
           ],
-          borderWidth: 1
+          borderRadius: 6,
+          borderSkipped: false,
         }]
       },
-
       options: {
         responsive: true,
-        maintainAspectRatio: false,
-        aspectRatio: 1, // Esto establece la relación 1:1
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              // Mostrar solo valores enteros
-              stepSize: 1,
-              precision: 0 // No mostrar decimales
-            }
-          }
-        },
         plugins: {
           legend: {
             position: 'top',
           },
           title: {
-            display: false,
-            text: 'Grafica Cantidad Expedientes por Status',
-          },
-        },
+            display: false
+          }
+        }
       },
     });
   }
@@ -292,18 +306,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   // Método para actualizar los datos
   updateChartData(newData: any[]): void {
     this.chartData = [...newData];
-    console.log(this.chartData,'Chart-Data');
 
     this.chartData_construida = [
       {
-        label : 'esperadas',
-        value : this.chartData[0]?.esperadas
+        label: 'Esperadas',
+        value: this.chartData[0]?.esperadas
       },
       {
-        label : 'enviadas_tisa',
-        value : this.chartData[0]?.enviadas_tisa
+        label: 'Enviadas',
+        value: this.chartData[0]?.enviadas_tisa
       }
-  ]
+    ]
 
     if (this.chart) {
       this.chart.data.labels = this.chartData_construida.map(item => item.label);
@@ -324,34 +337,26 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       //let nombre_archivo_upload = 'ArchivosEsperadosDigitalizar_20250509_170514.pdf';
       let nombre_archivo_upload = this.nombre_archivo_upload_selected;
 
-      if(this.nombre_archivo_upload_selected != ''){
+      if (this.nombre_archivo_upload_selected != '') {
         const newData = await this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).toPromise();
-        console.log(newData);
 
-        // Actualizar valores para los spans
-        this.spanValues = { ...newData.data  || [] } ;
-        console.log(this.spanValues);
+        if (newData.data) {
+          const { esperadas, enviadas_tisa } = newData.data[0]
 
-        if (this.spanValues.length === 0) {
-          this.spanValues.push({ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 });
+          this.esperadas = esperadas;
+          this.enviadas = enviadas_tisa;
+        } else {
+          this.esperadas = 0;
+          this.enviadas = 0;
         }
-
 
         this.updateChartData(newData.data);
 
-
-
-        // Actualizar arreglo para el chart
-        //this.chartData = [...newData.chartInfo];
-
-        // Forzar detección de cambios si es necesario
-         this.cdr.detectChanges();
+        this.cdr.detectChanges();
       }
-
-
     } catch (error) {
-      console.error('Error al actualizar datos:', error);
-      this.spanValues = [{ esperadas: 0, digitalizadas: 0, enviadas_tisa: 0 }];
+      this.esperadas = 0;
+      this.enviadas = 0;
     }
   }
 
@@ -370,209 +375,37 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     try {
 
 
-          // Convertimos cada observable a promesa con lastValueFrom (de RxJS)
-    const nombresArchivos = await lastValueFrom(this.configDigitalizadorService.getNombresArchivosUploadDigitalizador());
-    await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
+      // Convertimos cada observable a promesa con lastValueFrom (de RxJS)
+      const nombresArchivos = await lastValueFrom(this.configDigitalizadorService.getNombresArchivosUploadDigitalizador());
+      await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
 
-    const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
-    await this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(tiposDocs.data);
+      const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
+      await this.configDigitalizadorService.syncTipos(tiposDocs.data);
 
-    const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
-    await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
+      const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
+      await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
 
-    const extensiones = await lastValueFrom(this.configDigitalizadorService.getExtensiones());
-    await this.configDigitalizadorService.syncLocalDataBase_Extensiones(extensiones.data);
-
-      // this.configDigitalizadorService.getNombresArchivosUploadDigitalizador().subscribe({
-      //   next: (response) => {
-      //     this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(response.data);
-      //   },
-      //   error: (error) => {
-      //     console.error('Error al obtener Nombres Archivos Upload:', error);
-      //   }
-      // });
-
-      // this.configDigitalizadorService.getTiposDocsDigitalizador().subscribe({
-      //   next: (response) => {
-      //     this.configDigitalizadorService.syncLocalDataBase_TiposDocsDigitalizador(response.data);
-      //   },
-      //   error: (error) => {
-      //     console.error('Error al obtener Tipos Documentos Digitalizacion:', error);
-      //   }
-      // });
-
-      // this.configDigitalizadorService.getContenedores().subscribe({
-      //   next: (response) => {
-      //     this.configDigitalizadorService.syncLocalDataBase_Contenedores(response.data);
-      //   },
-      //   error: (error) => {
-      //     console.error('Error al obtener Contenedores:', error);
-      //   }
-      // });
-
-      // this.configDigitalizadorService.getExtensiones().subscribe({
-      //   next: (response) => {
-      //     this.configDigitalizadorService.syncLocalDataBase_Extensiones(response.data);
-      //   },
-      //   error: (error) => {
-      //     console.error('Error al obtener Extensiones:', error);
-      //   }
-      // });
+      const extensiones = await lastValueFrom(this.configDigitalizadorService.getExtensiones());
+      await this.configDigitalizadorService.syncLocalDataBase_Extensiones(extensiones.data);
     } catch (error) {
       console.error('Error en sincronización:', error);
       throw error; // Opcional: re-lanzar el error si quieres manejarlo fuera
     }
-
-
-  }
-
-  async creaCarpetaExpedientes() {
-    try {
-      // const hasPermission = await this.fileSystemService.checkPermissions(this.targetDirectory);
-      // if (!hasPermission) {
-      //   this.snackBar.open('No tiene permisos para acceder a esta ubicación', 'Cerrar', {
-      //     duration: 5000,
-      //     panelClass: ['error-snackbar']
-      //   });
-      //   return;
-      // }
-
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory
-        );
-        if (created) {
-          console.log(`Directorio creado: ${this.targetDirectory}`);
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        console.log(`El directorio ya existe: ${this.targetDirectory}`);
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
-  }
-
-  async creaCarpetaExpedientes_Digitalizados() {
-    try {
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory_Digitalizados
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory_Digitalizados
-        );
-        if (created) {
-          console.log(
-            `Directorio creado: ${this.targetDirectory_Digitalizados}`
-          );
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory_Digitalizados}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        console.log(
-          `El directorio ya existe: ${this.targetDirectory_Digitalizados}`
-        );
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory_Digitalizados}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
-  }
-
-  async creaCarpetaExpedientes_Enviados() {
-    try {
-      const exists = await this.fileSystemService.directoryExists(
-        this.targetDirectory_Enviados
-      );
-
-      if (!exists) {
-        const created = await this.fileSystemService.ensureDirectoryExists(
-          this.targetDirectory_Enviados
-        );
-        if (created) {
-          console.log(`Directorio creado: ${this.targetDirectory_Enviados}`);
-          this.snackBar.open(
-            `Directorio creado: ${this.targetDirectory_Enviados}`,
-            'Cerrar',
-            {
-              duration: 3000,
-            }
-          );
-        }
-      } else {
-        console.log(
-          `El directorio ya existe: ${this.targetDirectory_Enviados}`
-        );
-        this.snackBar.open(
-          `Directorio ya existe: ${this.targetDirectory_Enviados}`,
-          'Cerrar',
-          {
-            duration: 3000,
-          }
-        );
-      }
-    } catch (error) {
-      console.error('Error al verificar/crear el directorio:', error);
-      this.snackBar.open(`Error al crear directorio: ${error}`, 'Cerrar', {
-        duration: 5000,
-        panelClass: ['error-snackbar'],
-      });
-    }
   }
 
   showDialog() {
-    if (this.electronService.isElectron) {
-      console.log('SI es electron');
-      this.electronService.dialog
-        ?.showOpenDialog({
-          properties: ['openFile'],
-        })
-        .then((result) => {
-          if (!result.canceled) {
-            console.log('Archivo seleccionado:', result.filePaths[0]);
-          }
-        });
-    } else {
-      console.log('NO es electron');
-    }
+    if (!this.electronService.isElectron) return;
+
+    this.electronService.dialog
+      ?.showOpenDialog({
+        properties: ['openFile'],
+      })
+      .then((result) => {
+        if (!result.canceled) {
+          console.log('Archivo seleccionado:', result.filePaths[0]);
+        }
+      });
+
   }
 
   displayFn(curp: Curp): string {
@@ -620,121 +453,71 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   sourcePath = signal<string>('');
   destinationPath = signal<string>('');
   timeSync = signal<number>(10);
-  curps = signal<Curp[]>([
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-    { value: 'MUDE881028HJCXZR00', name: 'MUDE881028HJCXZR00' },
-    { value: 'BADN980406HJCSVS00', name: 'BADN980406HJCSVS00' },
-  ]);
 
   // Método para manejar la selección de la ruta de origen
   onSourcePathSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      console.log('entre al if');
       // Obtenemos la ruta del directorio seleccionado
       // Nota: debido a restricciones de seguridad del navegador, solo obtenemos el nombre
       // del directorio, no la ruta completa del sistema de archivos
       this.sourcePath.set(input.files[0].webkitRelativePath.split('/')[0]);
     } else {
-      console.log('entre al else');
       // Caso cuando el directorio está vacío
       // Esto solo funciona en algunos navegadores
       const path = input.value;
-      console.log(path);
       if (path.includes('\\')) {
         this.sourcePath.set(path.split('\\').slice(0, -1).join('\\'));
       } else if (path.includes('/')) {
         this.sourcePath.set(path.split('/').slice(0, -1).join('/'));
       }
     }
-    console.log(this.sourcePath);
   }
 
   // Método para manejar la selección de la ruta de destino
   onDestinationPathSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      console.log('entre al if');
       this.destinationPath.set(input.files[0].webkitRelativePath.split('/')[0]);
     } else {
-      console.log('entre al else');
-      // Caso cuando el directorio está vacío
-      // Esto solo funciona en algunos navegadores
       const path = input.value;
-      console.log(path);
       if (path.includes('\\')) {
         this.destinationPath.set(path.split('\\').slice(0, -1).join('\\'));
       } else if (path.includes('/')) {
         this.destinationPath.set(path.split('/').slice(0, -1).join('/'));
       }
     }
-    console.log(this.destinationPath);
   }
 
   // Método para guardar las rutas
-  async saveDirectories(): Promise<void> {
+  async saveConfig(): Promise<void> {
+    this.toggleModalConfiguraciones();
+
     try {
-      const ruta_origen = this.path.join(
-        this.targetDirectory,
-        this.sourcePath()
-      );
-      const ruta_destino = this.path.join(
-        this.targetDirectory,
-        this.destinationPath()
-      );
-      const tiempo_sync = this.getTiempoSyncSegValue();
+      const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+      const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+      const extension = this.formConfiguracion.get('extension')?.value;
+      const intervaloSincronizacion = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+      const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
-      await this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
-        ruta_digitalizados: ruta_origen,
-        ruta_enviados: ruta_destino,
-        tiempo_sync: tiempo_sync,
-      });
+      this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
+        ruta_digitalizados: rutaOrigen,
+        ruta_enviados: rutaDestino,
+        tiempo_sync: intervaloSincronizacion,
+        extension: extension,
+        peso_minimo: pesoMinimo
+      }).then(() => {
+        this.sinConfiguracion = false;
 
-      // Obtener configuración
-      const config =
-        await this.configDigitalizadorService.consultarConfigDigitalizador();
-      console.log(config);
-      if (config) {
         Swal.fire({
           title: 'Configuracion Almacenada Correctamente',
-          html: `
-            <b>Ruta Digitalizados:</b> ${
-              config.ruta_digitalizados || 'No definida'
-            }<br>
-            <b>Ruta Enviados:</b> ${config.ruta_enviados || 'No definida'}<br>
-            <b>Intervalo Sync:</b> ${
-              config.tiempo_sync
-                ? config.tiempo_sync + ' segundos'
-                : 'No definido'
-            }
-          `,
           icon: 'success',
           timer: 5000,
           showConfirmButton: false,
           confirmButtonText: 'Aceptar',
-        });
-        console.log('Configuración actual:', config);
-      } else {
-        Swal.fire({
-          title: 'Configuración no encontrada',
-          text: 'No existe configuración guardada',
-          icon: 'warning',
-          confirmButtonText: 'Aceptar',
-        });
-        console.log('No existe configuración guardada');
-      }
+        })
+      });
     } catch (error) {
       Swal.fire({
         title: 'Error',
@@ -744,23 +527,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       });
       console.error('Error al obtener configuración:', error);
     }
-
-    //console.log("Ruta origen:", this.sourcePath())
-    //console.log("Ruta destino:", this.destinationPath())
-    //alert(`Rutas guardadas:\nOrigen: ${this.sourcePath()}\nDestino: ${this.destinationPath()}`)
-  }
-
-  // Método para obtener el valor
-  getTiempoSyncSegValue() {
-    const value = this.tiempoSyncSegRef.nativeElement.valueAsNumber;
-    console.log('Valor numérico:', value);
-    return value;
-  }
-
-  // Método para el evento change
-  onTiempoSyncSegChange() {
-    const value = this.tiempoSyncSegRef.nativeElement.value;
-    console.log('Valor como string:', value);
   }
 
   // Método para abrir el selector de archivos programáticamente
@@ -768,19 +534,34 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     document.getElementById(inputId)?.click();
   }
 
-  startMonitoreo() {
+  iniciarMonitor(): void {
+    const intervalo = this.formConfiguracion.get('intervaloSincronizacion')?.value;
+
+    this.monitorSubscription = interval(intervalo * 1000).subscribe(() => {
+      this.procesarArchivos();
+    });
+
+    // Procesar inmediatamente al iniciar
+    this.procesarArchivos();
     this.isMonitoring = true;
-    console.log('START Presionado');
-    this.iniciarMonitor();
   }
 
-  stopMonitoreo() {
-    this.isMonitoring = false;
-    console.log('STOP Presionado');
-    this.detenerMonitor();
+  detenerMonitor(): void {
+    if (this.monitorSubscription) {
+      this.monitorSubscription.unsubscribe();
+      this.isMonitoring = false;
+    }
   }
 
-  buscarCurps() {}
+  toggleMonitoreo() {
+    if (this.sinConfiguracion)
+      return this.detenerMonitor();
+
+    if (this.isMonitoring)
+      this.detenerMonitor();
+    else
+      this.iniciarMonitor();
+  }
 
   isValidField(fieldName: string): boolean | null {
     return (
@@ -815,111 +596,24 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.myForm.get('curp')?.setValue(input.value);
   }
 
-  tipos_documento_dig: any[] = [];
+  tipos: any[] = [];
   contenedores: any[] = [];
   extensiones: any[] = [];
 
-  selectedValue_2: string = '';
-  selectedValue_3: string = '';
-  selectedValue_4: string = '';
-  selectedValue_5: string = '';
-
-  selectedValue2() {
-    this.selectedValue_2 = this.myForm_Config.get('id_tipo_doc_dig')?.value;
-
-    switch (Number(this.selectedValue_2)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  selectedValue3() {
-    this.selectedValue_3 = this.myForm_Upload.get('id_tipo_doc_dig')?.value;
-
-    switch (Number(this.selectedValue_3)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  selectedValue4() {
-    this.selectedValue_4 = this.myForm_Footer.get('id_contenedor')?.value;
-
-    switch (Number(this.selectedValue_4)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  selectedValue5() {
-    this.selectedValue_5 = this.myForm_Upload.get('id_extension')?.value;
-
-    switch (Number(this.selectedValue_5)) {
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        break;
-      case 4:
-        break;
-      case 5:
-        break;
-
-      default:
-        break;
-    }
-  }
-
-
-
-  getNombresArchivosUploadDigitalizador(): void {
+  getGrupos(body: { tipo?: number, fecha?: string | null | undefined }): void {
     this.configDigitalizadorService
       .consultarNombresArchivosUpload()
-      .then((nombres_archivos_upload) => {
-        this.nombres_archivos_upload = nombres_archivos_upload;
+      .then((grupos) => {
+        this.grupos = grupos;
       })
       .catch((error) => console.error('Error al obtener los nombres archivos upload:', error));
   }
 
-  getTiposDocDig(): void {
+  getTipos(): void {
     this.configDigitalizadorService
-      .consultarTiposDocsDigitalizador()
-      .then((tipos_documento_dig) => {
-        this.tipos_documento_dig = tipos_documento_dig;
+      .contultarTipos()
+      .then((tipos) => {
+        this.tipos = tipos;
       })
       .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
   }
@@ -965,42 +659,33 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
-      const file = event.target.files[0];
-      console.log(file,'file');
-      if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
-        this.lblUploadingFile = file.name;
-        this.documentFile.file = file;
-        // No establecer el valor del campo de entrada de archivo directamente
-        // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
-        this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
-        if(this.selectedValue_3 != null){
-          let tipo_doc = Number(this.selectedValue_3);
-          let ext = this.selectedValue_5;
-          this.importarExcel_ArchivosDigitalizar(this.documentFile.file,tipo_doc,ext);
-        }else{
-          Swal.fire('Error', 'Por favor Selecciona el tipo de documento', 'error');
-        }
-      } else {
-        Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
-        this.lblUploadingFile = '';
-        this.documentFile.file = null;
-        // No establecer el valor del campo de entrada de archivo directamente
-        // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
-        this.documentFileLoaded = false; // Marcar que no hay archivo cargado
-      }
+    const file = event.target.files[0];
+    if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
     }
+  }
 
 
 
 
 
-    async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
-      const archivo = file; //event.target.files[0];
-      if (archivo) {
-        await this.utilService.leerExcel_ArchivosDigitalizar(archivo,tipo_doc,ext).then(
+  async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
+    const archivo = file; //event.target.files[0];
+    if (archivo) {
+      await this.utilService.leerExcel_ArchivosDigitalizar(archivo, tipo_doc, ext).then(
         (response) => {
-          if(response){
-            console.log('Respuesta del servidor:', response);
+          if (response) {
             this.mensaje = 'Datos importados exitosamente.';
 
             this.datosExcel = [];
@@ -1012,7 +697,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
               timer: 2000,
               showConfirmButton: false
             });
-          }else{
+          } else {
             console.error('Error al enviar los datos:', response);
             this.mensaje = 'Hubo un error al importar los datos.';
             Swal.fire({
@@ -1023,54 +708,61 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
             });
           }
         }
-        );
+      );
 
-      }
     }
+  }
 
-    @ViewChild('fileInput') fileInput!: ElementRef;
+  @ViewChild('fileInput') fileInput!: ElementRef;
 
-    resetForm() {
-      this.myForm_Upload.reset();
-      this.lblUploadingFile = '';
-      this.fileInput.nativeElement.value = ''; // Resetear solo el input file
-    }
-
-
-    ////////////////////////////////////////////////////
-    /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
-    ////////////////////////////////////////////////////
+  resetForm() {
+    this.myForm_Upload.reset();
+    this.lblUploadingFile = '';
+    this.fileInput.nativeElement.value = ''; // Resetear solo el input file
+  }
 
 
-    iniciarMonitor(): void {
-      //this.logger.info('Iniciando monitor de directorios...');
-      this.monitorSubscription = interval(this.intervalo).subscribe(() => {
-        this.procesarArchivos();
+  ////////////////////////////////////////////////////
+  /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
+  ////////////////////////////////////////////////////
+
+  procesarArchivos(): void {
+    const rutaOrigen = this.formConfiguracion.get('rutaOrigen')?.value;
+    const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
+    const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
+    const extension = this.formConfiguracion.get('extension')?.value;
+
+    this.digitalizarArchivosService.procesarArchivosEnParalelo(rutaOrigen, rutaDestino, pesoMinimo, extension)
+      .subscribe({
+        next: (resultados) => {
+          const exitosos = resultados.filter(r => r).length;
+
+          console.log('Resultados: ', resultados);
+          console.log('Exitosos: ', exitosos);
+        },
+        error: (error) => {
+          console.log(error);
+        }
       });
+  }
 
-      // Procesar inmediatamente al iniciar
-      this.procesarArchivos();
+  getArchivosEsperados() {
+    const searchValue = this.formBusqueda.get('search')?.value || '';
+
+    this.digitalizarArchivosService.getArchivosEsperados({ search: searchValue }).subscribe({
+      next: response => {
+        this.archivosEsperados = response.data;
+
+        this.cdr.detectChanges();
+      },
+      error: error => { }
+    })
+  }
+
+  async selectFolder(field: 'rutaOrigen' | 'rutaDestino') {
+    const folderPath = await this.electronService.selectFolder();
+    if (folderPath) {
+      this.formConfiguracion.get(field)?.setValue(folderPath);
     }
-
-    detenerMonitor(): void {
-      if (this.monitorSubscription) {
-        this.monitorSubscription.unsubscribe();
-        //this.logger.info('Monitor de directorios detenido');
-      }
-    }
-
-    procesarArchivos(): void {
-      //this.logger.info('Buscando archivos para procesar...');
-      this.digitalizarArchivosService.procesarArchivosEnParalelo(this.carpetaOrigen, this.carpetaDestino)
-        .subscribe({
-          next: (resultados) => {
-            const exitosos = resultados.filter(r => r).length;
-            //this.logger.info(`Proceso completado. ${exitosos}/${resultados.length} archivos procesados con éxito.`);
-          },
-          error: (error) => {
-            //this.logger.error(`Error en el proceso general: ${error.message}`);
-          }
-        });
-    }
-
+  }
 }

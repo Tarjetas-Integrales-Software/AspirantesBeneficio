@@ -8,7 +8,6 @@ import {
   ChangeDetectorRef,
   ElementRef,
 } from '@angular/core';
-const { ipcRenderer } = (window as any).require('electron');
 import { FormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { DatePipe, CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -50,8 +49,18 @@ export interface AspiranteBeneficio {
   id: number;
   id_foto: string;
   name: string;
-  progress: string;
-  fruit: string;
+  curp: string;
+  nombreBeneficiario: string;
+  fechaExpedicion: string;
+  telefono: string;
+}
+
+interface Printer {
+  name: string;
+  displayName: string;
+  description?: string;
+  status: number;
+  isDefault: boolean;
 }
 
 @Component({
@@ -298,26 +307,48 @@ export class ImpresionCredencialComponent implements OnInit, AfterViewInit {
     this.getAspirantesBeneficio();
   }
 
-  async getPrinters() {
-    this.printers = await ipcRenderer.invoke('get-printers');
-    console.log(this.printers.length, 'printer-lenght');
-    if (this.printers.length > 0) {
-      this.selectedPrinter = this.printers[0].name;
-      console.log(this.printers, 'printers');
+  async getPrinters(): Promise<Printer[]> {
+    if (!window.electronAPI) {
+      console.warn('Electron API no disponible - Modo navegador');
+      return []; // Fallback para desarrollo
+    }
+
+    try {
+      this.printers = await window.electronAPI.getPrinters();
+
+      if (this.printers.length > 0) {
+        this.selectedPrinter = this.printers[0].name;
+        console.log(this.printers, 'printers');
+      } else {
+        console.warn('No se encontraron impresoras');
+      }
+
+      return this.printers;
+    } catch (error) {
+      console.error('Error al obtener impresoras:', error);
+      return []; // Fallback seguro
     }
   }
 
   async print(aspirante: AspiranteBeneficio) {
     const photoPath = await this.getAspiranteFotoId(aspirante.id_foto);
 
+    if (!window.electronAPI) {
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
+    }
+
     try {
       const _impresora = this.formImpresion.get('impresora')?.value;
 
-        ipcRenderer.send('print-id-card', {
-          ...aspirante,
-          photoPath: photoPath,
-          printer: _impresora
-        });
+      if (!_impresora) {
+        throw new Error('No se ha seleccionado ninguna impresora');
+      }
+
+      await window.electronAPI.printIdCard({
+        ...aspirante,
+        photoPath: photoPath || '',
+        printer: _impresora
+      }, false);
 
       this.editAspiranteImpreso(aspirante);
 
