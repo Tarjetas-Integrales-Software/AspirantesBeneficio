@@ -74,13 +74,16 @@
             </mat-form-field></div>
           <div class="form__item">
             <mat-form-field class="w-100">
-              <mat-label>Tipo</mat-label>
-              <mat-select formControlName="tipo">
+              <mat-label>Grupo</mat-label>
+              <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('grupo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (tdd of tipos; track tdd) {
                 <mat-option [value]="tdd.id">{{tdd.tipo_doc_dig}}</mat-option>
                 }
               </mat-select>
+              <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
+                Selecciona un tipo y fechas válidas para habilitar
+              </mat-hint>
             </mat-form-field>
           </div>
         </div>
@@ -90,8 +93,8 @@
               <mat-label>Grupo</mat-label>
               <mat-select class="w-full" formControlName="grupo">
                 <mat-option value="">- Selecciona una opción -</mat-option>
-                @for (nau of grupos; track nau) {
-                <mat-option [value]="nau.nombre">{{nau.nombre}}</mat-option>
+                @for (grupo of grupos; track grupo) {
+                <mat-option [value]="grupo.nombre_archivo_upload">{{grupo.nombre_archivo_upload}}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
@@ -282,8 +285,8 @@
               <mat-form-field class="w-full">
                 <mat-label>Tipo Documento a Digitalizar</mat-label>
                 <mat-select class="w-full" formControlName="id_tipo_doc_dig">
-                  <mat-option class="w-full" *ngFor="let tipo of tipos"
-                    [value]="tipo.id">{{ tipo.tipo_doc_dig }}</mat-option>
+                  <mat-option class="w-full" *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.tipo_doc_dig
+                    }}</mat-option>
                 </mat-select>
               </mat-form-field>
 

@@ -108,6 +108,27 @@ export class ConfigDigitalizadorService {
     }
   }
 
+  async syncGrupos(datos: any[]): Promise<void> {
+    for (const item of datos) {
+      const sql = `
+        INSERT OR REPLACE INTO digitalizador_grupos (
+          id,
+          id_tipo_documento_digitalizacion,
+          nombre_archivo_upload,
+          created_at
+        ) VALUES (?, ?, ?, ?)
+      `;
+      const params = [
+        item.id,
+        item.id_tipo_documento_digitalizacion,
+        item.nombre_archivo_upload,
+        item.created_at,
+      ];
+
+      await this.databaseService.execute(sql, params);
+    }
+  }
+
   async contultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
       SELECT id, tipo_doc_dig
@@ -308,16 +329,31 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async consultarNombresArchivosUpload(): Promise<{ id: number; nombre: string }[]> {
-    const sql = `
-      SELECT id, nombre
-      FROM ct_nombres_archivos_upload
-      WHERE deleted_at IS NULL
-      ORDER BY id;
-    `;
+  async consultarNombresArchivosUpload(body: {
+    id_tipo_documento_digitalizacion: string,
+    fechaInicio: string,  // Formato: 'YYYY-MM-DD'
+    fechaFin: string      // Formato: 'YYYY-MM-DD'
+  }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
+    console.log('body: ', body);
 
-    // Ejecutar la consulta
-    const resultados = await this.databaseService.query(sql);
-    return resultados;
+    const sql = `
+    SELECT id, nombre_archivo_upload
+    FROM digitalizador_grupos
+    WHERE id_tipo_documento_digitalizacion = ? 
+      AND datetime(created_at) >= datetime(?, 'start of day')
+      AND datetime(created_at) <= datetime(?, 'start of day', '+1 day', '-1 second')
+    ORDER BY id;
+  `;
+
+    const params = [
+      body.id_tipo_documento_digitalizacion.toString(),
+      body.fechaInicio,
+      body.fechaFin
+    ];
+
+    const request = await this.databaseService.query(sql, params);
+    console.log('request: ', request);
+    
+    return request 
   }
 }

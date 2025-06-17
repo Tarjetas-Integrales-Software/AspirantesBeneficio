@@ -24,7 +24,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile } from 'rxjs';
+import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -126,7 +127,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
       tipo: '',
-      grupo: '',
+      grupo: { value: '', disabled: true },
       fechaInicio: new Date(),
       fechaFin: new Date(),
     });
@@ -155,6 +156,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
         this.getContenedores();
         this.getTipos();
+        this.getGruposAll();
         this.getExtensiones();
         this.getArchivosEsperados();
 
@@ -200,9 +202,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
       if (tipoId) {
-        const fechaDigitalizacion = this.formFiltrosDigitalizador.get('fechaDigitalizacion')?.value;
+        const fechaInicio = this.formFiltrosDigitalizador.get('fechaInicio')?.value;
+        const fechaFin = this.formFiltrosDigitalizador.get('fechaFin')?.value;
 
-        this.getGrupos({ tipo: tipoId, fecha: fechaDigitalizacion?.toISOString().substring(0, 10) });
+        this.getGrupos({ id_tipo_documento_digitalizacion: tipoId, fechaInicio: fechaInicio?.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -211,8 +214,20 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.formFiltrosDigitalizador.get('fechaInicio')?.valueChanges.subscribe(fecha => {
       if (fecha) {
         const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+        const fechaFin = this.formFiltrosDigitalizador.get('fechaFin')?.value;
 
-        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), tipo: tipo });
+        this.getGrupos({ fechaInicio: fecha.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
+    this.formFiltrosDigitalizador.get('fechaFin')?.valueChanges.subscribe(fecha => {
+      if (fecha) {
+        const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+        const fechaInicio = this.formFiltrosDigitalizador.get('fechaInicio')?.value;
+
+        this.getGrupos({ fechaFin: fecha.toISOString().substring(0, 10), fechaInicio: fechaInicio?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -222,6 +237,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       if (grupo) {
 
       }
+    });
+
+    this.shouldDisableGrupo$.subscribe(shouldDisable => {
+      const grupoControl = this.formFiltrosDigitalizador.get('grupo');
+      shouldDisable ? grupoControl?.disable() : grupoControl?.enable();
     });
   }
 
@@ -253,7 +273,18 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     id_contenedor: ['', [Validators.required]],
   });
 
-
+  get shouldDisableGrupo$(): Observable<boolean> {
+    return combineLatest([
+      this.formFiltrosDigitalizador.get('tipo')!.valueChanges,
+      this.formFiltrosDigitalizador.get('fechaInicio')!.valueChanges,
+      this.formFiltrosDigitalizador.get('fechaFin')!.valueChanges
+    ]).pipe(
+      map(([tipo, fechaInicio, fechaFin]) => {
+        return tipo === '' || !fechaInicio || !fechaFin;
+      }),
+      distinctUntilChanged()
+    );
+  }
 
   toggleModalConfiguraciones() {
     this.showModal_configuraciones = !this.showModal_configuraciones;
@@ -381,6 +412,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
       const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
       await this.configDigitalizadorService.syncTipos(tiposDocs.data);
+
+      this.digitalizarArchivosService.getGruposAll().subscribe({
+        next: (response) => {
+          this.configDigitalizadorService.syncGrupos(response.data);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
 
       const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
       await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
@@ -600,9 +640,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   contenedores: any[] = [];
   extensiones: any[] = [];
 
-  getGrupos(body: { tipo?: number, fecha?: string | null | undefined }): void {
+  getGrupos(body: { id_tipo_documento_digitalizacion: string, fechaInicio: string, fechaFin: string }): void {
     this.configDigitalizadorService
-      .consultarNombresArchivosUpload()
+      .consultarNombresArchivosUpload(body)
       .then((grupos) => {
         this.grupos = grupos;
       })
@@ -610,6 +650,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   getTipos(): void {
+    this.configDigitalizadorService
+      .contultarTipos()
+      .then((tipos) => {
+        this.tipos = tipos;
+      })
+      .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
+  }
+
+  getGruposAll(): void {
     this.configDigitalizadorService
       .contultarTipos()
       .then((tipos) => {

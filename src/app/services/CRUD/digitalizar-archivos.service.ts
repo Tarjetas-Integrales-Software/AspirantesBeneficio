@@ -48,7 +48,7 @@ export class DigitalizarArchivosService {
   }
 
   getGruposAll(): Observable<any> {
-    return this.http.get(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion_search');
+    return this.http.get(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion_grupos');
   }
 
   edit_archivo_esperado(nombre_archivo: string, status: number): Observable<any> {
