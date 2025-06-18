@@ -1,4 +1,4 @@
-<main class="container py-5 mx-auto">
+<main class="container main py-5 mx-auto">
   <section class="digitalizador">
     <div class="digitalizador__toolbar">
       <div class="toolbar__side">
@@ -61,8 +61,9 @@
     </div>
     <div class="digitalizador__estado">
       <form [formGroup]="formFiltrosDigitalizador" class="form" style="max-width: 100%;">
-        <div class="form__row">
-          <div class="form__item"><mat-form-field class="w-100">
+        <div class="form__row form__row--responsive">
+          <div class="form__item">
+            <mat-form-field class="w-full">
               <mat-label>Fecha digitalización</mat-label>
               <mat-date-range-input [rangePicker]="picker">
                 <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
@@ -71,9 +72,10 @@
               <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
               <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
               <mat-date-range-picker #picker></mat-date-range-picker>
-            </mat-form-field></div>
+            </mat-form-field>
+          </div>
           <div class="form__item">
-            <mat-form-field class="w-100">
+            <mat-form-field class="w-full">
               <mat-label>Grupo</mat-label>
               <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('grupo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
@@ -91,7 +93,7 @@
           <div class="form__item">
             <mat-form-field class="w-full">
               <mat-label>Grupo</mat-label>
-              <mat-select class="w-full" formControlName="grupo">
+              <mat-select formControlName="grupo">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (grupo of grupos; track grupo) {
                 <mat-option [value]="grupo.nombre_archivo_upload">{{grupo.nombre_archivo_upload}}</mat-option>
