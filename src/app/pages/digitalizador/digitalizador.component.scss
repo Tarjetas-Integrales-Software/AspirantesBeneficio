@@ -6,9 +6,10 @@
   width: 100%;
 }
 
-main.container {
+.main {
   display: flex;
-  column-gap: 2rem;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .digitalizador {
@@ -71,8 +72,8 @@ main.container {
 
   &__row {
     display: flex;
-    justify-content: space-between;
-    column-gap: 1rem;
+    flex-direction: column;
+    row-gap: 1rem;
   }
 
   &__item {
@@ -116,5 +117,31 @@ main.container {
     align-items: flex-start;
     justify-content: flex-start;
     line-height: 1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .main {
+    flex-direction: row;
+    column-gap: 2rem;
+
+    &> :first-child {
+      flex: 2;
+    }
+
+    &> :last-child {
+      flex: 1;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .form {
+
+    &__row {
+      flex-direction: row;
+      justify-content: space-between;
+      column-gap: 1rem;
+    }
   }
 }

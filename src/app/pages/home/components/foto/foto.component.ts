@@ -14,7 +14,6 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DocumentosService } from "../../../../services/CRUD/documentos.service";
 import { AspirantesBeneficioDocumentosService } from "../../../../services/CRUD/aspirantes-beneficio-documentos.service";
 
-const { ipcRenderer } = (window as any).require("electron");
 @Component({
   selector: 'fotoComponent',
   imports: [CommonModule, FormsModule, MatCheckboxModule],
