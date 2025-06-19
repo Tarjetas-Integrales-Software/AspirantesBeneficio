@@ -542,6 +542,23 @@ function initializeDatabase() {
       created_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS ct_nombres_archivos_upload (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_status INTEGER NULL,
+      fecha TEXT NULL,
+      tipo TEXT NULL,
+      archivo TEXT NULL,
+      path TEXT NULL,
+      archivoOriginal TEXT NULL,
+      extension TEXT NULL,
+      created_id INTEGER,
+      updated_id INTEGER,
+      deleted_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);

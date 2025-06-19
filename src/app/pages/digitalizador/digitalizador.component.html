@@ -31,7 +31,6 @@
           </div>
           <div class="monitoring__text">
             <p class="">Monitoreando...</p>
-            <small>Procesando: </small>
           </div>
         </div>
       </div>
@@ -76,16 +75,13 @@
           </div>
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Grupo</mat-label>
-              <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('grupo')?.disabled ?? false">
+              <mat-label>Tipos</mat-label>
+              <mat-select formControlName="tipo">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (tdd of tipos; track tdd) {
                 <mat-option [value]="tdd.id">{{tdd.tipo_doc_dig}}</mat-option>
                 }
               </mat-select>
-              <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
-                Selecciona un tipo y fechas válidas para habilitar
-              </mat-hint>
             </mat-form-field>
           </div>
         </div>
@@ -93,12 +89,15 @@
           <div class="form__item">
             <mat-form-field class="w-full">
               <mat-label>Grupo</mat-label>
-              <mat-select formControlName="grupo">
+              <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('tipo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (grupo of grupos; track grupo) {
                 <mat-option [value]="grupo.nombre_archivo_upload">{{grupo.nombre_archivo_upload}}</mat-option>
                 }
               </mat-select>
+              <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
+                Selecciona un tipo y fechas válidas para habilitar
+              </mat-hint>
             </mat-form-field>
           </div>
         </div>

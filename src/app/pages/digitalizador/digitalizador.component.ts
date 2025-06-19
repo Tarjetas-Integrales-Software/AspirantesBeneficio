@@ -235,7 +235,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.formFiltrosDigitalizador.get('grupo')?.valueChanges.subscribe(grupo => {
       if (grupo) {
-
+        this.updateData();
       }
     });
 
@@ -299,10 +299,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   initializeChart(): void {
     if (this.chart) {
-      this.chart.destroy(); // Destruye el gráfico anterior si existe
+      this.chart.destroy();
     }
-
-    //this.chart = new Chart('myBarChart', this.bar);
 
     const ctx = this.myBarChart.nativeElement.getContext('2d');
     this.chart = new Chart(ctx, {
@@ -310,9 +308,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       data: {
         labels: this.chartData.map(item => item.label), // Ajusta según tu estructura de datos
         datasets: [{
-          label: '',
+          label: 'Estado de digitalización',
           data: this.chartData.map(item => item.value), // Ajusta según tu estructura
           backgroundColor: [
+            '#6B7280',
             '#6B7280',
             '#14B8A6',
           ],
@@ -322,6 +321,26 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       },
       options: {
         responsive: true,
+        scales: {
+          x: {
+            grid: {
+              display: false,    // Quita las líneas verticales de la cuadrícula
+            },
+            ticks: {
+              display: true,     // Muestra los números del eje X
+              stepSize: 1
+            }
+          },
+          y: {
+            grid: {
+              display: false,    // Quita las líneas horizontales de la cuadrícula
+            },
+            ticks: {
+              display: true,     // Muestra los números del eje Y
+              stepSize: 1,
+            }
+          }
+        },
         plugins: {
           legend: {
             position: 'top',
@@ -344,6 +363,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         value: this.chartData[0]?.esperadas
       },
       {
+        label: 'Digitalizadas',
+        value: 0
+      },
+      {
         label: 'Enviadas',
         value: this.chartData[0]?.enviadas_tisa
       }
@@ -364,26 +387,29 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   async updateData(): Promise<void> {
     try {
-      // Obtener datos actualizados
-      //let nombre_archivo_upload = 'ArchivosEsperadosDigitalizar_20250509_170514.pdf';
-      let nombre_archivo_upload = this.nombre_archivo_upload_selected;
+      const nombre_archivo_upload = this.formFiltrosDigitalizador.get('grupo')?.value || '';
 
-      if (this.nombre_archivo_upload_selected != '') {
-        const newData = await this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).toPromise();
+      if (nombre_archivo_upload != '') {
+        this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).subscribe({
+          next: (response) => {
+            if (response.data) {
+              const { esperadas, enviadas_tisa } = response.data[0]
 
-        if (newData.data) {
-          const { esperadas, enviadas_tisa } = newData.data[0]
+              this.esperadas = esperadas;
+              this.enviadas = enviadas_tisa;
 
-          this.esperadas = esperadas;
-          this.enviadas = enviadas_tisa;
-        } else {
-          this.esperadas = 0;
-          this.enviadas = 0;
-        }
-
-        this.updateChartData(newData.data);
-
-        this.cdr.detectChanges();
+              this.updateChartData(response.data);
+              this.cdr.detectChanges();
+            } else {
+              this.esperadas = 0;
+              this.enviadas = 0;
+            }
+          },
+          error: (error) => {
+            this.esperadas = 0;
+            this.enviadas = 0;
+          }
+        })
       }
     } catch (error) {
       this.esperadas = 0;
@@ -785,9 +811,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (resultados) => {
           const exitosos = resultados.filter(r => r).length;
-
-          console.log('Resultados: ', resultados);
-          console.log('Exitosos: ', exitosos);
         },
         error: (error) => {
           console.log(error);
