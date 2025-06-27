@@ -106,8 +106,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   private updateSubscription: Subscription = new Subscription();
   private isAlive = true; // Flag para controlar la suscripción
 
-  private nombre_archivo_upload_selected = ''
-
   constructor(
     private cdr: ChangeDetectorRef,
     private fileSystemService: FileSystemService,
@@ -141,7 +139,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       rutaDestino: '',
       tipo: '',
       intervaloSincronizacion: 10,
-      pesoMinimo: 300
+      pesoMinimo: 300,
+      regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -191,7 +190,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     } else this.sinConfiguracion = false;
 
-    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo } = await config
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp } = await config
 
     this.formConfiguracion = this.fb.nonNullable.group({
       extension: extension,
@@ -200,6 +199,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       intervaloSincronizacion: tiempo_sync,
       pesoMinimo: peso_minimo,
       tipo: tipo,
+      regexCurp: regex_curp
     });
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
@@ -567,6 +567,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const intervaloSincronizacion = this.formConfiguracion.get('intervaloSincronizacion')?.value;
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
       const tipo = this.formConfiguracion.get('tipo')?.value;
+      const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
@@ -576,6 +577,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         extension: extension,
         peso_minimo: pesoMinimo,
         tipo: tipo,
+        regexCurp: regexCurp,
       }).then(() => {
         this.sinConfiguracion = false;
 
@@ -682,8 +684,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.configDigitalizadorService
       .consultarTipos()
       .then((tipos) => {
-        console.log(tipos);
-
         this.tipos = tipos;
       })
       .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
@@ -802,11 +802,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
     const extension = this.formConfiguracion.get('extension')?.value;
     const tipo = this.formConfiguracion.get('tipo')?.value;
+    const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
 
-    this.digitalizarArchivosService.procesarArchivosBaseLocal(rutaOrigen, rutaDestino, pesoMinimo, extension, tipo)
+    this.digitalizarArchivosService.procesarArchivosBaseLocal(rutaOrigen, pesoMinimo, extension, tipo, regexCurp)
       .subscribe({
         next: (resultados) => {
-          console.log('Procesando: ', rutaOrigen, rutaDestino, pesoMinimo, extension, tipo);
         },
         error: (error) => {
           console.log(error);

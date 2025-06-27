@@ -64,24 +64,55 @@ export class DigitalizarArchivosService {
     return this.http.post(environment.apiUrl + '/lic/aspben/digitalizar_archivos/delete', { id: id });
   }
 
-  extraerCURP(texto: string): string | string {
-    // Expresión regular para validar CURP
-    const regexCURP = /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/;
+  private createRegexFromString(regexString: string): RegExp | null {
+    try {
+      // Eliminar espacios en blanco al inicio/final
+      const trimmedString = regexString.trim();
 
-    // Buscar coincidencia en el texto
-    const coincidencia = texto.match(regexCURP);
+      // Caso 1: Formato con barras (/patrón/banderas)
+      if (trimmedString.startsWith('/')) {
+        const lastSlashIndex = trimmedString.lastIndexOf('/');
 
-    // Si se encontró una coincidencia, devolver la CURP (grupo 1 de la coincidencia)
-    return coincidencia ? coincidencia[1].toUpperCase() : '';
+        // Si no hay segunda barra (ej: "/pattern")
+        if (lastSlashIndex <= 0) return null;
+
+        const pattern = trimmedString.slice(1, lastSlashIndex);
+        const flags = trimmedString.slice(lastSlashIndex + 1);
+
+        return pattern ? new RegExp(pattern, flags) : null;
+      }
+      // Caso 2: Formato simple (patrón sin banderas)
+      else {
+        return trimmedString ? new RegExp(trimmedString) : null;
+      }
+    } catch (error) {
+      console.error('Error al crear RegExp:', error);
+      return null;
+    }
   }
 
-  procesarArchivosBaseLocal(carpetaOrigen: string, carpetaDestino: string, pesoMinimo: number, extension: string, tipo: string) {
+  extraerCURP(texto: string, regexCURP: RegExp | string): string {
+    let regex: RegExp;
+
+    if (typeof regexCURP === 'string') {
+      const createdRegex = this.createRegexFromString(regexCURP);
+      if (!createdRegex) return '';
+      regex = createdRegex;
+    } else {
+      regex = regexCURP;
+    }
+
+    const coincidencia = texto.match(regex);
+    return coincidencia?.[1]?.toUpperCase() || '';
+  }
+
+  procesarArchivosBaseLocal(carpetaOrigen: string, pesoMinimo: number, extension: string, tipo: string, regexCurp: RegExp) {
     return from(this.verificarYCargarArchivos(carpetaOrigen, pesoMinimo, extension)).pipe(
       switchMap(archivos => {
         const procesos = archivos.map(archivo => {
           const ahora = new Date();
           const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
-          const curpParseada = this.extraerCURP(path.basename(archivo));
+          const curpParseada = this.extraerCURP(path.basename(archivo), regexCurp);
           const carpetaDestino = path.join(this.appPath, 'archivosDigitalizados');
 
           this.guardarArchivoBaseLocal({
@@ -119,9 +150,7 @@ export class DigitalizarArchivosService {
       console.warn('No hay archivos para procesar');
     }
 
-    console.log('Procesando archivos...');
     archivos.map(archivo => {
-      console.log('Procesando archivo:', archivo);
       return this.procesarArchivo(archivo, carpetaOrigen, carpetaDestino);
     });
   }
@@ -170,8 +199,6 @@ export class DigitalizarArchivosService {
   }
 
   private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string): void {
-    console.log(archivo, carpetaOrigen, carpetaDestino);
-
     try {
       const [curp, extension] = path.basename(archivo).split('.')
 
@@ -192,8 +219,6 @@ export class DigitalizarArchivosService {
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
           next: (response) => {
-            console.log('Archivo subido correctamente:', response);
-
             const destino = path.join(carpetaDestino, path.basename(archivo));
             fs.renameSync(archivo, destino);
           },

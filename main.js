@@ -150,6 +150,12 @@ function addColumnIfNotExists() {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo REAL NULL;").run();
     }
 
+    // Verificar columna 'regex_curp'
+    const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
+    if (!columnExists_regex_curp) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
+    }
+
   } catch (error) {
     console.error('Error altering table:', error);
   }

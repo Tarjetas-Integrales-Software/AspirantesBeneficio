@@ -219,15 +219,21 @@
               </div>
               <div class="form__row">
                 <div class="form__item">
-                  <div class="form__item">
-                    <mat-form-field class="w-full">
-                      <mat-label>Extensión</mat-label>
-                      <mat-select class="" formControlName="extension">
-                        <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
-                          extension.nombre }}</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
+                  <mat-form-field class="w-full">
+                    <mat-label>Expresión Regular</mat-label>
+                    <input matInput formControlName="regexCurp" />
+                  </mat-form-field>
+                </div>
+              </div>
+              <div class="form__row">
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Extensión</mat-label>
+                    <mat-select class="" formControlName="extension">
+                      <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
+                        extension.nombre }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
                 </div>
                 <div class="form__item">
                   <mat-form-field class="w-full">

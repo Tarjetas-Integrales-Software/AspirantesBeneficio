@@ -34,6 +34,7 @@ export class ConfigDigitalizadorService {
     extension: string;
     peso_minimo: number;
     tipo: string;
+    regexCurp: string;
   }): Promise<any> {
     const insertSql = `
     INSERT OR REPLACE INTO sy_config_digitalizador (
@@ -43,8 +44,9 @@ export class ConfigDigitalizadorService {
       tiempo_sync,
       extension,
       peso_minimo,
-      tipo
-    ) VALUES (?, ?, ?, ?, ?, ?, ?);
+      tipo,
+      regex_curp
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
   `;
     const params = [
       1,
@@ -53,7 +55,8 @@ export class ConfigDigitalizadorService {
       config.tiempo_sync,
       config.extension,
       config.peso_minimo,
-      config.tipo
+      config.tipo,
+      config.regexCurp
     ];
     return await this.databaseService.execute(insertSql, params);
   }
@@ -312,8 +315,6 @@ export class ConfigDigitalizadorService {
     fechaInicio: string,  // Formato: 'YYYY-MM-DD'
     fechaFin: string      // Formato: 'YYYY-MM-DD'
   }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
-    console.log('body: ', body);
-
     const sql = `
     SELECT 
       MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
@@ -332,9 +333,6 @@ export class ConfigDigitalizadorService {
       body.fechaFin
     ];
 
-    const request = await this.databaseService.query(sql, params);
-    console.log('request: ', request);
-
-    return request
+    return await this.databaseService.query(sql, params);
   }
 }
