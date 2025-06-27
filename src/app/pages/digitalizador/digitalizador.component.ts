@@ -449,6 +449,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         }
       })
 
+      this.digitalizarArchivosService.getGruposAll().subscribe({
+        next: (response) => {
+          this.configDigitalizadorService.syncGrupos(response.data);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
+
       const contenedores = await lastValueFrom(this.configDigitalizadorService.getContenedores());
       await this.configDigitalizadorService.syncLocalDataBase_Contenedores(contenedores.data);
 
@@ -681,6 +690,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   getTipos(): void {
+    this.configDigitalizadorService
+      .consultarTipos()
+      .then((tipos) => {
+        this.tipos = tipos;
+      })
+      .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
+  }
+
+  getGruposAll(): void {
     this.configDigitalizadorService
       .consultarTipos()
       .then((tipos) => {

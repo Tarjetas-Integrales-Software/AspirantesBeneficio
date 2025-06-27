@@ -82,6 +82,9 @@
                 <mat-option [value]="tdd.id">{{tdd.tipo_doc_dig}}</mat-option>
                 }
               </mat-select>
+              <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
+                Selecciona un tipo y fechas válidas para habilitar
+              </mat-hint>
             </mat-form-field>
           </div>
         </div>
