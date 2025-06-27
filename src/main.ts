@@ -1,4 +1,3 @@
-console.log('fromPreload:', (window as any).fromPreload);
 console.log('electronAPI:', (window as any).electronAPI);
 
 

@@ -209,10 +209,19 @@
                 </div>
               </div>
               <div class="form__row">
+                <mat-form-field class="w-full">
+                  <mat-label>Tipo Documento a Digitalizar</mat-label>
+                  <mat-select class="w-full" formControlName="tipo">
+                    <mat-option class="w-full" *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.tipo_doc_dig
+                      }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+              <div class="form__row">
                 <div class="form__item">
                   <div class="form__item">
                     <mat-form-field class="w-full">
-                      <mat-label>Extension</mat-label>
+                      <mat-label>Extensión</mat-label>
                       <mat-select class="" formControlName="extension">
                         <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
                           extension.nombre }}</mat-option>
@@ -279,17 +288,9 @@
         <div class="flex flex-col items-center justify-center">
           <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
-              Upload - Esperados por Tipo Documento
+              Importación de archivos esperados
             </h3>
             <form [formGroup]="myForm_Upload" class="flex items-center justify-between flex-wrap gap-2">
-
-              <mat-form-field class="w-full">
-                <mat-label>Tipo Documento a Digitalizar</mat-label>
-                <mat-select class="w-full" formControlName="id_tipo_doc_dig">
-                  <mat-option class="w-full" *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.tipo_doc_dig
-                    }}</mat-option>
-                </mat-select>
-              </mat-form-field>
 
               <div class="card">
                 <div class="card-body">

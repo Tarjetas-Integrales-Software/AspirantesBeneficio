@@ -54,7 +54,6 @@ export interface Curp {
     MatInputModule,
     MatAutocompleteModule,
     ReactiveFormsModule,
-    //AsyncPipe,
     MatListModule,
     MatSelectModule,
     MatDatepickerModule,
@@ -140,6 +139,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       extension: '',
       rutaOrigen: '',
       rutaDestino: '',
+      tipo: '',
       intervaloSincronizacion: 10,
       pesoMinimo: 300
     });
@@ -155,8 +155,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         await this.syncDataBase();
 
         this.getContenedores();
-        this.getTipos();
-        this.getGruposAll();
         this.getExtensiones();
         this.getArchivosEsperados();
 
@@ -178,6 +176,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       }
     }
 
+    this.getTipos();
+    this.getExtensiones();
+
     const config =
       await this.configDigitalizadorService.consultarConfigDigitalizador();
 
@@ -190,14 +191,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     } else this.sinConfiguracion = false;
 
-    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync } = await config
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo } = await config
 
     this.formConfiguracion = this.fb.nonNullable.group({
       extension: extension,
       rutaOrigen: ruta_digitalizados,
       rutaDestino: ruta_enviados,
       intervaloSincronizacion: tiempo_sync,
-      pesoMinimo: peso_minimo
+      pesoMinimo: peso_minimo,
+      tipo: tipo,
     });
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
@@ -259,12 +261,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     curpses: this.curpsesControl,
   });
 
-  myForm_Config: FormGroup = this.fb.group({
-    id_tipo_doc_dig: ['', [Validators.required]],
-  });
-
   myForm_Upload: FormGroup = this.fb.group({
-    id_tipo_doc_dig: ['', [Validators.required]],
     id_extension: ['', [Validators.required]],
     file: ''
   });
@@ -429,15 +426,19 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   async syncDataBase(): Promise<void> {
+    const online = this.networkStatusService.checkConnection();
+
+    if (!online) return;
+
     try {
-
-
-      // Convertimos cada observable a promesa con lastValueFrom (de RxJS)
-      const nombresArchivos = await lastValueFrom(this.configDigitalizadorService.getNombresArchivosUploadDigitalizador());
-      await this.configDigitalizadorService.syncLocalDataBase_NombresArchivosUpload(nombresArchivos.data);
-
-      const tiposDocs = await lastValueFrom(this.configDigitalizadorService.getTiposDocsDigitalizador());
-      await this.configDigitalizadorService.syncTipos(tiposDocs.data);
+      this.configDigitalizadorService.getTipos().subscribe({
+        next: (response) => {
+          this.configDigitalizadorService.syncTipos(response.data);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
 
       this.digitalizarArchivosService.getGruposAll().subscribe({
         next: (response) => {
@@ -565,6 +566,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const extension = this.formConfiguracion.get('extension')?.value;
       const intervaloSincronizacion = this.formConfiguracion.get('intervaloSincronizacion')?.value;
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
+      const tipo = this.formConfiguracion.get('tipo')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
@@ -572,7 +574,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         ruta_enviados: rutaDestino,
         tiempo_sync: intervaloSincronizacion,
         extension: extension,
-        peso_minimo: pesoMinimo
+        peso_minimo: pesoMinimo,
+        tipo: tipo,
       }).then(() => {
         this.sinConfiguracion = false;
 
@@ -668,7 +671,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   getGrupos(body: { id_tipo_documento_digitalizacion: string, fechaInicio: string, fechaFin: string }): void {
     this.configDigitalizadorService
-      .consultarNombresArchivosUpload(body)
+      .consultarGrupos(body)
       .then((grupos) => {
         this.grupos = grupos;
       })
@@ -677,17 +680,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   getTipos(): void {
     this.configDigitalizadorService
-      .contultarTipos()
+      .consultarTipos()
       .then((tipos) => {
-        this.tipos = tipos;
-      })
-      .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
-  }
+        console.log(tipos);
 
-  getGruposAll(): void {
-    this.configDigitalizadorService
-      .contultarTipos()
-      .then((tipos) => {
         this.tipos = tipos;
       })
       .catch((error) => console.error('Error al obtener tipos documentos digitalizacion:', error));
@@ -796,7 +792,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.fileInput.nativeElement.value = ''; // Resetear solo el input file
   }
 
-
   ////////////////////////////////////////////////////
   /* METODOS PARA EL MONITOREO Y SUBIDA DE ARCHIVOS */
   ////////////////////////////////////////////////////
@@ -806,11 +801,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const rutaDestino = this.formConfiguracion.get('rutaDestino')?.value;
     const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
     const extension = this.formConfiguracion.get('extension')?.value;
+    const tipo = this.formConfiguracion.get('tipo')?.value;
 
-    this.digitalizarArchivosService.procesarArchivosEnParalelo(rutaOrigen, rutaDestino, pesoMinimo, extension)
+    this.digitalizarArchivosService.procesarArchivosBaseLocal(rutaOrigen, rutaDestino, pesoMinimo, extension, tipo)
       .subscribe({
         next: (resultados) => {
-          const exitosos = resultados.filter(r => r).length;
+          console.log('Procesando: ', rutaOrigen, rutaDestino, pesoMinimo, extension, tipo);
         },
         error: (error) => {
           console.log(error);
