@@ -32,7 +32,9 @@ export class ConfigDigitalizadorService {
     ruta_enviados: string;
     tiempo_sync: number;
     extension: string;
-    peso_minimo: number
+    peso_minimo: number;
+    tipo: string;
+    regexCurp: string;
   }): Promise<any> {
     const insertSql = `
     INSERT OR REPLACE INTO sy_config_digitalizador (
@@ -41,8 +43,10 @@ export class ConfigDigitalizadorService {
       ruta_enviados,
       tiempo_sync,
       extension,
-      peso_minimo
-    ) VALUES (?, ?, ?, ?, ?, ?);
+      peso_minimo,
+      tipo,
+      regex_curp
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
   `;
     const params = [
       1,
@@ -50,39 +54,17 @@ export class ConfigDigitalizadorService {
       config.ruta_enviados,
       config.tiempo_sync,
       config.extension,
-      config.peso_minimo
+      config.peso_minimo,
+      config.tipo,
+      config.regexCurp
     ];
     return await this.databaseService.execute(insertSql, params);
   }
 
   // TIPOS DOCUMENTOS - DIGITALIZADOR PARA ASPBEN
 
-  getTiposDocsDigitalizador(): Observable<any> {
-    return new Observable(observer => {
-      this.networkStatusService.isOnline.subscribe(online => {
-        if (online) {
-          this.http.get(environment.apiUrl + '/lic/aspben/tipos_docs_dig_activos').subscribe({
-            next: (response) => {
-              observer.next(response);
-              observer.complete();
-            },
-            error: (error) => {
-              observer.error(error);
-            }
-          });
-        } else {
-          const sql = 'SELECT * FROM ct_tipos_documentos_digitalizador WHERE deleted_at IS NULL';
-          const params: any[] = [];
-
-          this.databaseService.query(sql, params).then(resultados => {
-            observer.next({ data: resultados });
-            observer.complete();
-          }).catch(error => {
-            observer.error(error);
-          });
-        }
-      });
-    });
+  getTipos(): Observable<any> {
+    return this.http.get(environment.apiUrl + '/lic/aspben/tipos_docs_dig_activos');
   }
 
   async syncTipos(datos: any[]): Promise<void> {
@@ -129,7 +111,7 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async contultarTipos(): Promise<{ id: number; modalidad: string }[]> {
+  async consultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
       SELECT id, tipo_doc_dig
       FROM ct_tipos_documentos_digitalizador
@@ -138,8 +120,7 @@ export class ConfigDigitalizadorService {
     `;
 
     // Ejecutar la consulta
-    const resultados = await this.databaseService.query(sql);
-    return resultados;
+    return this.databaseService.query(sql);
   }
 
   // CONTENEDORES - DIGITALIZADOR PARA ASPBEN
@@ -329,19 +310,20 @@ export class ConfigDigitalizadorService {
     }
   }
 
-  async consultarNombresArchivosUpload(body: {
+  async consultarGrupos(body: {
     id_tipo_documento_digitalizacion: string,
     fechaInicio: string,  // Formato: 'YYYY-MM-DD'
     fechaFin: string      // Formato: 'YYYY-MM-DD'
   }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
-    console.log('body: ', body);
-
     const sql = `
-    SELECT id, nombre_archivo_upload
+    SELECT 
+      MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
+      nombre_archivo_upload
     FROM digitalizador_grupos
     WHERE id_tipo_documento_digitalizacion = ? 
       AND datetime(created_at) >= datetime(?, 'start of day')
       AND datetime(created_at) <= datetime(?, 'start of day', '+1 day', '-1 second')
+    GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
     ORDER BY id;
   `;
 
@@ -351,9 +333,6 @@ export class ConfigDigitalizadorService {
       body.fechaFin
     ];
 
-    const request = await this.databaseService.query(sql, params);
-    console.log('request: ', request);
-    
-    return request 
+    return await this.databaseService.query(sql, params);
   }
 }

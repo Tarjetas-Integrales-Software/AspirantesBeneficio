@@ -1,7 +1,3 @@
-console.log('✅ preload.js cargado');
-global.fromPreload = true;
-
-
 const { contextBridge, ipcRenderer } = require('electron')
 const fs = require('fs');
 const path = require('path');
@@ -11,6 +7,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 });
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getFilteredFiles: (event, { folder, minSize, extension }) => ipcRenderer.invoke('get-app-path', event, { folder, minSize, extension }),
+  getAppPath: () => ipcRenderer.invoke('get-app-path'),
   invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   send: (channel, ...args) => ipcRenderer.send(channel, ...args),
   on: (channel, listener) => ipcRenderer.on(channel, listener),
@@ -79,6 +77,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readdirSync: (dirPath) => fs.readdirSync(dirPath),
     statSync: (filePath) => fs.statSync(filePath),
     renameSync: (oldPath, newPath) => fs.renameSync(oldPath, newPath),
+  },
+  resolveAppPath: (relativePath) => {
+    return path.join(appRoot, relativePath);
   },
   path: {
     join: (...args) => path.join(...args),

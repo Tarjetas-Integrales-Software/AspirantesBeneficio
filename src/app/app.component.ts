@@ -12,12 +12,13 @@ import { CajerosFotosService } from './services/CRUD/cajeros-fotos.service';
 import { CurpsRegistradasService } from './services/CRUD/curps-registradas.service';
 import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes-beneficio-documentos.service';
 import { DocumentosService } from './services/CRUD/documentos.service';
+import { DigitalizarArchivosService } from './services/CRUD/digitalizar-archivos.service';
+import { ConfigDigitalizadorService } from './services/CRUD/config-digitalizador.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
 
 import { environment } from '../environments/environment';
-import { GeolocationService } from './services/geolocation.service';
 import { MonitorEquiposService } from './services/CRUD/monitor-equipos.service';
 import { cs_monitor_equipos } from './services/CRUD/monitor-equipos.service';
 
@@ -55,10 +56,11 @@ export class AppComponent implements OnInit, OnDestroy {
     private asistenciaService: AsistenciaService,
     private cajerosFotosService: CajerosFotosService,
     private curpsRegistradasService: CurpsRegistradasService,
-    private geoService: GeolocationService,
     private monitorEquipoService: MonitorEquiposService,
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
-    private documentosService: DocumentosService
+    private documentosService: DocumentosService,
+    private digitalizarArchivosService: DigitalizarArchivosService,
+    private configDigitalizadorService: ConfigDigitalizadorService
   ) { }
 
   ngOnInit(): void {
@@ -66,10 +68,12 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncCurps();
     this.checkAndSyncMonitorEquipo();
     this.checkAndSyncAsistencias();
+    this.checkAndSyncArchivosDigitalizar();
 
     this.startSyncAspirantesInterval();
     this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
+    this.startSyncArchivosDigitalizarInterval();
 
     this.sendInfo_MonitorEquipo();
     this.startSyncAsistenciaInterval();
@@ -108,6 +112,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarAsistencias();
+    });
+  }
+
+  private checkAndSyncArchivosDigitalizar(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarArchivosDigitalizar();
     });
   }
 
@@ -150,6 +164,16 @@ export class AppComponent implements OnInit, OnDestroy {
       this.actualizarCurps();
       this.syncAspirantesBeneficioDocumento();
       this.validarSincronizacionCompleta(); //EMD
+    });
+  }
+
+  private startSyncArchivosDigitalizarInterval(): void {
+    this.syncSubscription = interval(environment.syncArchivosDigitalizadosInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarArchivosDigitalizar();
     });
   }
 
@@ -430,6 +454,19 @@ export class AppComponent implements OnInit, OnDestroy {
           console.error("Error obteniendo aspirante o foto:", error);
         }
       }
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async actualizarArchivosDigitalizar(): Promise<void> {
+    try {
+      const config =
+        await this.configDigitalizadorService.consultarConfigDigitalizador();
+
+      const { extension, peso_minimo, ruta_enviados } = await config;
+
+      this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension);
     } catch (error) {
       console.error("Error consultando relaciones:", error);
     }

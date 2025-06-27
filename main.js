@@ -7,8 +7,6 @@ const path = require('path');
 
 //Impresion de Credencial
 const { exec } = require('child_process');
-const PDFDocument = require('pdfkit');
-// import { print } from "pdf-to-printer";
 const axios = require('axios');
 const { jsPDF } = require("jspdf");
 
@@ -75,14 +73,6 @@ async function sendAppInfo() {
     }
 
     console.log(`Version: ${currentVersion}, Numero de serie: ${serialNumber}`);
-
-    // axios.post('https://tu-backend.com/api/version', { serialNumber, version })
-    //       .then(response => console.log(`SerialNumber: ${serialNumber}, Versión reportada: ${version}`))
-    //       .catch(error => console.error('Error al reportar versión:', error));
-
-
-    console.log('Informacion reportada exitosamente');
-
   } catch (error) {
     console.error('Error al obtener información del sistema o enviarla:', error);
   }
@@ -136,11 +126,7 @@ function addColumnIfNotExists() {
     const rowsAspirantes = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
     const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
     if (!columnExists_modulo) {
-      console.log("Agregando la columna 'modulo'...");
       db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
-      console.log("Columna 'modulo' agregada con éxito.");
-    } else {
-      console.log("La columna 'modulo' ya existe. No es necesario agregarla.");
     }
 
     // Verificar y agregar columnas en sy_config_digitalizador
@@ -149,21 +135,25 @@ function addColumnIfNotExists() {
     // Verificar columna 'extension'
     const columnExists_extension = rowsConfig.some(row => row.name === 'extension');
     if (!columnExists_extension) {
-      console.log("Agregando la columna 'extension'...");
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN extension TEXT NULL;").run();
-      console.log("Columna 'extension' agregada con éxito.");
-    } else {
-      console.log("La columna 'extension' ya existe. No es necesario agregarla.");
     }
 
     // Verificar columna 'peso_minimo'
     const columnExists_peso_minimo = rowsConfig.some(row => row.name === 'peso_minimo');
     if (!columnExists_peso_minimo) {
-      console.log("Agregando la columna 'peso_minimo'...");
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN peso_minimo REAL NULL;").run();
-      console.log("Columna 'peso_minimo' agregada con éxito.");
-    } else {
-      console.log("La columna 'peso_minimo' ya existe. No es necesario agregarla.");
+    }
+
+    // Verificar columna 'tipo'
+    const columnExists_tipo = rowsConfig.some(row => row.name === 'tipo');
+    if (!columnExists_tipo) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo REAL NULL;").run();
+    }
+
+    // Verificar columna 'regex_curp'
+    const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
+    if (!columnExists_regex_curp) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
     }
 
   } catch (error) {
@@ -542,6 +532,22 @@ function initializeDatabase() {
       created_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS archivos_digitalizar (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fecha TEXT NULL,
+      tipo INTEGER NULL,
+      curp TEXT NULL,
+      carpetaOrigen TEXT NULL,
+      carpetaDestino TEXT NULL,
+      extension TEXT NULL,
+      created_id INTEGER,
+      updated_id INTEGER,
+      deleted_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -696,6 +702,8 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
 
 });
+
+ipcMain.handle('get-app-path', () => app.getPath('userData'))
 
 ipcMain.on('print-id-card-manual', async (event, data) => {
   try {
@@ -902,4 +910,16 @@ ipcMain.handle('select-folder', async (event, operation) => {
     return null;
   else
     return result.filePaths[0];
+});
+
+ipcMain.handle('get-filtered-files', (event, { folder, minSize, extension }) => {
+  const files = fs.readdirSync(folder)
+    .filter(file => {
+      const fullPath = path.join(folder, file);
+      const stats = fs.statSync(fullPath);
+      return stats.isFile() && 
+             (!minSize || (stats.size / 1024 >= minSize)) &&
+             (!extension || file.endsWith(extension));
+    });
+  return files.map(file => path.join(folder, file));
 });
