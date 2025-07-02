@@ -464,9 +464,9 @@ export class AppComponent implements OnInit, OnDestroy {
       const config =
         await this.configDigitalizadorService.consultarConfigDigitalizador();
 
-      const { extension, peso_minimo, ruta_enviados } = await config;
+      const { extension, peso_minimo, ruta_enviados, tipo } = await config;
 
-      this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension);
+      this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension, tipo);
     } catch (error) {
       console.error("Error consultando relaciones:", error);
     }

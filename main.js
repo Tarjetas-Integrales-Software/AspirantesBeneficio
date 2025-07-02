@@ -540,6 +540,7 @@ function initializeDatabase() {
       carpetaOrigen TEXT NULL,
       carpetaDestino TEXT NULL,
       extension TEXT NULL,
+      grupo TEXT NULL,
       created_id INTEGER,
       updated_id INTEGER,
       deleted_id INTEGER,
