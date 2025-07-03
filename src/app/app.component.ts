@@ -14,6 +14,7 @@ import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes
 import { DocumentosService } from './services/CRUD/documentos.service';
 import { DigitalizarArchivosService } from './services/CRUD/digitalizar-archivos.service';
 import { ConfigDigitalizadorService } from './services/CRUD/config-digitalizador.service';
+import { RelacionUsuarioRolesService } from './services/CRUD/relacion-usuario-roles.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
@@ -60,7 +61,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
     private documentosService: DocumentosService,
     private digitalizarArchivosService: DigitalizarArchivosService,
-    private configDigitalizadorService: ConfigDigitalizadorService
+    private configDigitalizadorService: ConfigDigitalizadorService,
+    private relacionUsuarioRolesService: RelacionUsuarioRolesService
   ) { }
 
   ngOnInit(): void {
@@ -69,11 +71,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncMonitorEquipo();
     this.checkAndSyncAsistencias();
     this.checkAndSyncArchivosDigitalizar();
+    this.checkAndSyncRelacionUsuarioRoles();
 
     this.startSyncAspirantesInterval();
     this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
     this.startSyncArchivosDigitalizarInterval();
+    this.startSyncRelacionUsuarioRoles();
 
     this.sendInfo_MonitorEquipo();
     this.startSyncAsistenciaInterval();
@@ -122,6 +126,15 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarArchivosDigitalizar();
+    });
+  }
+  private checkAndSyncRelacionUsuarioRoles(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarRelacionUsuarioRol();
     });
   }
 
@@ -174,6 +187,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarArchivosDigitalizar();
+    });
+  }
+
+  private startSyncRelacionUsuarioRoles(): void {
+    this.syncSubscription = interval(environment.syncInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarRelacionUsuarioRol();
     });
   }
 
@@ -467,6 +490,21 @@ export class AppComponent implements OnInit, OnDestroy {
       const { extension, peso_minimo, ruta_enviados, tipo } = await config;
 
       this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension, tipo);
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async actualizarRelacionUsuarioRol(): Promise<void> {
+    try {
+      this.relacionUsuarioRolesService.getRelaciones().subscribe({
+        next: (response) => {
+          if(response.data) this.relacionUsuarioRolesService.syncLocalDataBase(response.data);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
     } catch (error) {
       console.error("Error consultando relaciones:", error);
     }

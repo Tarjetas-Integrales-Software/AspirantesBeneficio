@@ -549,6 +549,18 @@ function initializeDatabase() {
       deleted_at TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS relacion_usuario_roles (
+      pkUserPerfil INTEGER PRIMARY KEY,
+      fkUser INTEGER NULL,
+      fkRole INTEGER NULL,
+      created_at TEXT NULL,
+      updated_at TEXT NULL,
+      creator_id INTEGER NULL,
+      updated_id INTEGER NULL,
+      deleted_id INTEGER NULL,
+      deleted_at TEXT NULL
+    );
+
     `);
   } catch (error) {
     console.error('Error creating table:', error);
