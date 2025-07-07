@@ -38,6 +38,7 @@ import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitaliz
 import { NetworkStatusService } from '../../services/network-status.service';
 import { UtilService } from '../../services/util.service';
 import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
+import * as XLSX from 'xlsx';
 
 Chart.register(...registerables);
 
@@ -361,7 +362,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       },
       {
         label: 'Digitalizadas',
-        value: 0
+        value: this.chartData[0]?.digitalizadas
       },
       {
         label: 'Enviadas',
@@ -390,13 +391,21 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.digitalizarArchivosService.get_data_esperados_digitalizados(nombre_archivo_upload).subscribe({
           next: (response) => {
             if (response.data) {
-              const { esperadas, enviadas_tisa } = response.data[0]
+              const { esperadas, enviadas_tisa } = response.data[0];
+              this.digitalizarArchivosService.consultarCantidadDigitalizados(nombre_archivo_upload).then((cantidad) => {
+                this.digitalizadas = cantidad;
 
-              this.esperadas = esperadas;
-              this.enviadas = enviadas_tisa;
+                this.esperadas = esperadas;
+                this.enviadas = enviadas_tisa;
 
-              this.updateChartData(response.data);
-              this.cdr.detectChanges();
+                this.updateChartData(response.data.map((item: any) => {
+                  return {
+                    ...item,
+                    digitalizadas: this.digitalizadas
+                  }
+                }));
+                this.cdr.detectChanges();
+              })
             } else {
               this.esperadas = 0;
               this.enviadas = 0;
@@ -749,12 +758,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
+    const extension = this.formConfiguracion.get('extension')?.value;
+    const tipo = this.formConfiguracion.get('tipo')?.value;
+
     if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
       this.lblUploadingFile = file.name;
       this.documentFile.file = file;
       // No establecer el valor del campo de entrada de archivo directamente
       // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
       this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+
+      this.importarExcel_ArchivosDigitalizar(this.documentFile.file, tipo, extension);
     } else {
       Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
       this.lblUploadingFile = '';
@@ -764,10 +778,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       this.documentFileLoaded = false; // Marcar que no hay archivo cargado
     }
   }
-
-
-
-
 
   async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
     const archivo = file; //event.target.files[0];
@@ -786,6 +796,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
               timer: 2000,
               showConfirmButton: false
             });
+
+            this.syncDataBase();
           } else {
             console.error('Error al enviar los datos:', response);
             this.mensaje = 'Hubo un error al importar los datos.';
@@ -850,5 +862,18 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     if (folderPath) {
       this.formConfiguracion.get(field)?.setValue(folderPath);
     }
+  }
+
+  downloadPlantilla() {
+    const worksheet = XLSX.utils.aoa_to_sheet([
+      ['NOMBRE_ARCHIVO']
+    ]);
+
+    // Crea un libro de trabajo y agrega la hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
+
+    // Genera el archivo y lo descarga
+    XLSX.writeFile(workbook, `plantilla_digitalizador.xlsx`);
   }
 }

@@ -6,7 +6,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CommonModule } from "@angular/common"
-import { Validators,FormsModule,ReactiveFormsModule,FormGroup,FormBuilder, } from "@angular/forms"
+import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
 import { ModulosService } from "../../services/CRUD/modulos.service";
 import Swal from 'sweetalert2';
@@ -18,22 +18,21 @@ import { MenuService } from "../../services/CRUD/menu.service";
 @Component({
   selector: 'app-configuraciones',
   imports: [
-        MatDividerModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        CommonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatIconModule,
-        MatDatepickerModule,
-        MatCardModule,
+    MatDividerModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatIconModule,
+    MatDatepickerModule,
+    MatCardModule,
   ],
   templateUrl: './configuraciones.component.html',
   styleUrl: './configuraciones.component.scss'
 })
-export class ConfiguracionesComponent implements OnInit
-{
+export class ConfiguracionesComponent implements OnInit {
   @Output() submitForm = new EventEmitter<void>();
   private fb = inject(FormBuilder);
   private router = inject(Router);
@@ -47,14 +46,13 @@ export class ConfiguracionesComponent implements OnInit
     , private menuService: MenuService
   ) { }
 
-    myForm: FormGroup = this.fb.group({
-      modulo: ['', [Validators.required, Validators.minLength(5)]],
+  myForm: FormGroup = this.fb.group({
+    modulo: ['', [Validators.required, Validators.minLength(5)]],
 
-    });
+  });
 
   ngOnInit() {
     this.getModulosAspben()
-    this.getOpcionesMenu();
   }
 
   async getModulosAspben() {
@@ -65,7 +63,7 @@ export class ConfiguracionesComponent implements OnInit
       .catch(error => console.error('Error al obtener modulos:', error));
   }
 
-  selectedValue_modulo(){
+  selectedValue_modulo() {
     this.selectedValue_modu = this.myForm.get('modulo')?.value;
   }
 
@@ -91,21 +89,6 @@ export class ConfiguracionesComponent implements OnInit
       }
     }
     return null;
-  }
-
-  getOpcionesMenu() {
-    this.menuService.getOpcionesMenu().subscribe({
-      next: response => {
-        if (response.response) {
-          // this.opcionesMenu = response.data;
-          this.opcionesMenu.set(response.data)
-          console.log('Estas son las opcines del menu: ', this.opcionesMenu())
-        }
-      },
-      error: error => {
-        console.log(error);
-      }
-    })
   }
 
   async onSubmit(): Promise<void> {
@@ -142,7 +125,7 @@ export class ConfiguracionesComponent implements OnInit
             this.router.navigate(['/inicio/digitalizacion']);
           } else {
             // Si no tiene ningún permiso, mostrar un mensaje
-            Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema', 'warning');
+            Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema - configuraciones -', 'warning');
           }
         } else {
           // Si no hay opciones de menú, redirigir a la página de inicio

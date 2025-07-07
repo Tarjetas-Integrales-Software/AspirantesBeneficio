@@ -14,6 +14,8 @@ import { AspirantesBeneficioDocumentosService } from './services/CRUD/aspirantes
 import { DocumentosService } from './services/CRUD/documentos.service';
 import { DigitalizarArchivosService } from './services/CRUD/digitalizar-archivos.service';
 import { ConfigDigitalizadorService } from './services/CRUD/config-digitalizador.service';
+import { RelacionUsuarioRolesService } from './services/CRUD/relacion-usuario-roles.service';
+import { MenuService } from './services/CRUD/menu.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
@@ -60,7 +62,9 @@ export class AppComponent implements OnInit, OnDestroy {
     private aspirantesBeneficioDocumentosService: AspirantesBeneficioDocumentosService,
     private documentosService: DocumentosService,
     private digitalizarArchivosService: DigitalizarArchivosService,
-    private configDigitalizadorService: ConfigDigitalizadorService
+    private configDigitalizadorService: ConfigDigitalizadorService,
+    private relacionUsuarioRolesService: RelacionUsuarioRolesService,
+    private menuService: MenuService,
   ) { }
 
   ngOnInit(): void {
@@ -69,11 +73,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncMonitorEquipo();
     this.checkAndSyncAsistencias();
     this.checkAndSyncArchivosDigitalizar();
+    this.checkAndSyncRelacionUsuarioRoles();
+    this.checkAndSyncOpcionesMenu();
 
     this.startSyncAspirantesInterval();
     this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
     this.startSyncArchivosDigitalizarInterval();
+    this.startSyncRelacionUsuarioRoles();
+    this.startSyncOpcionesMenu();
 
     this.sendInfo_MonitorEquipo();
     this.startSyncAsistenciaInterval();
@@ -122,6 +130,26 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarArchivosDigitalizar();
+    });
+  }
+
+  private checkAndSyncRelacionUsuarioRoles(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarRelacionUsuarioRol();
+    });
+  }
+
+  private checkAndSyncOpcionesMenu(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarOpcionesMenu();
     });
   }
 
@@ -174,6 +202,26 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarArchivosDigitalizar();
+    });
+  }
+
+  private startSyncRelacionUsuarioRoles(): void {
+    this.syncSubscription = interval(environment.syncInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarRelacionUsuarioRol();
+    });
+  }
+
+  private startSyncOpcionesMenu(): void {
+    this.syncSubscription = interval(environment.syncInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarOpcionesMenu();
     });
   }
 
@@ -464,11 +512,43 @@ export class AppComponent implements OnInit, OnDestroy {
       const config =
         await this.configDigitalizadorService.consultarConfigDigitalizador();
 
-      const { extension, peso_minimo, ruta_enviados } = await config;
+      const { extension, peso_minimo, ruta_enviados, tipo } = await config;
 
-      this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension);
+      this.digitalizarArchivosService.procesarArchivosEnParalelo(ruta_enviados, peso_minimo, extension, tipo);
     } catch (error) {
       console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async actualizarRelacionUsuarioRol(): Promise<void> {
+    try {
+      this.relacionUsuarioRolesService.getRelaciones().subscribe({
+        next: (response) => {
+          if (response.data) this.relacionUsuarioRolesService.syncLocalDataBase(response.data);
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async actualizarOpcionesMenu(): Promise<void> {
+    try {
+      this.menuService.getOpcionesMenu().subscribe({
+        next: ((response) => {
+          if (response.response) {
+            this.menuService.syncMenuOptionsLocal(response.data);
+          }
+        }),
+        error: ((error) => {
+          console.error('Error al sincronizar opciones de menú:', error);
+        })
+      });
+    } catch (error) {
+      console.error("Error consultando opciones menú:", error);
     }
   }
 

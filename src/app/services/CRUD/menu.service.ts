@@ -23,8 +23,7 @@ export class MenuService {
    */
   async getOpcionesMenuLocal(): Promise<any[]> {
     try {
-      // Consultar todas las opciones que comienzan con 'menu_habilitar_' de la tabla cat_ct_configuraciones
-      const result = await this.databaseService.execute(
+      const result = await this.databaseService.query(
         `SELECT * FROM cat_ct_configuraciones WHERE clave LIKE 'menu_habilitar_%'`
       );
       return result || [];

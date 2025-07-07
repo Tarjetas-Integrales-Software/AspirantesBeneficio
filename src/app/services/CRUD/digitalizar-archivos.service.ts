@@ -4,6 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, forkJoin, from, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { DatabaseService } from '../database.service';
 import { PDFDocument } from 'pdf-lib';
+import { error } from 'console';
 
 const electronAPI = (window as any).electronAPI;
 
@@ -141,7 +142,7 @@ export class DigitalizarArchivosService {
     );
   }
 
-  async procesarArchivosEnParalelo(carpetaDestino: string, pesoMinimo: number, extension: string): Promise<void> {
+  async procesarArchivosEnParalelo(carpetaDestino: string, pesoMinimo: number, extension: string, tipo: string): Promise<void> {
     const carpetaOrigen = path.join(this.appPath, 'archivosDigitalizados');
 
     const archivos = await this.verificarYCargarArchivos(carpetaOrigen, pesoMinimo, extension);
@@ -151,7 +152,7 @@ export class DigitalizarArchivosService {
     }
 
     archivos.map(archivo => {
-      return this.procesarArchivo(archivo, carpetaOrigen, carpetaDestino);
+      return this.procesarArchivo(archivo, carpetaOrigen, carpetaDestino, tipo);
     });
   }
 
@@ -198,7 +199,7 @@ export class DigitalizarArchivosService {
     return await this.databaseService.execute(sql, params);
   }
 
-  private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string): void {
+  private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string, tipo: string): void {
     try {
       const [curp, extension] = path.basename(archivo).split('.')
 
@@ -213,14 +214,32 @@ export class DigitalizarArchivosService {
       let documento = {
         archivo: archivo,
         fecha: fechaFormateada,
-        tipo: 'expediente_beneficiario'
+        tipo: tipo
       }
 
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
           next: (response) => {
-            const destino = path.join(carpetaDestino, path.basename(archivo));
-            fs.renameSync(archivo, destino);
+            console.log('Response: ', response);
+
+
+            if (response.data) {
+              const { filename, grupo } = response.data;
+
+              this.actualizarGrupoPorCurp(filename.replaceAll('.pdf', ''), grupo);
+
+              const destino = path.join(carpetaDestino, path.basename(archivo));
+              fs.renameSync(archivo, destino);
+
+              this.edit_archivo_esperado(filename, 1).subscribe({
+                next: (response) => {
+
+                },
+                error: (error) => {
+                  console.error('Error al actualizar el archivo esperado:', error);
+                }
+              })
+            }
           },
           error: (error) => {
             console.error('Error al subir el archivo:', error);
@@ -238,7 +257,7 @@ export class DigitalizarArchivosService {
     }
   }
 
-  async subirArchivo(beneficiario: any, documento: any, carpetaOrigen: string, extension: string) {
+  async subirArchivo(beneficiario: any, documento: any, carpetaOrigen: string, extension: string): Promise<Observable<any>> {
     // Leer el documento desde el main process
     const { archivo, fecha, tipo } = documento;
     const { id, curp } = beneficiario;
@@ -341,6 +360,94 @@ export class DigitalizarArchivosService {
     } catch (error) {
       console.error('Error al buscar por CURP:', error);
       return []; // Retorna array vacío en caso de error
+    }
+  }
+
+  async consultarPendientesDigitalizarFiltrados(
+    curp: string,
+    grupo: string
+  ): Promise<
+    {
+      id: number;
+      fecha: string;
+      tipo: string;
+      curp: string;
+      carpetaOrigen: string;
+      carpetaDestino: string;
+      extension: string;
+      grupo: string;
+    }[]
+  > {
+    let condiciones: string[] = ['deleted_at IS NULL'];
+    let parametros: any[] = [];
+
+    if (curp) {
+      condiciones.push('curp = ?');
+      parametros.push(curp);
+    }
+
+    if (grupo) {
+      condiciones.push('grupo = ?');
+      parametros.push(grupo);
+    }
+
+    const sql = `
+    SELECT *
+    FROM archivos_digitalizar
+    WHERE ${condiciones.join(' AND ')}
+    ORDER BY id;
+  `;
+
+    try {
+      const resultados = await this.databaseService.query(sql, parametros);
+      return resultados;
+    } catch (error) {
+      console.error('Error al buscar con filtros:', error);
+      return [];
+    }
+  }
+
+  async consultarCantidadDigitalizados(grupo: string): Promise<number> {
+    const sql = `
+      SELECT COUNT(DISTINCT curp) as cantidad
+      FROM archivos_digitalizar
+      WHERE deleted_at IS NULL AND grupo = ?;
+    `;
+
+    try {
+      const resultados = await this.databaseService.query(sql, [grupo]);
+      return resultados[0]?.cantidad || 0;
+    } catch (error) {
+      console.error('Error al contar CURPs únicas por grupo:', error);
+      return 0;
+    }
+  }
+
+  async actualizarGrupoPorCurp(
+    curp: string,
+    nuevoGrupo: string
+  ): Promise<number> {
+    const sqlUpdate = `
+    UPDATE archivos_digitalizar
+    SET grupo = ?
+    WHERE deleted_at IS NULL AND curp = ?;
+  `;
+
+    try {
+      const result = await this.databaseService.execute(sqlUpdate, [nuevoGrupo, curp]);
+
+      if (typeof result === 'number') {
+        return result; // Si el backend devuelve directamente el número
+      } else if (result && typeof result.affectedRows === 'number') {
+        return result.affectedRows; // Si es un objeto con propiedad affectedRows
+      } else if (result && typeof result.changes === 'number') {
+        return result.changes; // Para SQLite
+      }
+
+      return 1;
+    } catch (error) {
+      console.error('Error al actualizar grupo por CURP:', error);
+      throw error; // Propaga el error para manejarlo en el componente
     }
   }
 }

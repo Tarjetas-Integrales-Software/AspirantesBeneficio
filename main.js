@@ -51,7 +51,7 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -90,29 +90,27 @@ function getWindowsSerialNumber() {
   });
 }
 
-function dropTablesIfExists() {
+function eliminarConfiguracionModulo() {
   try {
-    // Ruta de la base de datos en la carpeta de datos del usuario
     const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
-
-    console.log('Database path:', dbPath);
 
     db = new Database(dbPath);
 
-    // Verificar si la tabla existe antes de eliminarla
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
-      db.prepare("DROP TABLE cat_ct_configuraciones;").run();
-      console.log("Tabla eliminada con éxito.");
-    } else {
-      console.log("La tabla no existe, no se elimino.");
-    }
+      const stmt = db.prepare("DELETE FROM cat_ct_configuraciones WHERE clave = ?;");
+      const result = stmt.run('modulo');
 
+      if (result.changes > 0) console.log("Registro eliminado con éxito.");
+      else console.log("No se encontró ningún registro con clave 'modulo'.");
+    } else console.log("La tabla no existe, no se puede eliminar el registro.");
   } catch (error) {
-    console.error('Error en drop table:', error);
+    console.error('Error al eliminar el registro:', error);
+  } finally {
+    if (db)
+      db.close();
   }
-
 }
 
 function addColumnIfNotExists() {
@@ -170,7 +168,7 @@ function initializeDatabase() {
   db = new Database(dbPath);
 
   // Eliminacion de tablas en caso de ser requerido
-  dropTablesIfExists();
+  eliminarConfiguracionModulo();
 
   // Creacion de tablas en caso de no existir
   try {
@@ -540,12 +538,25 @@ function initializeDatabase() {
       carpetaOrigen TEXT NULL,
       carpetaDestino TEXT NULL,
       extension TEXT NULL,
+      grupo TEXT NULL,
       created_id INTEGER,
       updated_id INTEGER,
       deleted_id INTEGER,
       created_at TEXT,
       updated_at TEXT,
       deleted_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS relacion_usuario_roles (
+      pkUserPerfil INTEGER PRIMARY KEY,
+      fkUser INTEGER NULL,
+      fkRole INTEGER NULL,
+      created_at TEXT NULL,
+      updated_at TEXT NULL,
+      creator_id INTEGER NULL,
+      updated_id INTEGER NULL,
+      deleted_id INTEGER NULL,
+      deleted_at TEXT NULL
     );
 
     `);
@@ -917,9 +928,9 @@ ipcMain.handle('get-filtered-files', (event, { folder, minSize, extension }) => 
     .filter(file => {
       const fullPath = path.join(folder, file);
       const stats = fs.statSync(fullPath);
-      return stats.isFile() && 
-             (!minSize || (stats.size / 1024 >= minSize)) &&
-             (!extension || file.endsWith(extension));
+      return stats.isFile() &&
+        (!minSize || (stats.size / 1024 >= minSize)) &&
+        (!extension || file.endsWith(extension));
     });
   return files.map(file => path.join(folder, file));
 });

@@ -58,9 +58,7 @@ export class LoginComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-
-    //Sincronizar Usuarios de TISA hacia la DB Local
-    this.syncDataBase();
+    if (this.networkStatusService.checkConnection()) this.syncDataBase();
 
     if (this.storageService.exists("token"))
       this.token = this.storageService.get("token");
@@ -88,35 +86,43 @@ export class LoginComponent implements OnInit {
             this.menuService.getOpcionesMenu().subscribe({
               next: ((response) => {
                 if (response.response) {
-                  // Crear un mapa para acceder fácilmente a las opciones por su clave
-                  const menuOptions: {[key: string]: string} = {};
+                  this.menuService.syncMenuOptionsLocal(response.data);
 
-                  // Mapear todas las opciones de menú
-                  response.data.forEach((option: any) => {
-                    menuOptions[option.clave] = option.valor;
-                  });
+                  this.menuService.getOpcionesMenuLocal().then((opcionesMenu) => {
+                    if (opcionesMenu) {
+                      // Crear un mapa para acceder fácilmente a las opciones por su clave
+                      const menuOptions: { [key: string]: string } = {};
 
-                  // Navegación basada en permisos
-                  if (menuOptions['menu_habilitar_configurar'] === '1') {
-                    this.router.navigate(['/inicio/configuraciones']);
-                  } else if (menuOptions['menu_habilitar_consulta'] === '1') {
-                    this.router.navigate(['/inicio/consulta']);
-                  } else if (menuOptions['menu_habilitar_impresion'] === '1') {
-                    this.router.navigate(['/inicio/impresion-credencial']);
-                  } else if (menuOptions['menu_habilitar_reportes'] === '1') {
-                    this.router.navigate(['/inicio/reportes']);
-                  } else if (menuOptions['menu_habilitar_asistencia'] === '1') {
-                    this.router.navigate(['/inicio/asistencia']);
-                  } else {
-                    // Si no tiene ningún permiso, mostrar un mensaje
-                    Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema', 'warning');
+                      // Mapear todas las opciones de menú
+                      opcionesMenu.forEach((option: any) => {
+                        menuOptions[option.clave] = option.valor;
+                      });
+
+                      // Navegación basada en permisos
+                      if (menuOptions['menu_habilitar_configurar'] === '1') {
+                        this.router.navigate(['/inicio/configuraciones']);
+                      } else if (menuOptions['menu_habilitar_consulta'] === '1') {
+                        this.router.navigate(['/inicio/consulta']);
+                      } else if (menuOptions['menu_habilitar_impresion'] === '1') {
+                        this.router.navigate(['/inicio/impresion-credencial']);
+                      } else if (menuOptions['menu_habilitar_reportes'] === '1') {
+                        this.router.navigate(['/inicio/reportes']);
+                      } else if (menuOptions['menu_habilitar_asistencia'] === '1') {
+                        this.router.navigate(['/inicio/asistencia']);
+                      } else {
+                        // Si no tiene ningún permiso, mostrar un mensaje
+                        Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema - online -', 'warning');
+                      }
+                    } else {
+                      this.loading = false;
+                      Swal.fire('Error', 'No se pudieron cargar las opciones del menú', 'error');
+                    }
                   }
+                  );
                 }
               }),
               error: ((error) => {
-                console.error('Error al obtener opciones de menú:', error);
-                this.loading = false;
-                Swal.fire('Error', 'No se pudieron cargar las opciones del menú', 'error');
+                console.error('Error al sincronizar opciones de menú:', error);
               })
             });
           } else {
@@ -138,27 +144,47 @@ export class LoginComponent implements OnInit {
           if (existe == true) {
             // Obtener opciones de menú de la base de datos local
             this.menuService.getOpcionesMenuLocal().then(menuOptions => {
-              // Convertir el resultado a un objeto para fácil acceso
-              const menuMap: {[key: string]: string} = {};
-              menuOptions.forEach((option: any) => {
-                menuMap[option.clave] = option.valor;
-              });
 
-              // Aplicar la misma lógica de navegación que en modo online
-              if (menuMap['menu_habilitar_configurar'] === '1') {
-                this.router.navigate(['/inicio/configuraciones']);
-              } else if (menuMap['menu_habilitar_consulta'] === '1') {
-                this.router.navigate(['/inicio/consulta']);
-              } else if (menuMap['menu_habilitar_impresion'] === '1') {
-                this.router.navigate(['/inicio/impresion-credencial']);
-              } else if (menuMap['menu_habilitar_reportes'] === '1') {
-                this.router.navigate(['/inicio/reportes']);
-              } else if (menuMap['menu_habilitar_asistencia'] === '1') {
-                this.router.navigate(['/inicio/asistencia']);
+              // CODIGO DAVID INICIO
+
+              // Definir un tipo para las opciones del menú para mayor seguridad en tipos
+              interface MenuOption {
+                clave: string;
+                valor: string;
+              }
+
+              // Crear un mapa de rutas basado en las claves del menú
+              const routeMap: { [key: string]: string } = {
+                menu_habilitar_configurar: '/inicio/configuraciones',
+                menu_habilitar_consulta: '/inicio/consulta',
+                menu_habilitar_impresion: '/inicio/impresion-credencial',
+                menu_habilitar_reportes: '/inicio/reportes',
+                menu_habilitar_asistencia: '/inicio/asistencia'
+              };
+
+              // Convertir el array de opciones a un objeto mapa de forma más funcional
+              const menuMap = menuOptions.reduce((acc: { [key: string]: string }, option: MenuOption) => {
+                acc[option.clave] = option.valor;
+                return acc;
+              }, {});
+
+              // Encontrar la primera ruta habilitada
+              const enabledRoute = Object.keys(routeMap).find(key => menuMap[key] == 1);
+
+              if (enabledRoute) {
+                this.router.navigate([routeMap[enabledRoute]]);
               } else {
                 // Si no tiene ningún permiso, mostrar un mensaje
-                Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema', 'warning');
+                Swal.fire({
+                  title: 'Sin acceso',
+                  text: 'No tienes acceso a ningún módulo del sistema - offline -',
+                  icon: 'warning'
+                });
               }
+
+
+              // CODIGO DAVID FIN
+
             }).catch(err => {
               console.error('Error al obtener opciones de menú locales:', err);
               // Fallback a configuraciones en caso de error
@@ -218,18 +244,6 @@ export class LoginComponent implements OnInit {
       }
       ),
       error: ((error) => { })
-    });
-
-    // Sincronizar opciones de menú
-    this.menuService.getOpcionesMenu().subscribe({
-      next: ((response) => {
-        if (response.response) {
-          this.menuService.syncMenuOptionsLocal(response.data);
-        }
-      }),
-      error: ((error) => {
-        console.error('Error al sincronizar opciones de menú:', error);
-      })
     });
   }
 }
