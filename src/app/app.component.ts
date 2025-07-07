@@ -524,8 +524,6 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       this.relacionUsuarioRolesService.getRelaciones().subscribe({
         next: (response) => {
-          console.log(response.data);
-          
           if (response.data) this.relacionUsuarioRolesService.syncLocalDataBase(response.data);
         },
         error: (error) => {
