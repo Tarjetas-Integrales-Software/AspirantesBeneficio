@@ -60,7 +60,7 @@ export class MenuComponent implements OnInit {
       opcionMenu.clave === opcion
     )
 
-    if (found) return found.valor == "1";
+    if (found) return found.valor == 1;
 
     return false;
   }

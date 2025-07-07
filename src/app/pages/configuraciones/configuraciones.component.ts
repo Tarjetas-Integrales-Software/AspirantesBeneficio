@@ -91,13 +91,6 @@ export class ConfiguracionesComponent implements OnInit {
     return null;
   }
 
-  getOpcionesMenu() {
-    this.menuService.getOpcionesMenuLocal().then((opcionesMenu) => {
-      this.opcionesMenu.set(opcionesMenu);
-      this.menuService.syncMenuOptionsLocal(opcionesMenu);
-    })
-  }
-
   async onSubmit(): Promise<void> {
     try {
       this.selectedValue_modu = this.myForm.get('modulo')?.value;

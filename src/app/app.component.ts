@@ -15,6 +15,7 @@ import { DocumentosService } from './services/CRUD/documentos.service';
 import { DigitalizarArchivosService } from './services/CRUD/digitalizar-archivos.service';
 import { ConfigDigitalizadorService } from './services/CRUD/config-digitalizador.service';
 import { RelacionUsuarioRolesService } from './services/CRUD/relacion-usuario-roles.service';
+import { MenuService } from './services/CRUD/menu.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
@@ -62,7 +63,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private documentosService: DocumentosService,
     private digitalizarArchivosService: DigitalizarArchivosService,
     private configDigitalizadorService: ConfigDigitalizadorService,
-    private relacionUsuarioRolesService: RelacionUsuarioRolesService
+    private relacionUsuarioRolesService: RelacionUsuarioRolesService,
+    private menuService: MenuService,
   ) { }
 
   ngOnInit(): void {
@@ -72,12 +74,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncAsistencias();
     this.checkAndSyncArchivosDigitalizar();
     this.checkAndSyncRelacionUsuarioRoles();
+    this.checkAndSyncOpcionesMenu();
 
     this.startSyncAspirantesInterval();
     this.startSyncDocumentosInterval();
     this.startSyncCurpInterval();
     this.startSyncArchivosDigitalizarInterval();
     this.startSyncRelacionUsuarioRoles();
+    this.startSyncOpcionesMenu();
 
     this.sendInfo_MonitorEquipo();
     this.startSyncAsistenciaInterval();
@@ -128,6 +132,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.actualizarArchivosDigitalizar();
     });
   }
+
   private checkAndSyncRelacionUsuarioRoles(): void {
     this.networkStatusService.isOnline.pipe(
       take(1),
@@ -135,6 +140,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarRelacionUsuarioRol();
+    });
+  }
+
+  private checkAndSyncOpcionesMenu(): void {
+    this.networkStatusService.isOnline.pipe(
+      take(1),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarOpcionesMenu();
     });
   }
 
@@ -197,6 +212,16 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
       this.actualizarRelacionUsuarioRol();
+    });
+  }
+
+  private startSyncOpcionesMenu(): void {
+    this.syncSubscription = interval(environment.syncInterval).pipe(
+      switchMap(() => this.networkStatusService.isOnline),
+      filter(isOnline => isOnline),
+      filter(() => this.storageService.exists("token"))
+    ).subscribe(() => {
+      this.actualizarOpcionesMenu();
     });
   }
 
@@ -499,7 +524,9 @@ export class AppComponent implements OnInit, OnDestroy {
     try {
       this.relacionUsuarioRolesService.getRelaciones().subscribe({
         next: (response) => {
-          if(response.data) this.relacionUsuarioRolesService.syncLocalDataBase(response.data);
+          console.log(response.data);
+          
+          if (response.data) this.relacionUsuarioRolesService.syncLocalDataBase(response.data);
         },
         error: (error) => {
           console.log(error);
@@ -507,6 +534,23 @@ export class AppComponent implements OnInit, OnDestroy {
       })
     } catch (error) {
       console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  async actualizarOpcionesMenu(): Promise<void> {
+    try {
+      this.menuService.getOpcionesMenu().subscribe({
+        next: ((response) => {
+          if (response.response) {
+            this.menuService.syncMenuOptionsLocal(response.data);
+          }
+        }),
+        error: ((error) => {
+          console.error('Error al sincronizar opciones de menú:', error);
+        })
+      });
+    } catch (error) {
+      console.error("Error consultando opciones menú:", error);
     }
   }
 
