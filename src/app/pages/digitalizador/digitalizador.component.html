@@ -92,7 +92,7 @@
           <div class="form__item">
             <mat-form-field class="w-full">
               <mat-label>Grupo</mat-label>
-              <mat-select formControlName="grupo">
+              <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('tipo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (grupo of grupos; track grupo) {
                 <mat-option [value]="grupo.nombre_archivo_upload">{{grupo.nombre_archivo_upload}}</mat-option>
