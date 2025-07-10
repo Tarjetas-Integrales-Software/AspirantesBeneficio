@@ -51,7 +51,7 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -675,8 +675,6 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
 
     // CODIGO DAVID INICIO
-
-    console.log('Impresora: ', data.printer, 'printer');
 
     const pdfFilePath = path.resolve(savePath_pdf);
     const pdfFileUrl = 'file://' + pdfFilePath;

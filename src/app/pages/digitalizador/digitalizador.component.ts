@@ -24,11 +24,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest } from 'rxjs';
-import { distinctUntilChanged } from 'rxjs/operators';
+import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest, throwError } from 'rxjs';
+import { distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -38,9 +39,20 @@ import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitaliz
 import { NetworkStatusService } from '../../services/network-status.service';
 import { UtilService } from '../../services/util.service';
 import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
+import { ModulosService } from '../../services/CRUD/modulos.service';
+import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 Chart.register(...registerables);
+
+interface Printer {
+  name: string;
+  displayName: string;
+  description?: string;
+  status: number;
+  isDefault: boolean;
+}
 
 export interface Curp {
   value: string;
@@ -62,6 +74,7 @@ export interface Curp {
     MatButtonModule,
     MatIconModule,
     CommonModule,
+    MatTabsModule,
   ],
   templateUrl: './digitalizador.component.html',
   styleUrl: './digitalizador.component.scss',
@@ -80,9 +93,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   @ViewChild('tiempoSyncSeg') tiempoSyncSegRef!: ElementRef<HTMLInputElement>;
 
   filteredOptions?: Observable<Curp[]>;
-  //chart: any;
-  showModal_configuraciones = false;
-  showModal_upload_esperados_tipo_archivo = false;
+
+  showModalCaratulas: boolean = false;
+  showModalConfiguraciones = false;
+  showModalUploadEsperadosTipoArchivo = false;
 
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
@@ -91,11 +105,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   private fs: any;
   private path: any;
 
+  formCaratula: FormGroup;
   formFiltrosDigitalizador: FormGroup;
   formBusqueda: FormGroup;
   formConfiguracion: FormGroup;
 
+  modulos: any[] = [];
   grupos: any[] = [];
+  printers: any[] = [];
 
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
 
@@ -116,12 +133,20 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private networkStatusService: NetworkStatusService,
     private utilService: UtilService,
     private digitalizarArchivosService: DigitalizarArchivosService,
-    //private logger: NGXLogger
+    private modulosService: ModulosService,
+    private atencionSinCitaService: AtencionSinCitaService,
   ) {
     const electronAPI = (window as any).electronAPI;
 
     this.path = electronAPI?.path;
     this.fs = electronAPI?.fs;
+
+    this.formCaratula = this.fb.nonNullable.group({
+      impresora: '',
+      fecha: new Date(),
+      id_modulo: '',
+      curp: '',
+    });
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
       tipo: '',
@@ -178,6 +203,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.getTipos();
     this.getExtensiones();
+    this.getAvailablePrinters();
+    this.getModulos();
 
     const config =
       await this.configDigitalizadorService.consultarConfigDigitalizador();
@@ -284,14 +311,20 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
-  toggleModalConfiguraciones() {
-    this.showModal_configuraciones = !this.showModal_configuraciones;
-
-    if (this.showModal_configuraciones) this.detenerMonitor();
+  toggleModalCaratula() {
+    this.showModalCaratulas = !this.showModalCaratulas;
   }
 
-  toggleModal_UploadEsperadosTipoArchivo() {
-    this.showModal_upload_esperados_tipo_archivo = !this.showModal_upload_esperados_tipo_archivo;
+  toggleModalConfiguraciones() {
+    this.showModalConfiguraciones = !this.showModalConfiguraciones;
+
+    if (this.showModalConfiguraciones) this.detenerMonitor();
+  }
+
+  toggleModalUploadEsperadosTipoArchivo() {
+    this.showModalUploadEsperadosTipoArchivo = !this.showModalUploadEsperadosTipoArchivo;
+
+    if (this.showModalUploadEsperadosTipoArchivo) this.detenerMonitor();
   }
 
 
@@ -875,5 +908,126 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     // Genera el archivo y lo descarga
     XLSX.writeFile(workbook, `plantilla_digitalizador.xlsx`);
+  }
+
+  getModulos(): void {
+    this.modulosService.getModulos().subscribe({
+      next: ((response) => {
+        if (response.response) {
+          this.modulos = response.data;
+        }
+      }),
+      error: ((error) => {
+      })
+    });
+  }
+
+  getAtencionSinCita(body: Object): Observable<any> {
+    return this.atencionSinCitaService.getCaratula(body).pipe(
+      map(response => response?.data),
+      catchError(error => throwError(error))
+    );
+  }
+
+  async getAvailablePrinters(): Promise<Printer[]> {
+    if (!window.electronAPI) {
+      console.warn('Electron API no disponible - Modo navegador');
+      return []; // Fallback para desarrollo
+    }
+
+    try {
+      this.printers = await window.electronAPI.getPrinters();
+
+      if (this.printers.length > 0) {
+        console.log('Impresoras disponibles:', this.printers);
+      } else {
+        console.warn('No se encontraron impresoras');
+      }
+
+      return this.printers;
+    } catch (error) {
+      console.error('Error al obtener impresoras:', error);
+      return []; // Fallback seguro
+    }
+  }
+
+  imprimirCaratulas(): void {
+    const idModulo = this.formCaratula.get('id_modulo')?.value;
+    const fecha = this.formCaratula.get('fecha')?.value;
+    const body = {
+      id_modulo: idModulo,
+      fecha: fecha.toISOString().substring(0, 10)
+    }
+
+    this.getAtencionSinCita(body).subscribe({
+      next: citas => {
+        if (citas.length === 0) {
+          Swal.fire({
+            title: 'Atención',
+            icon: 'warning',
+            text: 'No hay atenciones sin cita para el día y módulo seleccionado',
+            timer: 2000
+          });
+          return;
+        }
+
+        this.crearCaratula(citas)
+      },
+      error: err => console.error('Error:', err)
+    });
+  }
+
+  crearCaratula(citas: string[]): void {
+    const doc = new jsPDF();
+
+    citas.map(cita => {
+      doc.text(cita, 50, 50);
+      doc.addPage();
+    })
+    doc.deletePage(citas.length + 1);
+
+    
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+
+    // Crear iframe oculto
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    iframe.style.visibility = 'hidden';
+
+    document.body.appendChild(iframe);
+
+    iframe.onload = function () {
+      try {
+        if (!iframe.contentWindow) {
+          throw new Error("No se pudo acceder al contentWindow del iframe");
+        }
+
+        // Forzar el enfoque en el iframe para impresión
+        iframe.contentWindow.focus();
+
+        // Algunos navegadores necesitan un pequeño retraso
+        setTimeout(() => {
+          iframe.contentWindow?.print();
+
+          // Limpiar después de imprimir
+          setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+            document.body.removeChild(iframe);
+          }, 1000);
+        }, 500);
+      } catch (error) {
+        console.error("Error al imprimir:", error);
+        // Fallback: abrir en nueva ventana
+        window.open(pdfUrl, '_blank');
+      }
+    };
+
+    iframe.src = pdfUrl;
   }
 }

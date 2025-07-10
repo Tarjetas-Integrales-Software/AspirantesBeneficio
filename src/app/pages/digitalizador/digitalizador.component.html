@@ -35,7 +35,14 @@
         </div>
       </div>
       <div class="toolbar__side">
-        <button mat-raised-button (click)="toggleModal_UploadEsperadosTipoArchivo()">
+        <button mat-raised-button (click)="toggleModalCaratula()">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M10 14H14M13 3H8.2C7.0799 3 6.51984 3 6.09202 3.21799C5.71569 3.40973 5.40973 3.71569 5.21799 4.09202C5 4.51984 5 5.0799 5 6.2V17.8C5 18.9201 5 19.4802 5.21799 19.908C5.40973 20.2843 5.71569 20.5903 6.09202 20.782C6.51984 21 7.0799 21 8.2 21H15.8C16.9201 21 17.4802 21 17.908 20.782C18.2843 20.5903 18.5903 20.2843 18.782 19.908C19 19.4802 19 18.9201 19 17.8V9M13 3L19 9M13 3V7.4C13 7.96005 13 8.24008 13.109 8.45399C13.2049 8.64215 13.3578 8.79513 13.546 8.89101C13.7599 9 14.0399 9 14.6 9H19"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button mat-raised-button (click)="toggleModalUploadEsperadosTipoArchivo()">
           <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
             class="icon icon-tabler icons-tabler-outline icon-tabler-file-upload">
@@ -156,10 +163,95 @@
   </section>
 </main>
 
-@if(showModal_configuraciones){
+@if(showModalCaratulas){
+<div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModalConfiguraciones()">
+  <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+</div>
 <!-- Modal -->
-<!-- Button to open the modal -->
-<!-- Background overlay -->
+<div x-show="showModal_configuraciones" x-transition:enter="transition ease-out duration-300 transform"
+  class="fixed z-10 inset-0 overflow-y-auto" x-cloak>
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <!-- Modal Configuraciones Globales -->
+    <div style="min-width: 800px;"
+      class="w-full inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+      role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <!-- Modal content -->
+        <div class="flex flex-col items-center justify-center">
+          <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
+              Impresión de carátulas
+            </h3>
+
+            <form [formGroup]="formCaratula" class="form busqueda__form mt-3">
+              <div class="form__row">
+                <mat-form-field class="w-full">
+                  <mat-label>Impresora</mat-label>
+                  <mat-select class="w-full" formControlName="impresora">
+                    <mat-option class="w-full" *ngFor="let impresora of printers" [value]="impresora.name">{{
+                      impresora.name
+                      }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-tab-group>
+                <mat-tab label="Automática">
+                  <div class="form__row mt-2">
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Fecha</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="fecha">
+                        <mat-hint>DD/MM/YYYY</mat-hint>
+                        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                      </mat-form-field>
+                    </div>
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Módulo</mat-label>
+                        <mat-select class="w-full" formControlName="id_modulo">
+                          <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
+                            modulo.nombre
+                            }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-tab>
+                <mat-tab label="Manual">
+                  <div class="form__row mt-2">
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>CURP</mat-label>
+                        <input matInput formControlName="curp">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-tab>
+              </mat-tab-group>
+            </form>
+
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <button (click)="imprimirCaratulas()" type="button"
+          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+          Guardar
+        </button>
+        <button (click)="toggleModalCaratula()" type="button"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+}
+
+@if(showModalConfiguraciones){
 <div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModalConfiguraciones()">
   <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
 </div>
@@ -280,8 +372,8 @@
 
 }
 
-@if(showModal_upload_esperados_tipo_archivo){
-<div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModal_UploadEsperadosTipoArchivo()">
+@if(showModalUploadEsperadosTipoArchivo){
+<div class="fixed inset-0 transition-opacity" aria-hidden="true" (click)="toggleModalUploadEsperadosTipoArchivo()">
   <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
 </div>
 <!-- Modal -->
@@ -323,7 +415,7 @@
         </div>
       </div>
       <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button (click)="toggleModal_UploadEsperadosTipoArchivo()" type="button"
+        <button (click)="toggleModalUploadEsperadosTipoArchivo()" type="button"
           class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Cancel
         </button>
