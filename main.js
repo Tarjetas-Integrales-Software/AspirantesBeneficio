@@ -676,8 +676,6 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
     // CODIGO DAVID INICIO
 
-    console.log('Impresora: ', data.printer, 'printer');
-
     const pdfFilePath = path.resolve(savePath_pdf);
     const pdfFileUrl = 'file://' + pdfFilePath;
 

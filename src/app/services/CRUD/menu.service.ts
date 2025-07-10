@@ -24,7 +24,7 @@ export class MenuService {
   async getOpcionesMenuLocal(): Promise<any[]> {
     try {
       const result = await this.databaseService.query(
-        `SELECT * FROM cat_ct_configuraciones WHERE clave LIKE 'menu_habilitar_%'`
+        `SELECT * FROM cat_ct_configuraciones WHERE clave LIKE 'menu_habilitar_%' AND valor = '1'`
       );
       return result || [];
     } catch (error) {
