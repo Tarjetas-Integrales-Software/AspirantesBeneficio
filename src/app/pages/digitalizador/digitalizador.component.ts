@@ -27,9 +27,10 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest, throwError } from 'rxjs';
 import { distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
-import { MatListModule, MatListOption } from '@angular/material/list';
+import { MatListModule, MatListOption, MatSelectionList } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -75,6 +76,7 @@ export interface Curp {
     MatIconModule,
     CommonModule,
     MatTabsModule,
+    MatCheckboxModule,
   ],
   templateUrl: './digitalizador.component.html',
   styleUrl: './digitalizador.component.scss',
@@ -314,6 +316,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       }),
       distinctUntilChanged()
     );
+  }
+
+  toggleSeleccionarTodos(event: MatCheckboxChange, selectionRef: MatSelectionList) {
+    if (event.checked) selectionRef.selectAll();
+    else selectionRef.deselectAll();
   }
 
   toggleModalConfirmarCaratula() {
@@ -972,6 +979,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const idModulo = this.formCaratula.get('id_modulo')?.value;
     const fecha = this.formCaratula.get('fecha')?.value;
     const curp = this.formCaratula.get('curp')?.value;
+
+    if (idModulo === '') {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione un módulo',
+        timer: 2000
+      });
+      return;
+    }
+
     const body = {
       id_modulo: idModulo,
       fecha: fecha.toISOString().substring(0, 10)
@@ -985,7 +1003,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
               title: 'Atención',
               icon: 'warning',
               text: 'No hay atenciones sin cita para el día y módulo seleccionado',
-              timer: 2000
+              timer: 5000
             });
             return;
           }
@@ -1000,14 +1018,24 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     else this.crearCaratula([curp]);
   }
 
-  crearCaratula(citas: string[]): void {
+  crearCaratula(caratulas: string[]): void {
+    if (caratulas.length === 0) {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione al menos un registro',
+        timer: 2000
+      });
+      return;
+    }
+
     const doc = new jsPDF();
 
-    citas.map(cita => {
+    caratulas.map(cita => {
       doc.text(cita, 50, 50);
       doc.addPage();
     })
-    doc.deletePage(citas.length + 1);
+    doc.deletePage(caratulas.length + 1);
 
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -1051,5 +1079,32 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     };
 
     iframe.src = pdfUrl;
+  }
+
+  downloadXlsx(caratulas: string[]) {
+    if (caratulas.length === 0) {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione al menos un registro',
+        timer: 2000
+      });
+      return;
+    }
+
+    caratulas.unshift('NOMBRE_ARCHIVO');
+
+    const worksheet = XLSX.utils.aoa_to_sheet(caratulas.map(caratula => [caratula]));
+    const idModulo = this.formCaratula.get('id_modulo')?.value;
+    const fecha = this.formCaratula.get('fecha')?.value;
+    const horaImpresion = new Date().toTimeString().substring(0, 8).replaceAll(':', '');
+    const modulo = this.modulos.find(modulo => modulo.id === idModulo);
+
+    // Crea un libro de trabajo y agrega la hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Carátulas');
+
+    // Genera el archivo y lo descarga
+    XLSX.writeFile(workbook, `${fecha.toISOString().substring(0, 10).replaceAll('-', '')}_${horaImpresion}_${modulo.nombre}.xlsx`);
   }
 }
