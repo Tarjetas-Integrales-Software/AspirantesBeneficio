@@ -27,7 +27,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest, throwError } from 'rxjs';
 import { distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
-import { MatListModule } from '@angular/material/list';
+import { MatListModule, MatListOption } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Chart, registerables } from 'chart.js';
@@ -94,9 +94,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   filteredOptions?: Observable<Curp[]>;
 
+  showModalConfirmarCaratulas: boolean = false;
   showModalCaratulas: boolean = false;
-  showModalConfiguraciones = false;
-  showModalUploadEsperadosTipoArchivo = false;
+  showModalConfiguraciones: boolean = false;
+  showModalUploadEsperadosTipoArchivo: boolean = false;
 
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
@@ -110,11 +111,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   formBusqueda: FormGroup;
   formConfiguracion: FormGroup;
 
+  caratulas: string[] = [];
   modulos: any[] = [];
   grupos: any[] = [];
   printers: any[] = [];
 
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
+
+  activeTab: number = 0;
 
   esperadas: number = 0;
   digitalizadas: number = 0;
@@ -137,6 +141,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private atencionSinCitaService: AtencionSinCitaService,
   ) {
     const electronAPI = (window as any).electronAPI;
+    const CURP_REGEX = /^([A-Z&]|[a-z&]{1})([AEIOU]|[aeiou]{1})([A-Z&]|[a-z&]{1})([A-Z&]|[a-z&]{1})([0-9]{2})(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])([HM]|[hm]{1})(AS|as|BC|bc|BS|bs|CC|cc|CS|cs|CH|ch|CL|cl|CM|cm|DF|df|DG|dg|GT|gt|GR|gr|HG|hg|JC|jc|MC|mc|MN|mn|MS|ms|NT|nt|NL|nl|OC|oc|PL|pl|QT|qt|QR|qr|SP|sp|SL|sl|SR|sr|TC|tc|TS|ts|TL|tl|VZ|vz|YN|yn|ZS|zs|NE|ne)([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([0-9]{2})$/;
 
     this.path = electronAPI?.path;
     this.fs = electronAPI?.fs;
@@ -145,7 +150,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       impresora: '',
       fecha: new Date(),
       id_modulo: '',
-      curp: '',
+      curp: ['', [Validators.pattern(CURP_REGEX)]],
     });
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
@@ -311,8 +316,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
+  toggleModalConfirmarCaratula() {
+    this.showModalConfirmarCaratulas = !this.showModalConfirmarCaratulas;
+    this.cdr.detectChanges();
+  }
+
   toggleModalCaratula() {
     this.showModalCaratulas = !this.showModalCaratulas;
+    this.cdr.detectChanges();
   }
 
   toggleModalConfiguraciones() {
@@ -789,6 +800,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
+  getSelectedValues(seleccionCaratulas: MatListOption[]): string[] {
+    return seleccionCaratulas.map(
+      (option: MatListOption) => option.value
+    );
+  }
+
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     const extension = this.formConfiguracion.get('extension')?.value;
@@ -954,27 +971,33 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   imprimirCaratulas(): void {
     const idModulo = this.formCaratula.get('id_modulo')?.value;
     const fecha = this.formCaratula.get('fecha')?.value;
+    const curp = this.formCaratula.get('curp')?.value;
     const body = {
       id_modulo: idModulo,
       fecha: fecha.toISOString().substring(0, 10)
     }
 
-    this.getAtencionSinCita(body).subscribe({
-      next: citas => {
-        if (citas.length === 0) {
-          Swal.fire({
-            title: 'Atención',
-            icon: 'warning',
-            text: 'No hay atenciones sin cita para el día y módulo seleccionado',
-            timer: 2000
-          });
-          return;
-        }
+    if (this.activeTab === 0)
+      this.getAtencionSinCita(body).subscribe({
+        next: caratulas => {
+          if (caratulas.length === 0) {
+            Swal.fire({
+              title: 'Atención',
+              icon: 'warning',
+              text: 'No hay atenciones sin cita para el día y módulo seleccionado',
+              timer: 2000
+            });
+            return;
+          }
 
-        this.crearCaratula(citas)
-      },
-      error: err => console.error('Error:', err)
-    });
+          this.caratulas = caratulas;
+
+          this.toggleModalCaratula();
+          this.toggleModalConfirmarCaratula();
+        },
+        error: err => console.error('Error:', err)
+      });
+    else this.crearCaratula([curp]);
   }
 
   crearCaratula(citas: string[]): void {
@@ -986,7 +1009,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     })
     doc.deletePage(citas.length + 1);
 
-    
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
 
