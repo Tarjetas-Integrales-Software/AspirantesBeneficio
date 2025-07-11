@@ -51,7 +51,7 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -614,6 +614,17 @@ ipcMain.handle('get-printers', async () => {
   });
 });
 
+ipcMain.on('print', async (event, doc, printer) => {
+  const dirPath = path.join(app.getPath("userData"), "aux");
+  const id = "id" + Math.random().toString(16).slice(2);
+  const savePath = path.join(dirPath, id + ".pdf");
+
+  doc.save(savePath);
+
+  printCard(savePath, printer)
+    .then(() => { fs.unlinkSync(savePath); })
+    .catch(err => console.error('Error durante la impresión:', err));
+});
 
 ipcMain.on('print-id-card', async (event, data, name) => {
   try {

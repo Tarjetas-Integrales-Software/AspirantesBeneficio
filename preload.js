@@ -54,6 +54,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.once('pdf-save-error', reject);
     });
   },
+  print: (doc, printer) => ipcRenderer.invoke('print', doc, printer),
   getPrinters: () => ipcRenderer.invoke('get-printers'),
   printIdCard: (data, manual) => {
     console.log('Printing: ', data);
