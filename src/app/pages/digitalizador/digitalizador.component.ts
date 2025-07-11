@@ -1019,6 +1019,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   crearCaratula(caratulas: string[]): void {
+    if (!window.electronAPI) {
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
+    }
+
     if (caratulas.length === 0) {
       Swal.fire({
         title: 'Advertencia',
@@ -1029,6 +1033,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const impresora = this.formCaratula.get('impresora')?.value;
     const doc = new jsPDF();
 
     caratulas.map(cita => {
@@ -1037,48 +1042,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     })
     doc.deletePage(caratulas.length + 1);
 
-    const pdfBlob = doc.output('blob');
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-
-    // Crear iframe oculto
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.style.visibility = 'hidden';
-
-    document.body.appendChild(iframe);
-
-    iframe.onload = function () {
-      try {
-        if (!iframe.contentWindow) {
-          throw new Error("No se pudo acceder al contentWindow del iframe");
-        }
-
-        // Forzar el enfoque en el iframe para impresión
-        iframe.contentWindow.focus();
-
-        // Algunos navegadores necesitan un pequeño retraso
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-
-          // Limpiar después de imprimir
-          setTimeout(() => {
-            URL.revokeObjectURL(pdfUrl);
-            document.body.removeChild(iframe);
-          }, 1000);
-        }, 500);
-      } catch (error) {
-        console.error("Error al imprimir:", error);
-        // Fallback: abrir en nueva ventana
-        window.open(pdfUrl, '_blank');
-      }
-    };
-
-    iframe.src = pdfUrl;
+    window.electronAPI.print(doc, impresora);
   }
 
   downloadXlsx(caratulas: string[]) {
