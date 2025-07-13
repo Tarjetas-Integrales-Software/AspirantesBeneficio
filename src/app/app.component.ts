@@ -23,6 +23,7 @@ import { switchMap, filter, take } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 import { MonitorEquiposService } from './services/CRUD/monitor-equipos.service';
 import { cs_monitor_equipos } from './services/CRUD/monitor-equipos.service';
+import { LoginService } from './login/login.service';
 
 interface Location {
   lat: number;
@@ -65,9 +66,12 @@ export class AppComponent implements OnInit, OnDestroy {
     private configDigitalizadorService: ConfigDigitalizadorService,
     private relacionUsuarioRolesService: RelacionUsuarioRolesService,
     private menuService: MenuService,
+    private loginService: LoginService,
   ) { }
 
   ngOnInit(): void {
+    this.loginService.loadConfigStyle();
+
     this.checkAndSyncAspirantes();
     this.checkAndSyncCurps();
     this.checkAndSyncMonitorEquipo();

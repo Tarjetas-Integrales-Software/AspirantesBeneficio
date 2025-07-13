@@ -16,6 +16,14 @@ export class LoginService {
 
   constructor() { }
 
+  loadConfigStyle(): void {
+    // Solo hace la petición si aún no hay datos
+    if (!this.configSubject.value) {
+      this.http.get<any>(`${environment.apiUrl}/lic/imagenes_all`)
+        .subscribe(resp => this.configSubject.next(resp.data));
+    }
+  }
+
   get configuraciones$(): Observable<any> {
     return this.configSubject.asObservable();
   }
