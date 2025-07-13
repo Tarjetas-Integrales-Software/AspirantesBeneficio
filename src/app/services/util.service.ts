@@ -16,28 +16,6 @@ export class UtilService {
   )
    { }
 
-  generarNombreArchivoUnico(extension: string = 'pdf'): string {
-    // Obtener la fecha actual
-    const ahora = new Date();
-
-    // Formatear componentes de fecha
-    const año = ahora.getFullYear();
-    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-    const dia = String(ahora.getDate()).padStart(2, '0');
-    const horas = String(ahora.getHours()).padStart(2, '0');
-    const minutos = String(ahora.getMinutes()).padStart(2, '0');
-    const segundos = String(ahora.getSeconds()).padStart(2, '0');
-
-    // Construir el nombre del archivo
-    const nombreBase = 'ArchivosEsperadosDigitalizar';
-    const fechaHora = `${año}${mes}${dia}_${horas}${minutos}${segundos}`;
-
-    // Asegurar que la extensión no tenga punto
-    const ext = extension.replace(/^\./, '');
-
-    return `${nombreBase}_${fechaHora}.${ext}`;
-  }
-
   leerExcel(archivo: File): Promise<any[]> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -101,33 +79,18 @@ export class UtilService {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-
-        // const data = new Uint8Array(e.target.result);
-        // console.log(data,'data');
-
-        //const workbook = XLSX.read(data, { type: 'array' });
         const workbook = XLSX.read(e.target.result, { type: 'binary' });
-        console.log(workbook,'workbook');
-
         const sheetName = workbook.SheetNames[0];
-        console.log(sheetName,'sheetName');
-
         const worksheet = workbook.Sheets[sheetName];
-        console.log(worksheet,'worksheet');
-
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        console.log(jsonData);
 
         // Convertir datos a formato esperado
         const registros = jsonData.map((row: any) => ({
           id_tipo_documento_digitalizacion: tipo_doc,
           nombre_archivo: row['NOMBRE_ARCHIVO'] ? String(row['NOMBRE_ARCHIVO']).trim() : null,
           extension: ext,
-          nombre_archivo_upload: this.generarNombreArchivoUnico()
-          //row['NOMBRE_ARCHIVO_UPLOAD'] ? String(row['NOMBRE_ARCHIVO_UPLOAD']).trim() : null
+          nombre_archivo_upload: archivo.name
         }));
-
-        console.log(registros);
 
         this.digitalizarArchivosService.BulkInsert_InBatches(registros, 100);
 

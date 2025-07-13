@@ -27,9 +27,10 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { Observable, startWith, map, interval, Subscription, lastValueFrom, takeWhile, combineLatest, throwError } from 'rxjs';
 import { distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
-import { MatListModule } from '@angular/material/list';
+import { MatListModule, MatListOption, MatSelectionList } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
 import { Chart, registerables } from 'chart.js';
 import { FileSystemService } from '../../services/file-system.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -75,6 +76,7 @@ export interface Curp {
     MatIconModule,
     CommonModule,
     MatTabsModule,
+    MatCheckboxModule,
   ],
   templateUrl: './digitalizador.component.html',
   styleUrl: './digitalizador.component.scss',
@@ -94,9 +96,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   filteredOptions?: Observable<Curp[]>;
 
+  showModalConfirmarCaratulas: boolean = false;
   showModalCaratulas: boolean = false;
-  showModalConfiguraciones = false;
-  showModalUploadEsperadosTipoArchivo = false;
+  showModalConfiguraciones: boolean = false;
+  showModalUploadEsperadosTipoArchivo: boolean = false;
 
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
@@ -110,11 +113,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   formBusqueda: FormGroup;
   formConfiguracion: FormGroup;
 
+  caratulas: string[] = [];
   modulos: any[] = [];
   grupos: any[] = [];
   printers: any[] = [];
 
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
+
+  activeTab: number = 0;
 
   esperadas: number = 0;
   digitalizadas: number = 0;
@@ -137,6 +143,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private atencionSinCitaService: AtencionSinCitaService,
   ) {
     const electronAPI = (window as any).electronAPI;
+    const CURP_REGEX = /^([A-Z&]|[a-z&]{1})([AEIOU]|[aeiou]{1})([A-Z&]|[a-z&]{1})([A-Z&]|[a-z&]{1})([0-9]{2})(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])([HM]|[hm]{1})(AS|as|BC|bc|BS|bs|CC|cc|CS|cs|CH|ch|CL|cl|CM|cm|DF|df|DG|dg|GT|gt|GR|gr|HG|hg|JC|jc|MC|mc|MN|mn|MS|ms|NT|nt|NL|nl|OC|oc|PL|pl|QT|qt|QR|qr|SP|sp|SL|sl|SR|sr|TC|tc|TS|ts|TL|tl|VZ|vz|YN|yn|ZS|zs|NE|ne)([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([0-9]{2})$/;
 
     this.path = electronAPI?.path;
     this.fs = electronAPI?.fs;
@@ -145,7 +152,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       impresora: '',
       fecha: new Date(),
       id_modulo: '',
-      curp: '',
+      curp: ['', [Validators.pattern(CURP_REGEX)]],
     });
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
@@ -311,8 +318,19 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
+  toggleSeleccionarTodos(event: MatCheckboxChange, selectionRef: MatSelectionList) {
+    if (event.checked) selectionRef.selectAll();
+    else selectionRef.deselectAll();
+  }
+
+  toggleModalConfirmarCaratula() {
+    this.showModalConfirmarCaratulas = !this.showModalConfirmarCaratulas;
+    this.cdr.detectChanges();
+  }
+
   toggleModalCaratula() {
     this.showModalCaratulas = !this.showModalCaratulas;
+    this.cdr.detectChanges();
   }
 
   toggleModalConfiguraciones() {
@@ -789,6 +807,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
+  getSelectedValues(seleccionCaratulas: MatListOption[]): string[] {
+    return seleccionCaratulas.map(
+      (option: MatListOption) => option.value
+    );
+  }
+
   onFileSelected(event: any): void {
     const file = event.target.files[0];
     const extension = this.formConfiguracion.get('extension')?.value;
@@ -954,80 +978,97 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   imprimirCaratulas(): void {
     const idModulo = this.formCaratula.get('id_modulo')?.value;
     const fecha = this.formCaratula.get('fecha')?.value;
+    const curp = this.formCaratula.get('curp')?.value;
+
+    if (idModulo === '') {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione un módulo',
+        timer: 2000
+      });
+      return;
+    }
+
     const body = {
       id_modulo: idModulo,
       fecha: fecha.toISOString().substring(0, 10)
     }
 
-    this.getAtencionSinCita(body).subscribe({
-      next: citas => {
-        if (citas.length === 0) {
-          Swal.fire({
-            title: 'Atención',
-            icon: 'warning',
-            text: 'No hay atenciones sin cita para el día y módulo seleccionado',
-            timer: 2000
-          });
-          return;
-        }
+    if (this.activeTab === 0)
+      this.getAtencionSinCita(body).subscribe({
+        next: caratulas => {
+          if (caratulas.length === 0) {
+            Swal.fire({
+              title: 'Atención',
+              icon: 'warning',
+              text: 'No hay atenciones sin cita para el día y módulo seleccionado',
+              timer: 5000
+            });
+            return;
+          }
 
-        this.crearCaratula(citas)
-      },
-      error: err => console.error('Error:', err)
-    });
+          this.caratulas = caratulas;
+
+          this.toggleModalCaratula();
+          this.toggleModalConfirmarCaratula();
+        },
+        error: err => console.error('Error:', err)
+      });
+    else this.crearCaratula([curp]);
   }
 
-  crearCaratula(citas: string[]): void {
+  crearCaratula(caratulas: string[]): void {
+    if (!window.electronAPI) {
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
+    }
+
+    if (caratulas.length === 0) {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione al menos un registro',
+        timer: 2000
+      });
+      return;
+    }
+
+    const impresora = this.formCaratula.get('impresora')?.value;
     const doc = new jsPDF();
 
-    citas.map(cita => {
+    caratulas.map(cita => {
       doc.text(cita, 50, 50);
       doc.addPage();
     })
-    doc.deletePage(citas.length + 1);
+    doc.deletePage(caratulas.length + 1);
 
-    
-    const pdfBlob = doc.output('blob');
-    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.electronAPI.print(doc, impresora);
+  }
 
-    // Crear iframe oculto
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    iframe.style.visibility = 'hidden';
+  downloadXlsx(caratulas: string[]) {
+    if (caratulas.length === 0) {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione al menos un registro',
+        timer: 2000
+      });
+      return;
+    }
 
-    document.body.appendChild(iframe);
+    caratulas.unshift('NOMBRE_ARCHIVO');
 
-    iframe.onload = function () {
-      try {
-        if (!iframe.contentWindow) {
-          throw new Error("No se pudo acceder al contentWindow del iframe");
-        }
+    const worksheet = XLSX.utils.aoa_to_sheet(caratulas.map(caratula => [caratula]));
+    const idModulo = this.formCaratula.get('id_modulo')?.value;
+    const fecha = this.formCaratula.get('fecha')?.value;
+    const horaImpresion = new Date().toTimeString().substring(0, 8).replaceAll(':', '');
+    const modulo = this.modulos.find(modulo => modulo.id === idModulo);
 
-        // Forzar el enfoque en el iframe para impresión
-        iframe.contentWindow.focus();
+    // Crea un libro de trabajo y agrega la hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Carátulas');
 
-        // Algunos navegadores necesitan un pequeño retraso
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-
-          // Limpiar después de imprimir
-          setTimeout(() => {
-            URL.revokeObjectURL(pdfUrl);
-            document.body.removeChild(iframe);
-          }, 1000);
-        }, 500);
-      } catch (error) {
-        console.error("Error al imprimir:", error);
-        // Fallback: abrir en nueva ventana
-        window.open(pdfUrl, '_blank');
-      }
-    };
-
-    iframe.src = pdfUrl;
+    // Genera el archivo y lo descarga
+    XLSX.writeFile(workbook, `${fecha.toISOString().substring(0, 10).replaceAll('-', '')}_${horaImpresion}_${modulo.nombre}.xlsx`);
   }
 }
