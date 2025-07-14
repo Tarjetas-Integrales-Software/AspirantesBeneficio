@@ -614,17 +614,21 @@ ipcMain.handle('get-printers', async () => {
   });
 });
 
-ipcMain.on('print', async (event, doc, printer) => {
+ipcMain.handle('print', async (event, pdfBuffer, printer) => {
   const dirPath = path.join(app.getPath("userData"), "aux");
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+
   const id = "id" + Math.random().toString(16).slice(2);
   const savePath = path.join(dirPath, id + ".pdf");
 
-  doc.save(savePath);
+  // Guarda el buffer
+  fs.writeFileSync(savePath, Buffer.from(pdfBuffer));
 
   printCard(savePath, printer)
-    .then(() => { fs.unlinkSync(savePath); })
+    .then(() => fs.unlinkSync(savePath))
     .catch(err => console.error('Error durante la impresión:', err));
 });
+
 
 ipcMain.on('print-id-card', async (event, data, name) => {
   try {
@@ -633,7 +637,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
     const doc = new jsPDF({
       orientation: "landscape",
       unit: "mm",
-      format: [85, 54] // Ancho x Alto en mm
+      format: [85, 54]
     });
 
     name = data.curp; //VARIABLE PARA EL NOMBRE DEL ARCHIVO PDF
