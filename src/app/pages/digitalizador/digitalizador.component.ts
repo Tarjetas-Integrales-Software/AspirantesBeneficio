@@ -32,15 +32,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
 import { Chart, registerables } from 'chart.js';
-import { FileSystemService } from '../../services/file-system.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ElectronService } from '../../services/electron.service';
 import Swal from 'sweetalert2';
 import { ConfigDigitalizadorService } from '../../services/CRUD/config-digitalizador.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { UtilService } from '../../services/util.service';
 import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
-import { ModulosService } from '../../services/CRUD/modulos.service';
+import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion.service';
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -86,8 +84,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   @ViewChild('myBarChart') myBarChart!: ElementRef;
   chart!: Chart;
-  chartData: any[] = []; // Tus datos vendrán aquí
-  chartData_construida: any[] = []; // Tus datos vendrán aquí
+  chartData: any[] = [];
+  chartData_construida: any[] = [];
 
   private monitorSubscription: Subscription = Subscription.EMPTY;
 
@@ -132,18 +130,18 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   constructor(
     private cdr: ChangeDetectorRef,
-    private fileSystemService: FileSystemService,
     private electronService: ElectronService,
-    private snackBar: MatSnackBar,
     private configDigitalizadorService: ConfigDigitalizadorService,
     private networkStatusService: NetworkStatusService,
     private utilService: UtilService,
     private digitalizarArchivosService: DigitalizarArchivosService,
-    private modulosService: ModulosService,
+    private modulosLicitacionService: ModulosLicitacionService,
     private atencionSinCitaService: AtencionSinCitaService,
   ) {
     const electronAPI = (window as any).electronAPI;
-    const CURP_REGEX = /^([A-Z&]|[a-z&]{1})([AEIOU]|[aeiou]{1})([A-Z&]|[a-z&]{1})([A-Z&]|[a-z&]{1})([0-9]{2})(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])([HM]|[hm]{1})(AS|as|BC|bc|BS|bs|CC|cc|CS|cs|CH|ch|CL|cl|CM|cm|DF|df|DG|dg|GT|gt|GR|gr|HG|hg|JC|jc|MC|mc|MN|mn|MS|ms|NT|nt|NL|nl|OC|oc|PL|pl|QT|qt|QR|qr|SP|sp|SL|sl|SR|sr|TC|tc|TS|ts|TL|tl|VZ|vz|YN|yn|ZS|zs|NE|ne)([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([^AEIOUaeiou]{1})([0-9]{2})$/;
+    const CURP_REGEX = new RegExp(
+      '^[A-Z][AEIOU][A-Z]{2}[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z][0-9]$'
+    );
 
     this.path = electronAPI?.path;
     this.fs = electronAPI?.fs;
@@ -190,9 +188,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.getExtensiones();
         this.getArchivosEsperados();
 
-
         this.initializeChart();
-
 
         // Carga inicial
         this.updateData();
@@ -343,6 +339,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.showModalUploadEsperadosTipoArchivo = !this.showModalUploadEsperadosTipoArchivo;
 
     if (this.showModalUploadEsperadosTipoArchivo) this.detenerMonitor();
+  }
+
+  cancelarConfirmarCaratula() {
+    this.toggleModalConfirmarCaratula();
+    this.toggleModalCaratula();
   }
 
 
@@ -733,7 +734,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   toUpperCaseCurp(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
-    this.myForm.get('curp')?.setValue(input.value);
+    this.formCaratula.get('curp')?.setValue(input.value);
   }
 
   tipos: any[] = [];
@@ -935,7 +936,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   getModulos(): void {
-    this.modulosService.getModulos().subscribe({
+    this.modulosLicitacionService.getModulos().subscribe({
       next: ((response) => {
         if (response.response) {
           this.modulos = response.data;
@@ -976,26 +977,37 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   imprimirCaratulas(): void {
+    const impresora = this.formCaratula.get('impresora')?.value;
     const idModulo = this.formCaratula.get('id_modulo')?.value;
     const fecha = this.formCaratula.get('fecha')?.value;
     const curp = this.formCaratula.get('curp')?.value;
 
-    if (idModulo === '') {
+    if (impresora === '') {
       Swal.fire({
         title: 'Advertencia',
         icon: 'warning',
-        text: 'Seleccione un módulo',
-        timer: 2000
+        text: 'Seleccione una impresora',
+        timer: 2500
       });
       return;
     }
 
-    const body = {
-      id_modulo: idModulo,
-      fecha: fecha.toISOString().substring(0, 10)
-    }
+    if (this.activeTab === 0) {
+      if (idModulo === '') {
+        Swal.fire({
+          title: 'Advertencia',
+          icon: 'warning',
+          text: 'Seleccione un módulo',
+          timer: 2000
+        });
+        return;
+      }
 
-    if (this.activeTab === 0)
+      const body = {
+        id_modulo: idModulo,
+        fecha: fecha.toISOString().substring(0, 10)
+      }
+
       this.getAtencionSinCita(body).subscribe({
         next: caratulas => {
           if (caratulas.length === 0) {
@@ -1015,6 +1027,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         },
         error: err => console.error('Error:', err)
       });
+    }
+
     else this.crearCaratula([curp]);
   }
 
@@ -1035,6 +1049,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     const impresora = this.formCaratula.get('impresora')?.value;
     const doc = new jsPDF();
+    doc.setFontSize(32);
 
     caratulas.map(cita => {
       doc.text(cita, 50, 50);
@@ -1042,7 +1057,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     })
     doc.deletePage(caratulas.length + 1);
 
-    window.electronAPI.print(doc, impresora);
+    const pdfBuffer = doc.output('arraybuffer');
+
+    window.electronAPI.print(pdfBuffer, impresora);
   }
 
   downloadXlsx(caratulas: string[]) {
