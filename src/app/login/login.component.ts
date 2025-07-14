@@ -27,6 +27,7 @@ export class LoginComponent implements OnInit {
   errorMessage: string = '';
   showPassword: boolean = false;
   loading: boolean = false;
+  configuraciones: any[] = [];
 
   constructor(private fb: FormBuilder,
     private router: Router,
@@ -38,7 +39,7 @@ export class LoginComponent implements OnInit {
     private tiposCarrerasService: TiposCarrerasService,
     private carrerasService: CarrerasService,
     private modulosService: ModulosService,
-    private menuService: MenuService
+    private menuService: MenuService,
   ) {
 
     this.loginForm = this.fb.group({
@@ -64,6 +65,21 @@ export class LoginComponent implements OnInit {
       this.token = this.storageService.get("token");
 
     if (this.token !== "") this.router.navigate(['/registro']);
+
+    this.loginService.configuraciones$.subscribe(data => {
+      this.configuraciones = data;
+
+      console.log(data,'data');
+      console.log(this.configuraciones,'configuraciones');
+    });
+
+
+  }
+
+  getConfigPorIdentificador(identificador: string): any | null {
+    if (!this.configuraciones) return null;
+    const configItem = this.configuraciones.find((item: any) => item.nombre_identificador === identificador);
+    return configItem || null;
   }
 
   login(): void {
