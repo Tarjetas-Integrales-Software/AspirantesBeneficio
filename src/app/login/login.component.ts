@@ -68,9 +68,6 @@ export class LoginComponent implements OnInit {
 
     this.loginService.configuraciones$.subscribe(data => {
       this.configuraciones = data;
-
-      console.log(data,'data');
-      console.log(this.configuraciones,'configuraciones');
     });
 
 

@@ -31,7 +31,7 @@ declare global {
             savePdf: (pdfData: ArrayBuffer, fileName: string) => Promise<string>;
             getPrinters: () => Promise<Printer[]>;
             printIdCard: (data: DataImpresionCredencial, manual: boolean) => Promise<void>;
-            print: (pdfBuffer: ArrayBuffer, printer: string) => Promise<void>;
+            print: (pdfBuffer: ArrayBuffer, printer: string) => Promise<string>;
         };
     }
 }

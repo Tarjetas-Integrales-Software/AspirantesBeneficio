@@ -51,7 +51,7 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -152,6 +152,18 @@ function addColumnIfNotExists() {
     const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
+    }
+
+    // Verificar columna 'qr'
+    const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
+    if (!columnExists_qr) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr REAL NULL;").run();
+    }
+
+    // Verificar columna 'barras'
+    const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
+    if (!columnExists_barras) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras REAL NULL;").run();
     }
 
   } catch (error) {
@@ -614,7 +626,7 @@ ipcMain.handle('get-printers', async () => {
   });
 });
 
-ipcMain.handle('print', async (event, pdfBuffer, printer) => {
+ipcMain.handle('print', (event, pdfBuffer, printer) => {
   const dirPath = path.join(app.getPath("userData"), "aux");
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
@@ -624,9 +636,17 @@ ipcMain.handle('print', async (event, pdfBuffer, printer) => {
   // Guarda el buffer
   fs.writeFileSync(savePath, Buffer.from(pdfBuffer));
 
-  printCard(savePath, printer)
-    .then(() => fs.unlinkSync(savePath))
-    .catch(err => console.error('Error durante la impresión:', err));
+  return new Promise((resolve, reject) => {
+    simplePrint(savePath, printer)
+      .then((response) => {
+        fs.unlinkSync(savePath);
+        resolve(response);
+      })
+      .catch(err => {
+        console.error('Error durante la impresión:', err);
+        reject(err);
+      });
+  })
 });
 
 
@@ -917,6 +937,37 @@ async function printCard(pdfFileUrl, printerName) {
 
         console.log('Impresión enviada correctamente');
         resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+async function simplePrint(pdfFileUrl, printerName) {
+  return new Promise((resolve, reject) => {
+    try {
+      const pdfPath = pdfFileUrl.replace('file://', '').replace(/\//g, '\\');
+
+      if (!fs.existsSync(pdfPath)) {
+        return reject(new Error('Archivo PDF no encontrado: ' + pdfPath));
+      }
+
+      const sumatraPath = path.join(process.resourcesPath, 'SumatraPDF.exe');
+
+      if (!fs.existsSync(sumatraPath)) {
+        return reject(new Error('No se encontró SumatraPDF en: ' + sumatraPath));
+      }
+
+      const command = `"${sumatraPath}" -print-to "${printerName}" -print-settings "duplex=off" "${pdfPath}"`;
+
+      exec(command, (err, stdout, stderr) => {
+        if (err) {
+          console.error('Error al imprimir:', err);
+          return reject(err);
+        }
+
+        resolve('Impresión enviada correctamente');
       });
     } catch (error) {
       reject(error);

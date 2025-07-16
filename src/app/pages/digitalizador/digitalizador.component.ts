@@ -31,6 +31,7 @@ import { MatListModule, MatListOption, MatSelectionList } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Chart, registerables } from 'chart.js';
 import { ElectronService } from '../../services/electron.service';
 import Swal from 'sweetalert2';
@@ -42,6 +43,8 @@ import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
+import JsBarcode from 'jsbarcode';
 
 Chart.register(...registerables);
 
@@ -75,6 +78,7 @@ export interface Curp {
     CommonModule,
     MatTabsModule,
     MatCheckboxModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './digitalizador.component.html',
   styleUrl: './digitalizador.component.scss',
@@ -171,7 +175,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       tipo: '',
       intervaloSincronizacion: 10,
       pesoMinimo: 300,
-      regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/
+      regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/,
+      qr: false,
+      barras: false,
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -221,7 +227,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     } else this.sinConfiguracion = false;
 
-    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp } = await config
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp, qr, barras } = await config
 
     this.formConfiguracion = this.fb.nonNullable.group({
       extension: extension,
@@ -230,7 +236,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       intervaloSincronizacion: tiempo_sync,
       pesoMinimo: peso_minimo,
       tipo: tipo,
-      regexCurp: regex_curp
+      regexCurp: regex_curp,
+      qr: Boolean(qr),
+      barras: Boolean(barras)
     });
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
@@ -638,6 +646,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
       const tipo = this.formConfiguracion.get('tipo')?.value;
       const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
+      const qr = this.formConfiguracion.get('qr')?.value;
+      const barras = this.formConfiguracion.get('barras')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
@@ -648,6 +658,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         peso_minimo: pesoMinimo,
         tipo: tipo,
         regexCurp: regexCurp,
+        qr: qr ? 1 : 0,
+        barras: barras ? 1 : 0,
       }).then(() => {
         this.sinConfiguracion = false;
 
@@ -1032,7 +1044,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     else this.crearCaratula([curp]);
   }
 
-  crearCaratula(caratulas: string[]): void {
+  async crearCaratula(caratulas: string[]): Promise<void> {
     if (!window.electronAPI) {
       throw new Error('Funcionalidad de impresión solo disponible en Electron');
     }
@@ -1051,15 +1063,61 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const doc = new jsPDF();
     doc.setFontSize(32);
 
-    caratulas.map(cita => {
-      doc.text(cita, 50, 50);
+    // Constantes de layout
+    const qrWidth = 90;
+    const barcodeWidth = qrWidth;
+    const barcodeHeight = 20;
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const centerX = (pageWidth - qrWidth) / 2;
+
+    for (const cita of caratulas) {
+      doc.text(cita, 50, 40); // puedes centrar el texto si quieres
+
+      // Agregar QR centrado
+      try {
+        const qrUrl = await QRCode.toDataURL(cita);
+        doc.addImage(qrUrl, 'PNG', centerX, 100, qrWidth, qrWidth, cita, 'FAST', 0);
+      } catch (err) {
+        console.error('Error generando QR:', err);
+      }
+
+      // Agregar código de barras centrado debajo del QR
+      try {
+        const canvas = document.createElement('canvas');
+        JsBarcode(canvas, cita, {
+          format: 'CODE128',
+          displayValue: false,
+          width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
+          height: barcodeHeight,
+          margin: 0
+        });
+
+        const barcodeUrl = canvas.toDataURL('image/png');
+        doc.addImage(barcodeUrl, 'PNG', centerX, 250, barcodeWidth, barcodeHeight);
+
+        canvas.width = 0;
+        canvas.height = 0;
+      } catch (err) {
+        console.error('Error generando código de barras:', err);
+      }
+
       doc.addPage();
-    })
-    doc.deletePage(caratulas.length + 1);
+    }
+
+    doc.deletePage(caratulas.length + 1); // elimina la última página vacía
 
     const pdfBuffer = doc.output('arraybuffer');
+    const respuestaPrint = await window.electronAPI.print(pdfBuffer, impresora);
 
-    window.electronAPI.print(pdfBuffer, impresora);
+    console.log(respuestaPrint);
+    
+    Swal.fire({
+      title: 'Aviso',
+      text: respuestaPrint,
+      timer: 3500,
+      icon: 'success'
+    })
   }
 
   downloadXlsx(caratulas: string[]) {
