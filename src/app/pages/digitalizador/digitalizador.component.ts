@@ -43,7 +43,8 @@ import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
-import QRCode from 'qrcode'
+import QRCode from 'qrcode';
+import JsBarcode from 'jsbarcode';
 
 Chart.register(...registerables);
 
@@ -1062,15 +1063,43 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const doc = new jsPDF();
     doc.setFontSize(32);
 
-    for (const cita of caratulas) {
-      doc.text(cita, 50, 50);
+    // Constantes de layout
+    const qrWidth = 90;
+    const barcodeWidth = qrWidth;
+    const barcodeHeight = 20;
 
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const centerX = (pageWidth - qrWidth) / 2;
+
+    for (const cita of caratulas) {
+      doc.text(cita, 50, 40); // puedes centrar el texto si quieres
+
+      // Agregar QR centrado
       try {
-        const url = await QRCode.toDataURL(cita);
-        console.log(url);
-        doc.addImage(url, 'PNG', 50, 50, 90, 90, cita, 'FAST', 0);
+        const qrUrl = await QRCode.toDataURL(cita);
+        doc.addImage(qrUrl, 'PNG', centerX, 100, qrWidth, qrWidth, cita, 'FAST', 0);
       } catch (err) {
-        console.error(err);
+        console.error('Error generando QR:', err);
+      }
+
+      // Agregar código de barras centrado debajo del QR
+      try {
+        const canvas = document.createElement('canvas');
+        JsBarcode(canvas, cita, {
+          format: 'CODE128',
+          displayValue: false,
+          width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
+          height: barcodeHeight,
+          margin: 0
+        });
+
+        const barcodeUrl = canvas.toDataURL('image/png');
+        doc.addImage(barcodeUrl, 'PNG', centerX, 250, barcodeWidth, barcodeHeight);
+
+        canvas.width = 0;
+        canvas.height = 0;
+      } catch (err) {
+        console.error('Error generando código de barras:', err);
       }
 
       doc.addPage();
@@ -1079,7 +1108,16 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     doc.deletePage(caratulas.length + 1); // elimina la última página vacía
 
     const pdfBuffer = doc.output('arraybuffer');
-    window.electronAPI.print(pdfBuffer, impresora);
+    const respuestaPrint = await window.electronAPI.print(pdfBuffer, impresora);
+
+    console.log(respuestaPrint);
+    
+    Swal.fire({
+      title: 'Aviso',
+      text: respuestaPrint,
+      timer: 3500,
+      icon: 'success'
+    })
   }
 
   downloadXlsx(caratulas: string[]) {
