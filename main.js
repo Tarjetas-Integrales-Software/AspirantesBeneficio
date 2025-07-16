@@ -154,6 +154,18 @@ function addColumnIfNotExists() {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
     }
 
+    // Verificar columna 'qr'
+    const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
+    if (!columnExists_qr) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr REAL NULL;").run();
+    }
+
+    // Verificar columna 'barras'
+    const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
+    if (!columnExists_barras) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras REAL NULL;").run();
+    }
+
   } catch (error) {
     console.error('Error altering table:', error);
   }

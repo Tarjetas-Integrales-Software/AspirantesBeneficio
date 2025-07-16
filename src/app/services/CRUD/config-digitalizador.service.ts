@@ -35,6 +35,8 @@ export class ConfigDigitalizadorService {
     peso_minimo: number;
     tipo: string;
     regexCurp: string;
+    qr: number;
+    barras: number;
   }): Promise<any> {
     const insertSql = `
     INSERT OR REPLACE INTO sy_config_digitalizador (
@@ -45,8 +47,10 @@ export class ConfigDigitalizadorService {
       extension,
       peso_minimo,
       tipo,
-      regex_curp
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+      regex_curp,
+      qr,
+      barras
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
     const params = [
       1,
@@ -56,7 +60,9 @@ export class ConfigDigitalizadorService {
       config.extension,
       config.peso_minimo,
       config.tipo,
-      config.regexCurp
+      config.regexCurp,
+      config.qr,
+      config.barras,
     ];
     return await this.databaseService.execute(insertSql, params);
   }

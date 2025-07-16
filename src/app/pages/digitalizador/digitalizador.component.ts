@@ -31,6 +31,7 @@ import { MatListModule, MatListOption, MatSelectionList } from '@angular/materia
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule, MatCheckboxChange } from '@angular/material/checkbox';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Chart, registerables } from 'chart.js';
 import { ElectronService } from '../../services/electron.service';
 import Swal from 'sweetalert2';
@@ -42,6 +43,7 @@ import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import QRCode from 'qrcode'
 
 Chart.register(...registerables);
 
@@ -75,6 +77,7 @@ export interface Curp {
     CommonModule,
     MatTabsModule,
     MatCheckboxModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './digitalizador.component.html',
   styleUrl: './digitalizador.component.scss',
@@ -171,7 +174,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       tipo: '',
       intervaloSincronizacion: 10,
       pesoMinimo: 300,
-      regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/
+      regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/,
+      qr: false,
+      barras: false,
     });
 
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
@@ -221,7 +226,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     } else this.sinConfiguracion = false;
 
-    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp } = await config
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp, qr, barras } = await config
 
     this.formConfiguracion = this.fb.nonNullable.group({
       extension: extension,
@@ -230,7 +235,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       intervaloSincronizacion: tiempo_sync,
       pesoMinimo: peso_minimo,
       tipo: tipo,
-      regexCurp: regex_curp
+      regexCurp: regex_curp,
+      qr: Boolean(qr),
+      barras: Boolean(barras)
     });
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
@@ -638,6 +645,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
       const tipo = this.formConfiguracion.get('tipo')?.value;
       const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
+      const qr = this.formConfiguracion.get('qr')?.value;
+      const barras = this.formConfiguracion.get('barras')?.value;
 
       // Guardar informacion de configuracion de digitalizador en la db Local
       this.configDigitalizadorService.localCreateOrUpdate_ConfigDigitalizador({
@@ -648,6 +657,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         peso_minimo: pesoMinimo,
         tipo: tipo,
         regexCurp: regexCurp,
+        qr: qr ? 1 : 0,
+        barras: barras ? 1 : 0,
       }).then(() => {
         this.sinConfiguracion = false;
 
@@ -1032,7 +1043,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     else this.crearCaratula([curp]);
   }
 
-  crearCaratula(caratulas: string[]): void {
+  async crearCaratula(caratulas: string[]): Promise<void> {
     if (!window.electronAPI) {
       throw new Error('Funcionalidad de impresión solo disponible en Electron');
     }
@@ -1051,14 +1062,23 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const doc = new jsPDF();
     doc.setFontSize(32);
 
-    caratulas.map(cita => {
+    for (const cita of caratulas) {
       doc.text(cita, 50, 50);
+
+      try {
+        const url = await QRCode.toDataURL(cita);
+        console.log(url);
+        doc.addImage(url, 'PNG', 50, 50, 90, 90, cita, 'FAST', 0);
+      } catch (err) {
+        console.error(err);
+      }
+
       doc.addPage();
-    })
-    doc.deletePage(caratulas.length + 1);
+    }
+
+    doc.deletePage(caratulas.length + 1); // elimina la última página vacía
 
     const pdfBuffer = doc.output('arraybuffer');
-
     window.electronAPI.print(pdfBuffer, impresora);
   }
 

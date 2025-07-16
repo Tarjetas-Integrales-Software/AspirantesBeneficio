@@ -75,9 +75,17 @@
     flex-direction: column;
     row-gap: 1rem;
   }
+  &__row--short {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+  }
 
   &__item {
     width: 100%;
+  }
+  &__item--short {
+    width: auto;
   }
 }
 
@@ -141,6 +149,12 @@
     &__row {
       flex-direction: row;
       justify-content: space-between;
+      column-gap: 1rem;
+    }
+
+    &__row--short {
+      flex-direction: row;
+      justify-content: flex-start;
       column-gap: 1rem;
     }
   }

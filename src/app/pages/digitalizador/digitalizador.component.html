@@ -281,7 +281,7 @@
               </p>
             </div>
 
-            <mat-selection-list #seleccionCaratulas>
+            <mat-selection-list #seleccionCaratulas class="busqueda__list">
               @for (caratula of caratulas; track caratula) {
               <mat-list-option [value]="caratula">{{caratula}}</mat-list-option>
               }
@@ -399,6 +399,17 @@
                     <mat-label>Peso mínimo (KB)</mat-label>
                     <input matInput formControlName="pesoMinimo" placeholder="Peso minimo en kilobytes" min="1">
                   </mat-form-field>
+                </div>
+              </div>
+              <div class="form__row--short">
+                <div class="form__item--short">
+                  <strong><h4>Carátula</h4></strong>
+                </div>
+                <div class="form__item--short">
+                  <mat-slide-toggle formControlName="qr">QR</mat-slide-toggle>
+                </div>
+                <div class="form__item--short">
+                  <mat-slide-toggle formControlName="barras">Código de barras</mat-slide-toggle>
                 </div>
               </div>
             </form>
