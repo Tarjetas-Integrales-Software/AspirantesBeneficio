@@ -116,6 +116,10 @@ export class DigitalizarArchivosService {
           const curpParseada = this.extraerCURP(path.basename(archivo), regexCurp);
           const carpetaDestino = path.join(this.appPath, 'archivosDigitalizados');
 
+          if (!fs.existsSync(carpetaDestino)) {
+            fs.mkdirSync(carpetaDestino, { recursive: true });
+          }
+
           this.guardarArchivoBaseLocal({
             fecha: fechaFormateada,
             tipo: tipo,
@@ -124,11 +128,6 @@ export class DigitalizarArchivosService {
             carpetaDestino: carpetaDestino,
             extension: extension
           });
-
-
-          if (!fs.existsSync(carpetaDestino)) {
-            fs.mkdirSync(carpetaDestino, { recursive: true });
-          }
 
           fs.renameSync(archivo, path.join(carpetaDestino, curpParseada + '.' + extension));
         }
@@ -163,6 +162,11 @@ export class DigitalizarArchivosService {
   ): Promise<string[]> {
     try {
       const electronAPI = (window as any).electronAPI;
+
+      if (!fs.existsSync(carpetaOrigen)) {
+        fs.mkdirSync(carpetaOrigen, { recursive: true });
+      }
+
       return await electronAPI.invoke('get-filtered-files', {
         folder: carpetaOrigen,
         minSize: pesoMinimo,
