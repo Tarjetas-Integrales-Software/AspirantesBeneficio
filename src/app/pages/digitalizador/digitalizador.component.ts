@@ -1059,6 +1059,19 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const config =
+      await this.configDigitalizadorService.consultarConfigDigitalizador();
+
+    if (config === undefined) {
+      this.sinConfiguracion = true;
+
+      this.detenerMonitor();
+      this.isMonitoring = false;
+
+      return;
+    } else this.sinConfiguracion = false;
+
+    const { qr, barras } = await config
     const impresora = this.formCaratula.get('impresora')?.value;
     const doc = new jsPDF();
     doc.setFontSize(32);
