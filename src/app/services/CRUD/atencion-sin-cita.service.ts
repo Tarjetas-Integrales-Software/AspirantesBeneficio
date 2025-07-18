@@ -23,4 +23,8 @@ export class AtencionSinCitaService {
   getCaratula(body: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/atencion_sin_cita_caratula', body);
   }
+
+  getDetalle(body: Object): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/atencion_sin_cita_por_modulo_all', body);
+  }
 }

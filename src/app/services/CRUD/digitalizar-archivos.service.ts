@@ -224,18 +224,16 @@ export class DigitalizarArchivosService {
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
           next: (response) => {
-            console.log('Response: ', response);
-
-
             if (response.data) {
               const { filename, grupo } = response.data;
+              const parsedFileName = filename.replaceAll('.pdf', '');
 
-              this.actualizarGrupoPorCurp(filename.replaceAll('.pdf', ''), grupo);
+              this.actualizarGrupoPorCurp(parsedFileName, grupo);
 
               const destino = path.join(carpetaDestino, path.basename(archivo));
               fs.renameSync(archivo, destino);
 
-              this.edit_archivo_esperado(filename, 1).subscribe({
+              this.edit_archivo_esperado(parsedFileName, 1).subscribe({
                 next: (response) => {
 
                 },
@@ -324,6 +322,10 @@ export class DigitalizarArchivosService {
 
   get_data_esperados_digitalizados(nombre_archivo_upload: string): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/rep_get_cantidades_por_archivo_upload', { nombre_archivo_upload: nombre_archivo_upload });
+  }
+
+  getArchivosPendientesEnviar(nombre_archivo_upload: string): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/rep_get_nombres_archivo_esperados_por_archivo_upload', { nombre_archivo_upload: nombre_archivo_upload });
   }
 
   async consultarPendientesDigitalizar(): Promise<{ id: number; fecha: string; tipo: string; curp: string; carpetaOrigen: string, carpetaDestino: string, extension: string }[]> {

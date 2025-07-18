@@ -70,7 +70,7 @@
         <div class="form__row form__row--responsive">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Fecha digitalización</mat-label>
+              <mat-label>Fecha de carga</mat-label>
               <mat-date-range-input [rangePicker]="picker">
                 <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
                 <input matEndDate formControlName="fechaFin" placeholder="Fin" />
@@ -113,53 +113,93 @@
         </div>
       </form>
 
-      <div class="chart">
-        <div>
-          <canvas #myBarChart class="w-full h-full" id="myBarChart"> {{ chart }} </canvas>
+      <div class="info">
+        <div class="esperadas">
+          <h5>Esperadas para las fechas seleccionadas</h5>
+          <mat-list role="list" class="esperadas__list">
+            @for (item of atencionSinCitaDetalles; track item) {
+            <mat-list-item role="listitem">
+              <div class="esperadas__item">
+                <span class="esperadas__modulo">{{ item.modulo }}</span>
+                <span class="esperadas__cantidad">{{ item.total_registros }}</span>
+              </div>
+            </mat-list-item>
+            }
+          </mat-list>
         </div>
+        <div class="chart">
+          <h5>Estado de digitalización para grupo seleccionado</h5>
+          <div>
+            <canvas #myBarChart class="w-full h-full" id="myBarChart"> {{ chart }} </canvas>
+          </div>
 
-        <div class="numeros">
-          <div class="numeros__item">
-            <span class="">{{ esperadas | number}}</span>
-            <span>Esperadas</span>
-          </div>
-          <div class="numeros__item">
-            <span class="">{{ digitalizadas | number }}</span>
-            <span>Digitalizadas</span>
-          </div>
-          <div class="numeros__item">
-            <span class="">{{ enviadas | number}}</span>
-            <span>Enviadas</span>
+          <div class="numeros">
+            <div class="numeros__item">
+              <span class="numeros__numero">{{ esperadas | number}}</span>
+              <span class="numeros__texto">Esperadas</span>
+            </div>
+            <div class="numeros__item">
+              <span class="numeros__numero">{{ digitalizadas | number }}</span>
+              <span class="numeros__texto">Digitalizadas</span>
+            </div>
+            <div class="numeros__item">
+              <span class="numeros__numero">{{ enviadas | number}}</span>
+              <span class="numeros__texto">Enviadas</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="busqueda">
-    <form [formGroup]="formBusqueda" class="form busqueda__form" style="max-width: 100%;">
-      <div class="form__row">
-        <div class="form__item">
-          <mat-form-field class="w-full">
-            <mat-label>Nombre Archivo Upload</mat-label>
-            <input matInput formControlName="search" (keyup)="getArchivosEsperados()" placeholder="Nombre del archivo">
-          </mat-form-field>
-        </div>
+  <section class="listas">
+    <div class="pendientes">
+      <div class="flex justify-between w-full">
+        <h4>Pendientes por enviar</h4>
+        <h4>{{ archivosPendientesEnviar.length }}</h4>
       </div>
-    </form>
 
-    <mat-list class="busqueda__list" role="list">
-      @for (archivo of archivosEsperados; track archivo.id) {
-      <mat-list-item role="listitem">
-        <div class="busqueda__list__item">
-          <span class="busqueda__list__item__archivo">{{ archivo.nombre_archivo }}</span>
-          <small class="busqueda__list__item__status">{{ archivo.status == 1 ? 'Digitalizada' : 'Pendiente' }}</small>
+      <mat-list class="pendientes__list" role="list">
+        @for (archivo of archivosPendientesEnviar; track archivo) {
+        <mat-list-item role="listitem">
+          <div class="pendientes__list__item">
+            {{ archivo.nombre_archivo }}
+          </div>
+        </mat-list-item>
+        } @empty {
+        <mat-list-item role="listitem">No se encontraron archivos para el grupo seleccionado</mat-list-item>
+        }
+      </mat-list>
+    </div>
+
+    <div class="busqueda">
+      <h4>Buscar archivos esperados</h4>
+
+      <form [formGroup]="formBusqueda" class="form busqueda__form">
+        <div class="form__row">
+          <div class="form__item">
+            <mat-form-field class="w-full">
+              <mat-label>Nombre del archivo</mat-label>
+              <input matInput formControlName="search" (keyup)="getArchivosEsperados()"
+                placeholder="Nombre del archivo">
+            </mat-form-field>
+          </div>
         </div>
-      </mat-list-item>
-      } @empty {
-      <mat-list-item role="listitem">No se encontraron archivos</mat-list-item>
-      }
-    </mat-list>
+      </form>
+
+      <mat-list class="busqueda__list" role="list">
+        @for (archivo of archivosEsperados; track archivo.id) {
+        <mat-list-item role="listitem">
+          <div class="busqueda__list__item">
+            <span class="busqueda__list__item__archivo">{{ archivo.nombre_archivo }}</span>
+            <small class="busqueda__list__item__status">{{ archivo.status == 1 ? 'Enviada' : 'Esperada' }}</small>
+          </div>
+        </mat-list-item>
+        } @empty {
+        <mat-list-item role="listitem">No se encontraron archivos</mat-list-item>
+        }
+      </mat-list>
+    </div>
   </section>
 </main>
 
@@ -225,7 +265,8 @@
                     <div class="form__item">
                       <mat-form-field class="w-full">
                         <mat-label>Nombre del archivo</mat-label>
-                        <input matInput formControlName="curp" placeholder="Nombre del archivo" (keyup)="toUpperCaseCurp($event)">
+                        <input matInput formControlName="curp" placeholder="Nombre del archivo"
+                          (keyup)="toUpperCaseCurp($event)">
                         <mat-error *ngIf="formCaratula.get('curp')?.hasError('pattern')">
                           Ingresa una CURP válida (18 caracteres alfanuméricos).
                         </mat-error>
@@ -281,7 +322,7 @@
               </p>
             </div>
 
-            <mat-selection-list #seleccionCaratulas class="busqueda__list">
+            <mat-selection-list #seleccionCaratulas class="caratulas__list">
               @for (caratula of caratulas; track caratula) {
               <mat-list-option [value]="caratula">{{caratula}}</mat-list-option>
               }
@@ -403,7 +444,9 @@
               </div>
               <div class="form__row--short">
                 <div class="form__item--short">
-                  <strong><h4>Carátula</h4></strong>
+                  <strong>
+                    <h4>Carátula</h4>
+                  </strong>
                 </div>
                 <div class="form__item--short">
                   <mat-slide-toggle formControlName="qr">QR</mat-slide-toggle>
