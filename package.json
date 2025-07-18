@@ -22,7 +22,8 @@
     "make": "electron-forge make",
     "build-start": "ng build --configuration production && electron .",
     "build-devs": "ng build --configuration development && electron .",
-    "sumatra": "copy tools\\SumatraPDF.exe node_modules\\electron\\dist\\resources\\"
+    "sumatra": "copy tools\\SumatraPDF.exe node_modules\\electron\\dist\\resources\\",
+    "rebuild": "electron-rebuild -f -w .\\node_modules\\.bin\\electron-rebuild.cmd"
   },
   "private": true,
   "build": {

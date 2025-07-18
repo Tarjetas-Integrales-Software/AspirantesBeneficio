@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, webContents } = require('electron');
 const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const url = require('url');
@@ -92,10 +92,6 @@ function getWindowsSerialNumber() {
 
 function eliminarConfiguracionModulo() {
   try {
-    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
-
-    db = new Database(dbPath);
-
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
@@ -107,19 +103,11 @@ function eliminarConfiguracionModulo() {
     } else console.log("La tabla no existe, no se puede eliminar el registro.");
   } catch (error) {
     console.error('Error al eliminar el registro:', error);
-  } finally {
-    if (db)
-      db.close();
   }
 }
 
 function addColumnIfNotExists() {
   try {
-    // Ruta de la base de datos en la carpeta de datos del usuario
-    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
-
-    db = new Database(dbPath);
-
     // Verificar y agregar columna 'modulo' en ct_aspirantes_beneficio
     const rowsAspirantes = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
     const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
@@ -605,26 +593,12 @@ app.whenReady().then(() => {
   });
 });
 
-// Obtener la lista de impresoras en Windows
 ipcMain.handle('get-printers', async () => {
-  return new Promise((resolve, reject) => {
-    exec('wmic printer get name', (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error al obtener impresoras:', error);
-        reject(error);
-        return;
-      }
+  if (!mainWindow) throw new Error('No se ha inicializado la ventana principal');
 
-      // Convertir la salida en una lista de impresoras
-      const printers = stdout.split('\n')
-        .map(line => line.trim())
-        .filter(line => line && line !== 'Name') // Filtrar líneas vacías y encabezado
-        .map(name => ({ name }));
-
-      resolve(printers);
-    });
-  });
+  return await mainWindow.webContents.getPrintersAsync();
 });
+
 
 ipcMain.handle('print', (event, pdfBuffer, printer) => {
   const dirPath = path.join(app.getPath("userData"), "aux");
@@ -814,9 +788,8 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (db) db.close();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 ipcMain.on("save-image", (event, imageData, name, customPath) => {

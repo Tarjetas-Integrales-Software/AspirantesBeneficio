@@ -106,6 +106,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   curpsesControl = new FormControl();
   isMonitoring: boolean = false;
   sinConfiguracion: boolean = true;
+  imprimiendo: boolean = false;
 
   private fs: any;
   private path: any;
@@ -120,7 +121,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   grupos: any[] = [];
   printers: any[] = [];
 
+  atencionSinCitaDetalles: any[] = [];
+
   archivosEsperados: { id: number, nombre_archivo: string, status: number }[] = [];
+  archivosPendientesEnviar: any[] = [];
 
   activeTab: number = 0;
 
@@ -188,11 +192,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     if (online) {
       try {
+        const today = new Date().toISOString().substring(0, 10);
+
         await this.syncDataBase();
 
         this.getContenedores();
         this.getExtensiones();
         this.getArchivosEsperados();
+        this.getAtencionSinCitaDetalle({ fechaInicio: today, fechaFin: today });
 
         this.initializeChart();
 
@@ -258,6 +265,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         const fechaFin = this.formFiltrosDigitalizador.get('fechaFin')?.value;
 
         this.getGrupos({ fechaInicio: fecha.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
+        this.getAtencionSinCitaDetalle({ fechaInicio: fecha.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -269,6 +277,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         const fechaInicio = this.formFiltrosDigitalizador.get('fechaInicio')?.value;
 
         this.getGrupos({ fechaFin: fecha.toISOString().substring(0, 10), fechaInicio: fechaInicio?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
+        this.getAtencionSinCitaDetalle({ fechaFin: fecha.toISOString().substring(0, 10), fechaInicio: fechaInicio?.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -469,6 +478,19 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
             } else {
               this.esperadas = 0;
               this.enviadas = 0;
+            }
+          },
+          error: (error) => {
+            this.esperadas = 0;
+            this.enviadas = 0;
+          }
+        })
+
+        this.digitalizarArchivosService.getArchivosPendientesEnviar(nombre_archivo_upload).subscribe({
+          next: (response) => {
+            if (response.response) {
+              this.archivosPendientesEnviar = response.data;
+              this.cdr.detectChanges();
             }
           },
           error: (error) => {
@@ -966,6 +988,23 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
+  getAtencionSinCitaDetalle(body: { fechaInicio: string, fechaFin: string }): void {
+    const { fechaInicio, fechaFin } = body;
+
+    this.atencionSinCitaService.getDetalle({
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin
+    }).subscribe({
+      next: (response) => {
+        if (response.response) this.atencionSinCitaDetalles = response.data;
+        else this.atencionSinCitaDetalles.length = 0;
+
+        this.cdr.detectChanges();
+      },
+      error: () => { },
+    })
+  }
+
   async getAvailablePrinters(): Promise<Printer[]> {
     if (!window.electronAPI) {
       console.warn('Electron API no disponible - Modo navegador');
@@ -1039,14 +1078,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         },
         error: err => console.error('Error:', err)
       });
-    }
-
-    else this.crearCaratula([curp]);
+    } else this.crearCaratula([curp]);
   }
 
   async crearCaratula(caratulas: string[]): Promise<void> {
+    if (this.imprimiendo) return;
+
+    this.imprimiendo = true;
+
     if (!window.electronAPI) {
       throw new Error('Funcionalidad de impresión solo disponible en Electron');
+      this.imprimiendo = false;
     }
 
     if (caratulas.length === 0) {
@@ -1056,9 +1098,27 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         text: 'Seleccione al menos un registro',
         timer: 2000
       });
+
+      this.imprimiendo = false;
       return;
     }
 
+    caratulas.sort();
+
+    const config =
+      await this.configDigitalizadorService.consultarConfigDigitalizador();
+
+    if (config === undefined) {
+      this.sinConfiguracion = true;
+
+      this.detenerMonitor();
+      this.isMonitoring = false;
+
+      this.imprimiendo = false;
+      return;
+    } else this.sinConfiguracion = false;
+
+    const { qr, barras } = await config
     const impresora = this.formCaratula.get('impresora')?.value;
     const doc = new jsPDF();
     doc.setFontSize(32);
@@ -1072,34 +1132,38 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const centerX = (pageWidth - qrWidth) / 2;
 
     for (const cita of caratulas) {
-      doc.text(cita, 50, 40); // puedes centrar el texto si quieres
+      doc.text(cita, 50, 40);
 
       // Agregar QR centrado
-      try {
-        const qrUrl = await QRCode.toDataURL(cita);
-        doc.addImage(qrUrl, 'PNG', centerX, 100, qrWidth, qrWidth, cita, 'FAST', 0);
-      } catch (err) {
-        console.error('Error generando QR:', err);
+      if (Boolean(qr)) {
+        try {
+          const qrUrl = await QRCode.toDataURL(cita);
+          doc.addImage(qrUrl, 'PNG', centerX, 70, qrWidth, qrWidth, cita, 'FAST', 0);
+        } catch (err) {
+          console.error('Error generando QR:', err);
+        }
       }
 
       // Agregar código de barras centrado debajo del QR
-      try {
-        const canvas = document.createElement('canvas');
-        JsBarcode(canvas, cita, {
-          format: 'CODE128',
-          displayValue: false,
-          width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
-          height: barcodeHeight,
-          margin: 0
-        });
+      if (Boolean(barras)) {
+        try {
+          const canvas = document.createElement('canvas');
+          JsBarcode(canvas, cita, {
+            format: 'CODE128',
+            displayValue: false,
+            width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
+            height: barcodeHeight,
+            margin: 0
+          });
 
-        const barcodeUrl = canvas.toDataURL('image/png');
-        doc.addImage(barcodeUrl, 'PNG', centerX, 250, barcodeWidth, barcodeHeight);
+          const barcodeUrl = canvas.toDataURL('image/png');
+          doc.addImage(barcodeUrl, 'PNG', centerX, 220, barcodeWidth, barcodeHeight);
 
-        canvas.width = 0;
-        canvas.height = 0;
-      } catch (err) {
-        console.error('Error generando código de barras:', err);
+          canvas.width = 0;
+          canvas.height = 0;
+        } catch (err) {
+          console.error('Error generando código de barras:', err);
+        }
       }
 
       doc.addPage();
@@ -1110,14 +1174,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const pdfBuffer = doc.output('arraybuffer');
     const respuestaPrint = await window.electronAPI.print(pdfBuffer, impresora);
 
-    console.log(respuestaPrint);
-    
     Swal.fire({
       title: 'Aviso',
       text: respuestaPrint,
       timer: 3500,
       icon: 'success'
-    })
+    }).then(() =>
+      this.imprimiendo = false
+    )
   }
 
   downloadXlsx(caratulas: string[]) {
