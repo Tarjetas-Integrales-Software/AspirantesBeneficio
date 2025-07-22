@@ -163,6 +163,18 @@ function addColumnIfNotExists() {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras REAL NULL;").run();
     }
 
+    // Verificar columna 'fecha_expediente'
+    const columnExists_fecha_expediente = rowsConfig.some(row => row.name === 'fecha_expediente');
+    if (!columnExists_fecha_expediente) {
+      db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
+    }
+
+    // Verificar columna 'grupo'
+    const columnExists_grupo = rowsConfig.some(row => row.name === 'grupo');
+    if (!columnExists_grupo) {
+      db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
+    }
+
   } catch (error) {
     console.error('Error altering table:', error);
   }
