@@ -70,7 +70,7 @@
         <div class="form__row form__row--responsive">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Fecha de carga</mat-label>
+              <mat-label>Fecha de Expediente</mat-label>
               <mat-date-range-input [rangePicker]="picker">
                 <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
                 <input matEndDate formControlName="fechaFin" placeholder="Fin" />
@@ -98,7 +98,7 @@
         <div class="form__row">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Grupo</mat-label>
+              <mat-label>Archivo xlsx cargado</mat-label>
               <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('tipo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (grupo of grupos; track grupo) {
@@ -506,6 +506,17 @@
 
             <form [formGroup]="myForm_Upload" class="my-3">
               <div class="form__row">
+
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Fecha de Expediente</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="fecha_expediente">
+                    <mat-hint>DD/MM/YYYY</mat-hint>
+                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                  </mat-form-field>
+                </div>
+
                 <div class="form__item">
                   <button mat-raised-button class="w-full">
                     <label for="txtFile" class="w-full text-nowrap">
@@ -517,9 +528,9 @@
                     </div>
                   </button>
                 </div>
-                <div class="form__item">
+                <!-- <div class="form__item">
                   <button mat-raised-button (click)="downloadPlantilla()">Descargar plantilla</button>
-                </div>
+                </div> -->
               </div>
             </form>
 

@@ -310,6 +310,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   });
 
   myForm_Upload: FormGroup = this.fb.group({
+    fecha_expediente: ['',[Validators.required]],
     id_extension: ['', [Validators.required]],
     file: ''
   });
@@ -848,33 +849,64 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    const extension = this.formConfiguracion.get('extension')?.value;
-    const tipo = this.formConfiguracion.get('tipo')?.value;
+  // Método para formatear
+  private formatDateToYYYYMMDD(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Meses son 0-based
+    const day = date.getDate().toString().padStart(2, '0');
 
-    if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
-      this.lblUploadingFile = file.name;
-      this.documentFile.file = file;
-      // No establecer el valor del campo de entrada de archivo directamente
-      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
-      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
-
-      this.importarExcel_ArchivosDigitalizar(this.documentFile.file, tipo, extension);
-    } else {
-      Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
-      this.lblUploadingFile = '';
-      this.documentFile.file = null;
-      // No establecer el valor del campo de entrada de archivo directamente
-      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
-      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
-    }
+    return `${year}-${month}-${day}`;
   }
 
-  async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string) {
+  onFileSelected(event: any): void {
+
+    const fecha_expediente = this.myForm_Upload.get('fecha_expediente')?.value;
+    console.log(fecha_expediente,'fecha_expediente');
+
+    if (fecha_expediente) {
+      // Formatea la fecha a YYYY-MM-DD
+      const fechaFormateada = this.formatDateToYYYYMMDD(fecha_expediente);
+      console.log(fechaFormateada,'fechaFormateada'); // Ejemplo: "2025-07-21"
+
+      const file = event.target.files[0];
+      const extension = this.formConfiguracion.get('extension')?.value;
+      const tipo = this.formConfiguracion.get('tipo')?.value;
+
+      if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+        this.lblUploadingFile = file.name;
+        this.documentFile.file = file;
+        // No establecer el valor del campo de entrada de archivo directamente
+        // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+        this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+
+        this.importarExcel_ArchivosDigitalizar(this.documentFile.file, tipo, extension, fechaFormateada);
+      } else {
+        Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+        this.lblUploadingFile = '';
+        this.documentFile.file = null;
+        // No establecer el valor del campo de entrada de archivo directamente
+        // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+        this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+      }
+
+    }else{
+
+        Swal.fire({
+          title: 'Advertencia',
+          icon: 'warning',
+          text: 'Seleccione una fecha de expediente',
+          timer: 2500
+        });
+        return;
+    }
+
+
+  }
+
+  async importarExcel_ArchivosDigitalizar(file: any, tipo_doc: number, ext: string, fecha: string) {
     const archivo = file; //event.target.files[0];
     if (archivo) {
-      await this.utilService.leerExcel_ArchivosDigitalizar(archivo, tipo_doc, ext).then(
+      await this.utilService.leerExcel_ArchivosDigitalizar(archivo, tipo_doc, ext, fecha).then(
         (response) => {
           if (response) {
             this.mensaje = 'Datos importados exitosamente.';

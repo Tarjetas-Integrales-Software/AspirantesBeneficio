@@ -51,7 +51,16 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
+
+  // mainWindow.webContents.on('did-frame-finish-load', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
+
+  // // Abre consola (para debug)
+  // mainWindow.on('ready-to-show', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -527,6 +536,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY,
       id_tipo_documento_digitalizacion TEXT,
       nombre_archivo_upload TEXT,
+      fecha_expediente TEXT NULL,
       created_at TEXT
     );
 

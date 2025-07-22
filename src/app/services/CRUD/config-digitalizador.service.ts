@@ -103,19 +103,42 @@ export class ConfigDigitalizadorService {
           id,
           id_tipo_documento_digitalizacion,
           nombre_archivo_upload,
+          fecha_expediente,
           created_at
-        ) VALUES (?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?)
       `;
       const params = [
         item.id,
         item.id_tipo_documento_digitalizacion,
         item.nombre_archivo_upload,
+        item.fecha_expediente,
         item.created_at,
       ];
 
       await this.databaseService.execute(sql, params);
     }
   }
+
+  // async syncGrupos(datos: any[]): Promise<void> {
+  //   for (const item of datos) {
+  //     const sql = `
+  //       INSERT OR REPLACE INTO digitalizador_grupos (
+  //         id,
+  //         id_tipo_documento_digitalizacion,
+  //         nombre_archivo_upload,
+  //         created_at
+  //       ) VALUES (?, ?, ?, ?)
+  //     `;
+  //     const params = [
+  //       item.id,
+  //       item.id_tipo_documento_digitalizacion,
+  //       item.nombre_archivo_upload,
+  //       item.created_at,
+  //     ];
+
+  //     await this.databaseService.execute(sql, params);
+  //   }
+  // }
 
   async consultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
@@ -322,13 +345,13 @@ export class ConfigDigitalizadorService {
     fechaFin: string      // Formato: 'YYYY-MM-DD'
   }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
     const sql = `
-    SELECT 
+    SELECT
       MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
       nombre_archivo_upload
     FROM digitalizador_grupos
-    WHERE id_tipo_documento_digitalizacion = ? 
-      AND datetime(created_at) >= datetime(?, 'start of day')
-      AND datetime(created_at) <= datetime(?, 'start of day', '+1 day', '-1 second')
+    WHERE id_tipo_documento_digitalizacion = ?
+      AND fecha_expediente >= ?  -- Filtro directo (formato YYYY-MM-DD)
+      AND fecha_expediente <= ?  -- No necesita conversión
     GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
     ORDER BY id;
   `;
@@ -341,4 +364,30 @@ export class ConfigDigitalizadorService {
 
     return await this.databaseService.query(sql, params);
   }
+
+  // async consultarGrupos(body: {
+  //   id_tipo_documento_digitalizacion: string,
+  //   fechaInicio: string,  // Formato: 'YYYY-MM-DD'
+  //   fechaFin: string      // Formato: 'YYYY-MM-DD'
+  // }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
+  //   const sql = `
+  //   SELECT
+  //     MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
+  //     nombre_archivo_upload
+  //   FROM digitalizador_grupos
+  //   WHERE id_tipo_documento_digitalizacion = ?
+  //     AND datetime(created_at) >= datetime(?, 'start of day')
+  //     AND datetime(created_at) <= datetime(?, 'start of day', '+1 day', '-1 second')
+  //   GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
+  //   ORDER BY id;
+  // `;
+
+  //   const params = [
+  //     body.id_tipo_documento_digitalizacion.toString(),
+  //     body.fechaInicio,
+  //     body.fechaFin
+  //   ];
+
+  //   return await this.databaseService.query(sql, params);
+  // }
 }
