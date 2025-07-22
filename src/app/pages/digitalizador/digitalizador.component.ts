@@ -158,7 +158,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       impresora: '',
       fecha: new Date(),
       id_modulo: '',
-      curp: ['', [Validators.pattern(CURP_REGEX)]],
+      curp: [''],
     });
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({

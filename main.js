@@ -133,25 +133,25 @@ function addColumnIfNotExists() {
     // Verificar columna 'tipo'
     const columnExists_tipo = rowsConfig.some(row => row.name === 'tipo');
     if (!columnExists_tipo) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo TEXT NULL;").run();
     }
 
     // Verificar columna 'regex_curp'
     const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp TEXT NULL;").run();
     }
 
     // Verificar columna 'qr'
     const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
     if (!columnExists_qr) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr INTEGER NULL;").run();
     }
 
     // Verificar columna 'barras'
     const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
     if (!columnExists_barras) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras INTEGER NULL;").run();
     }
 
   } catch (error) {
