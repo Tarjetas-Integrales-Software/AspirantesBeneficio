@@ -75,7 +75,7 @@ export class UtilService {
   }
 
 
-  leerExcel_ArchivosDigitalizar(archivo: File, tipo_doc: number, ext: string): Promise<boolean> {
+  leerExcel_ArchivosDigitalizar(archivo: File, tipo_doc: number, ext: string, fecha: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e: any) => {
@@ -89,7 +89,8 @@ export class UtilService {
           id_tipo_documento_digitalizacion: tipo_doc,
           nombre_archivo: row['NOMBRE_ARCHIVO'] ? String(row['NOMBRE_ARCHIVO']).trim() : null,
           extension: ext,
-          nombre_archivo_upload: archivo.name
+          nombre_archivo_upload: archivo.name,
+          fecha_expediente: fecha
         }));
 
         this.digitalizarArchivosService.BulkInsert_InBatches(registros, 100);

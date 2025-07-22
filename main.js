@@ -51,7 +51,16 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
+
+  // mainWindow.webContents.on('did-frame-finish-load', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
+
+  // // Abre consola (para debug)
+  // mainWindow.on('ready-to-show', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -152,6 +161,18 @@ function addColumnIfNotExists() {
     const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
     if (!columnExists_barras) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras INTEGER NULL;").run();
+    }
+
+    // Verificar columna 'fecha_expediente'
+    const columnExists_fecha_expediente = rowsConfig.some(row => row.name === 'fecha_expediente');
+    if (!columnExists_fecha_expediente) {
+      db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
+    }
+
+    // Verificar columna 'grupo'
+    const columnExists_grupo = rowsConfig.some(row => row.name === 'grupo');
+    if (!columnExists_grupo) {
+      db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
     }
 
   } catch (error) {
@@ -527,6 +548,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY,
       id_tipo_documento_digitalizacion TEXT,
       nombre_archivo_upload TEXT,
+      fecha_expediente TEXT NULL,
       created_at TEXT
     );
 
