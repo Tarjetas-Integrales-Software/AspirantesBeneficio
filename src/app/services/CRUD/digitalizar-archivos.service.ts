@@ -456,4 +456,8 @@ export class DigitalizarArchivosService {
       throw error; // Propaga el error para manejarlo en el componente
     }
   }
+
+  filtrarArchivosNoExistentes(archivos: string[]): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/filtrar_archivos_no_existentes', { archivos });
+  }
 }

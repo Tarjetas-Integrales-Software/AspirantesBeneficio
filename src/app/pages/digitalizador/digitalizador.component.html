@@ -70,14 +70,11 @@
         <div class="form__row form__row--responsive">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Fecha de Expediente</mat-label>
-              <mat-date-range-input [rangePicker]="picker">
-                <input matStartDate formControlName="fechaInicio" placeholder="Inicio" />
-                <input matEndDate formControlName="fechaFin" placeholder="Fin" />
-              </mat-date-range-input>
-              <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
+              <mat-label>Fecha expediente</mat-label>
+              <input matInput [matDatepicker]="picker" formControlName="fecha">
+              <mat-hint>DD/MM/YYYY</mat-hint>
               <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-date-range-picker #picker></mat-date-range-picker>
+              <mat-datepicker #picker></mat-datepicker>
             </mat-form-field>
           </div>
           <div class="form__item">
