@@ -368,90 +368,100 @@
             </h3>
 
             <form [formGroup]="formConfiguracion" class="form busqueda__form">
-              <div class="form__row">
-                <div class="form__item">
-                  <button mat-raised-button matSuffix (click)="selectFolder('rutaOrigen')">
-                    <mat-icon>folder</mat-icon>
-                    <span>Seleccionar ruta origen</span>
-                  </button>
-                </div>
-                <div class="form__item">
-                  <button mat-raised-button matSuffix (click)="selectFolder('rutaDestino')">
-                    <mat-icon>folder</mat-icon>
-                    <span>Seleccionar ruta destino</span>
-                  </button>
-                </div>
-              </div>
-              <div class="form__row">
-                <div class="form__item" (click)="selectFolder('rutaOrigen')">
-                  <mat-form-field class="w-full">
-                    <mat-label>Ruta origen</mat-label>
-                    <input matInput formControlName="rutaOrigen" webkitdirectory directory id="sourceInput" readonly />
-                  </mat-form-field>
-                </div>
-              </div>
-              <div class="form__row">
-                <div class="form__item" (click)="selectFolder('rutaDestino')">
-                  <mat-form-field class="w-full">
-                    <mat-label>Ruta destino</mat-label>
-                    <input matInput formControlName="rutaDestino" webkitdirectory directory id="destinationInput"
-                      readonly />
-                  </mat-form-field>
-                </div>
-              </div>
-              <div class="form__row">
-                <mat-form-field class="w-full">
-                  <mat-label>Tipo Documento a Digitalizar</mat-label>
-                  <mat-select class="w-full" formControlName="tipo">
-                    <mat-option class="w-full" *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.tipo_doc_dig
-                      }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-              <div class="form__row">
-                <div class="form__item">
-                  <mat-form-field class="w-full">
-                    <mat-label>Expresión Regular</mat-label>
-                    <input matInput formControlName="regexCurp" />
-                  </mat-form-field>
-                </div>
-              </div>
-              <div class="form__row">
-                <div class="form__item">
-                  <mat-form-field class="w-full">
-                    <mat-label>Extensión</mat-label>
-                    <mat-select class="" formControlName="extension">
-                      <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
-                        extension.nombre }}</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                </div>
-                <div class="form__item">
-                  <mat-form-field class="w-full">
-                    <mat-label>Intervalo de sincronización (s)</mat-label>
-                    <input matInput formControlName="intervaloSincronizacion" placeholder="Tiempo en segundos" min="1">
-                  </mat-form-field>
-                </div>
-                <div class="form__item">
-                  <mat-form-field class="w-full">
-                    <mat-label>Peso mínimo (KB)</mat-label>
-                    <input matInput formControlName="pesoMinimo" placeholder="Peso minimo en kilobytes" min="1">
-                  </mat-form-field>
-                </div>
-              </div>
-              <div class="form__row--short">
-                <div class="form__item--short">
-                  <strong>
-                    <h4>Carátula</h4>
-                  </strong>
-                </div>
-                <div class="form__item--short">
-                  <mat-slide-toggle formControlName="qr">QR</mat-slide-toggle>
-                </div>
-                <div class="form__item--short">
-                  <mat-slide-toggle formControlName="barras">Código de barras</mat-slide-toggle>
-                </div>
-              </div>
+              <mat-tab-group>
+                <mat-tab label="Configuración">
+                  <div class="form__row mt-3">
+                    <mat-form-field class="w-full">
+                      <mat-label>Tipo de documento a digitalizar</mat-label>
+                      <mat-select class="w-full" formControlName="tipo">
+                        <mat-option class="w-full" *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.tipo_doc_dig
+                          }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                  <div class="form__row">
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Intervalo de sincronización</mat-label>
+                        <input matInput formControlName="intervaloSincronizacion" placeholder="Tiempo en segundos"
+                          min="1">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-tab>
+                <mat-tab label="Rutas">
+                  <div class="form__row my-3">
+                    <div class="form__item">
+                      <button mat-raised-button matSuffix (click)="selectFolder('rutaOrigen')">
+                        <mat-icon>folder</mat-icon>
+                        <span>Seleccionar ruta origen</span>
+                      </button>
+                    </div>
+                    <div class="form__item">
+                      <button mat-raised-button matSuffix (click)="selectFolder('rutaDestino')">
+                        <mat-icon>folder</mat-icon>
+                        <span>Seleccionar ruta destino</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form__row">
+                    <div class="form__item" (click)="selectFolder('rutaOrigen')">
+                      <mat-form-field class="w-full">
+                        <mat-label>Ruta origen</mat-label>
+                        <input matInput formControlName="rutaOrigen" webkitdirectory directory id="sourceInput"
+                          readonly />
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  <div class="form__row">
+                    <div class="form__item" (click)="selectFolder('rutaDestino')">
+                      <mat-form-field class="w-full">
+                        <mat-label>Ruta destino</mat-label>
+                        <input matInput formControlName="rutaDestino" webkitdirectory directory id="destinationInput"
+                          readonly />
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-tab>
+                <mat-tab label="Filtrado">
+                  <div class="form__row mt-3">
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Expresión Regular</mat-label>
+                        <input matInput formControlName="regexCurp" />
+                      </mat-form-field>
+                    </div>
+                  </div>
+                  <div class="form__row">
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Extensión</mat-label>
+                        <mat-select class="" formControlName="extension">
+                          <mat-option class="" *ngFor="let extension of extensiones" [value]="extension.nombre">{{
+                            extension.nombre }}</mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+
+                    <div class="form__item">
+                      <mat-form-field class="w-full">
+                        <mat-label>Peso mínimo (KB)</mat-label>
+                        <input matInput formControlName="pesoMinimo" placeholder="Peso minimo en kilobytes" min="1">
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </mat-tab>
+                <mat-tab label="Generación de carátula">
+                  <div class="form__row--short mt-3">
+                    <div class="form__item--short">
+                      <mat-slide-toggle formControlName="qr">QR</mat-slide-toggle>
+                    </div>
+                    <div class="form__item--short">
+                      <mat-slide-toggle formControlName="barras">Código de barras</mat-slide-toggle>
+                    </div>
+                  </div>
+                </mat-tab>
+              </mat-tab-group>
             </form>
 
             <div class="mt-2">
