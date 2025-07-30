@@ -573,6 +573,19 @@ function initializeDatabase() {
       deleted_id INTEGER NULL,
       deleted_at TEXT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS configuracion (
+      nombre TEXT PRIMARY KEY,
+      intervalo INTEGER NULL,
+      activado INTEGER NULL,
+      curp TEXT NULL,
+      created_id INTEGER,
+      updated_id INTEGER,
+      deleted_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT
+    );
     `);
   } catch (error) {
     console.error('Error creating table:', error);

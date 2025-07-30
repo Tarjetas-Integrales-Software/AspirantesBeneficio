@@ -4,9 +4,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CommonModule } from "@angular/common"
 import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
@@ -18,9 +16,8 @@ import { MenuService } from "../../services/CRUD/menu.service";
 import { StorageService } from "../../services/storage.service";
 import { RelacionUsuarioRolesService } from "../../services/CRUD/relacion-usuario-roles.service";
 
-
 @Component({
-  selector: 'app-configuraciones',
+  selector: 'app-modulo-operaciones',
   imports: [
     MatDividerModule,
     MatInputModule,
@@ -29,22 +26,21 @@ import { RelacionUsuarioRolesService } from "../../services/CRUD/relacion-usuari
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    MatButtonModule,
     MatIconModule,
     MatDatepickerModule,
-    MatCardModule,
-    MatSlideToggleModule,
+    MatCardModule
   ],
-  templateUrl: './configuraciones.component.html',
-  styleUrl: './configuraciones.component.scss'
+  templateUrl: './modulo-operaciones.component.html',
+  styleUrl: './modulo-operaciones.component.scss'
 })
-export class ConfiguracionesComponent implements OnInit {
+export class ModuloOperacionesComponent implements OnInit {
   @Output() submitForm = new EventEmitter<void>();
   private fb = inject(FormBuilder);
   private router = inject(Router);
   opcionesMenu = signal<any[]>([]);
 
   modulos: any[] = [];
+  selectedValue_modu: string = '';
 
   rolesUsuario: Array<{ fkRole: number }> = [];
   rolesConPermisoMenu_Asistencia: number[] = [106];
@@ -70,46 +66,13 @@ export class ConfiguracionesComponent implements OnInit {
     }
   }
 
-  formConfiguraciones: FormGroup = this.fb.group({
-    enableSyncInterval: [true],
-    syncInterval: [{ value: 60, disabled: false }, [Validators.required]],
+  myForm: FormGroup = this.fb.group({
+    modulo: ['', [Validators.required, Validators.minLength(5)]],
 
-    enableSyncCurpInterval: [true],
-    syncCurpInterval: [{ value: 30, disabled: false }, [Validators.required]],
-
-    enableSyncMonitorInterval: [true],
-    syncMonitorInterval: [{ value: 9, disabled: false }, [Validators.required]],
-
-    enableSyncAsistenciaInterval: [true],
-    syncAsistenciaInterval: [{ value: 30, disabled: false }, [Validators.required]],
-
-    enableSyncArchivosDigitalizadosInterval: [true],
-    syncArchivosDigitalizadosInterval: [{ value: 2, disabled: false }, [Validators.required]],
-
-    enableSyncCargarArchivosPendientes: [true],
-    syncCargarArchivosPendientes: [{ value: 5, disabled: false }, [Validators.required]],
   });
 
-  ngOnInit(): void {
-    this.getModulosAspben();
-
-    this.toggleField('enableSyncInterval', 'syncInterval');
-    this.toggleField('enableSyncCurpInterval', 'syncCurpInterval');
-    this.toggleField('enableSyncMonitorInterval', 'syncMonitorInterval');
-    this.toggleField('enableSyncAsistenciaInterval', 'syncAsistenciaInterval');
-    this.toggleField('enableSyncArchivosDigitalizadosInterval', 'syncArchivosDigitalizadosInterval');
-    this.toggleField('enableSyncCargarArchivosPendientes', 'syncCargarArchivosPendientes');
-  }
-
-  toggleField(toggleControl: string, targetControl: string) {
-    this.formConfiguraciones.get(toggleControl)?.valueChanges.subscribe(enabled => {
-      const control = this.formConfiguraciones.get(targetControl);
-      if (enabled) {
-        control?.enable();
-      } else {
-        control?.disable();
-      }
-    });
+  ngOnInit() {
+    this.getModulosAspben()
   }
 
   async getModulosAspben() {
@@ -120,14 +83,18 @@ export class ConfiguracionesComponent implements OnInit {
       .catch(error => console.error('Error al obtener modulos:', error));
   }
 
+  selectedValue_modulo() {
+    this.selectedValue_modu = this.myForm.get('modulo')?.value;
+  }
+
   isValidField(fieldName: string): boolean | null {
-    return (this.formConfiguraciones.controls[fieldName].errors && this.formConfiguraciones.controls[fieldName].touched);
+    return (this.myForm.controls[fieldName].errors && this.myForm.controls[fieldName].touched);
   }
 
   getFieldError(fieldName: string): string | null {
-    if (!this.formConfiguraciones.controls[fieldName].errors) return null;
+    if (!this.myForm.controls[fieldName].errors) return null;
 
-    const errors = this.formConfiguraciones.controls[fieldName].errors ?? {};
+    const errors = this.myForm.controls[fieldName].errors ?? {};
 
     for (const key of Object.keys(errors)) {
       switch (key) {
@@ -182,9 +149,9 @@ export class ConfiguracionesComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    const moduloSeleccionado = this.formConfiguraciones.get('modulo')?.value;
+    this.selectedValue_modu = this.myForm.get('modulo')?.value;
 
-    if (moduloSeleccionado === '') {
+    if (this.selectedValue_modu === '') {
       Swal.fire({
         title: 'Selecciona un módulo!',
         icon: 'warning',
@@ -195,7 +162,7 @@ export class ConfiguracionesComponent implements OnInit {
     };
 
     try {
-      this.configuracionesService.insertOrUpdateConfiguracion('modulo', moduloSeleccionado).then(() => {
+      this.configuracionesService.insertOrUpdateConfiguracion('modulo', this.selectedValue_modu).then(() => {
         Swal.fire({
           title: 'Actualización exitosa!',
           icon: 'success',

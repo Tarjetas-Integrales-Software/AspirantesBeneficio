@@ -1,0 +1,22 @@
+@use '@angular/material' as mat;
+
+h2 {
+  color: var(--primary-color);
+}
+
+:root {
+  @include mat.select-overrides((
+    panel-background-color: orange,
+    enabled-trigger-text-color: red,
+  ));
+}
+
+// Ajustar ancho y alto del select
+.mat-mdc-form-field {
+  // width: 300px;
+}
+
+.mat-mdc-select {
+  height: 15px;
+  line-height: 15px;
+}
