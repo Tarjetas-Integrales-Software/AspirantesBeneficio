@@ -48,12 +48,12 @@ function createWindow() {
     path.join(__dirname, 'dist/aspirantes-beneficio/browser/index.html')
   );
 
-  // mainWindow.removeMenu();
+  mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.webContents.openDevTools();
-  });
+  // mainWindow.on('ready-to-show', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
