@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, Output, EventEmitter, signal } from "@angular/core"
+import { Component, OnInit, inject, ChangeDetectorRef } from "@angular/core"
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,14 +9,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CommonModule } from "@angular/common"
 import { Validators, FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, } from "@angular/forms"
-import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
-import { ModulosService } from "../../services/CRUD/modulos.service";
+import { ConfiguracionService } from "../../services/CRUD/configuracion.service";
 import Swal from 'sweetalert2';
 import { MatCardModule } from '@angular/material/card';
-import { Router } from "@angular/router";
-import { MenuService } from "../../services/CRUD/menu.service";
-import { StorageService } from "../../services/storage.service";
-import { RelacionUsuarioRolesService } from "../../services/CRUD/relacion-usuario-roles.service";
 
 
 @Component({
@@ -39,66 +34,43 @@ import { RelacionUsuarioRolesService } from "../../services/CRUD/relacion-usuari
   styleUrl: './configuraciones.component.scss'
 })
 export class ConfiguracionesComponent implements OnInit {
-  @Output() submitForm = new EventEmitter<void>();
   private fb = inject(FormBuilder);
-  private router = inject(Router);
-  opcionesMenu = signal<any[]>([]);
 
-  modulos: any[] = [];
-
-  rolesUsuario: Array<{ fkRole: number }> = [];
-  rolesConPermisoMenu_Asistencia: number[] = [106];
-  rolesConPermisoMenu_Registro: number[] = [108];
-  rolesConPermisoMenu_Consulta: number[] = [109];
-  rolesConPermisoMenu_Reportes: number[] = [110];
-  rolesConPermisoMenu_Impresion: number[] = [111];
-  rolesConPermisoMenu_ImpresionManual: number[] = [112];
-  rolesConPermisoMenu_Digitalizador: number[] = [113];
+  formConfiguraciones: FormGroup;
 
   constructor(
-    private modulosService: ModulosService,
-    private configuracionesService: ConfiguracionesService,
-    private menuService: MenuService,
-    private storageService: StorageService,
-    private relacionUsuarioRolesService: RelacionUsuarioRolesService
+    private configuracionService: ConfiguracionService,
+    private cdr: ChangeDetectorRef,
   ) {
-    if (this.storageService.exists('user')) {
-      const user = this.storageService.get('user');
-      const { iduser } = user;
+    this.formConfiguraciones = this.fb.nonNullable.group({
+      enableSyncInterval: [true],
+      syncInterval: [{ value: 60, disabled: false }, [Validators.required]],
 
-      this.relacionUsuarioRolesService.consultarRolesPorUsuario(iduser).then(roles => this.rolesUsuario = roles);
-    }
+      enableSyncCurpInterval: [true],
+      syncCurpInterval: [{ value: 30, disabled: false }, [Validators.required]],
+
+      enableSyncDocumentosInterval: [true],
+      syncDocumentosInterval: [{ value: 3, disabled: false }, [Validators.required]],
+
+      enableSyncMonitorInterval: [true],
+      syncMonitorInterval: [{ value: 9, disabled: false }, [Validators.required]],
+
+      enableSyncAsistenciaInterval: [true],
+      syncAsistenciaInterval: [{ value: 30, disabled: false }, [Validators.required]],
+
+      enableSyncArchivosDigitalizadosInterval: [true],
+      syncArchivosDigitalizadosInterval: [{ value: 2, disabled: false }, [Validators.required]],
+
+      enableSyncCargarArchivosPendientesInterval: [true],
+      syncCargarArchivosPendientesInterval: [{ value: 5, disabled: false }, [Validators.required]],
+    });
+
+    this.llenarFormulario();
   }
 
-  formConfiguraciones: FormGroup = this.fb.group({
-    enableSyncInterval: [true],
-    syncInterval: [{ value: 60, disabled: false }, [Validators.required]],
-
-    enableSyncCurpInterval: [true],
-    syncCurpInterval: [{ value: 30, disabled: false }, [Validators.required]],
-
-    enableSyncMonitorInterval: [true],
-    syncMonitorInterval: [{ value: 9, disabled: false }, [Validators.required]],
-
-    enableSyncAsistenciaInterval: [true],
-    syncAsistenciaInterval: [{ value: 30, disabled: false }, [Validators.required]],
-
-    enableSyncArchivosDigitalizadosInterval: [true],
-    syncArchivosDigitalizadosInterval: [{ value: 2, disabled: false }, [Validators.required]],
-
-    enableSyncCargarArchivosPendientes: [true],
-    syncCargarArchivosPendientes: [{ value: 5, disabled: false }, [Validators.required]],
-  });
 
   ngOnInit(): void {
-    this.getModulosAspben();
 
-    this.toggleField('enableSyncInterval', 'syncInterval');
-    this.toggleField('enableSyncCurpInterval', 'syncCurpInterval');
-    this.toggleField('enableSyncMonitorInterval', 'syncMonitorInterval');
-    this.toggleField('enableSyncAsistenciaInterval', 'syncAsistenciaInterval');
-    this.toggleField('enableSyncArchivosDigitalizadosInterval', 'syncArchivosDigitalizadosInterval');
-    this.toggleField('enableSyncCargarArchivosPendientes', 'syncCargarArchivosPendientes');
   }
 
   toggleField(toggleControl: string, targetControl: string) {
@@ -109,15 +81,9 @@ export class ConfiguracionesComponent implements OnInit {
       } else {
         control?.disable();
       }
-    });
-  }
 
-  async getModulosAspben() {
-    this.modulosService.consultarModulos()
-      .then(modulos => {
-        this.modulos = modulos;
-      })
-      .catch(error => console.error('Error al obtener modulos:', error));
+      this.cdr.detectChanges();
+    });
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -144,84 +110,71 @@ export class ConfiguracionesComponent implements OnInit {
     return null;
   }
 
-  redirigirModulo(): void {
-    this.menuService.getOpcionesMenuLocal().then((opcionesMenu) => {
-      if (opcionesMenu) {
-        // Crear un mapa para acceder fácilmente a las opciones por su clave
-        const menuOptions: { [key: string]: string } = {};
+  onSubmit(): void {
+    const configuracion = this.formConfiguraciones.getRawValue();
 
-        // Mapear todas las opciones de menú
-        opcionesMenu.forEach((option: any) => {
-          menuOptions[option.clave] = option.valor;
+    const mensaje = this.procesarConfiguraciones(configuracion);
+
+    Swal.fire({
+      title: 'Información',
+      text: mensaje,
+      icon: 'warning',
+      timer: 1500,
+      showConfirmButton: true,
+    });
+  }
+
+  procesarConfiguraciones(config: any): string {
+    Object.keys(config).forEach(key => {
+      if (key.startsWith('sync') && key.endsWith('Interval')) {
+        const nombre = key;
+        const intervalo = config[nombre];
+
+        // Buscar la clave 'enableSync...Interval' correspondiente
+        const enableKey = `enable${nombre.charAt(0).toUpperCase()}${nombre.slice(1)}`;
+        const activo = config.hasOwnProperty(enableKey) && config[enableKey] ? 1 : 0;
+
+        this.configuracionService.actualizarPorNombre({
+          nombre,
+          intervalo,
+          activo
         });
-
-        // Navegación basada en permisos
-        if (menuOptions['menu_habilitar_registro'] == '1' && this.permisoMenu_Registro) {
-          this.router.navigate(['/inicio/registro']);
-        } else if (menuOptions['menu_habilitar_consulta'] == '1' && this.permisoMenu_Consulta) {
-          this.router.navigate(['/inicio/consulta']);
-        } else if (menuOptions['menu_habilitar_asistencia'] == '1' && this.permisoMenu_Asistencia) {
-          this.router.navigate(['/inicio/asistencia']);
-        } else if (menuOptions['menu_habilitar_reportes'] == '1' && this.permisoMenu_Reportes) {
-          this.router.navigate(['/inicio/reportes']);
-        } else if (menuOptions['menu_habilitar_impresion'] == '1' && this.permisoMenu_Impresion) {
-          this.router.navigate(['/inicio/impresion-credencial']);
-        } else if (menuOptions['menu_habilitar_impr_manual'] == '1' && this.permisoMenu_ImpresionManual) {
-          this.router.navigate(['/inicio/impresion-manuales']);
-        } else if (menuOptions['menu_habilitar_cortes'] == '1') {
-          this.router.navigate(['/inicio/cortes']);
-        } else if (menuOptions['menu_habilitar_digitalizacion'] == '1' && this.permisoMenu_Digitalizador) {
-          this.router.navigate(['/inicio/digitalizacion']);
-        } else
-          Swal.fire('Sin acceso', 'No tienes acceso a ningún módulo del sistema - online -', 'warning');
-      } else {
-        Swal.fire('Error', 'No se pudieron cargar las opciones del menú', 'error');
       }
-    }
-    );
+    });
+
+    return 'Guardado con éxito';
   }
 
-  async onSubmit(): Promise<void> {
-    const moduloSeleccionado = this.formConfiguraciones.get('modulo')?.value;
+  llenarFormulario(): void {
+    this.configuracionService.consultar().then((configuraciones: any[]) => {
+      const form: { [key: string]: any } = {};
 
-    if (moduloSeleccionado === '') {
-      Swal.fire({
-        title: 'Selecciona un módulo!',
-        icon: 'warning',
-        timer: 1500,
-        showConfirmButton: true,
-      });
-      return;
-    };
+      configuraciones.forEach(conf => {
+        const nombre = conf.nombre;
+        const enableKey = `enable${nombre.charAt(0).toUpperCase()}${nombre.slice(1)}`;
 
-    try {
-      this.configuracionesService.insertOrUpdateConfiguracion('modulo', moduloSeleccionado).then(() => {
-        Swal.fire({
-          title: 'Actualización exitosa!',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false,
-        }).then(() => {
-          this.redirigirModulo();
-        });
+        const isEnabled = conf.activo === 1;
+
+        form[enableKey] = [conf.activo === 1];
+        form[nombre] = [{ value: conf.intervalo, disabled: !isEnabled }, [Validators.required]];
+
+        this.toggleField(enableKey, nombre);
       });
-    } catch (error) {
-      console.error('Error al guardar la configuracion en la base de datos local:', error);
-      Swal.fire({
-        title: 'Error al guardar la configuracion en la base de datos local',
-        icon: 'error',
-        timer: 2000,
-        showConfirmButton: false
+
+      // Crear el formulario dinámicamente basado en la configuración cargada
+      this.formConfiguraciones = this.fb.group(form);
+
+      Object.keys(form).forEach(key => {
+        if (key.startsWith('enableSync')) {
+          const controlName = key.replace(/^enable/, '');
+          const targetControl = controlName.charAt(0).toLowerCase() + controlName.slice(1);
+          this.toggleField(key, targetControl);
+        }
       });
-    }
-    this.submitForm.emit();
+
+      this.cdr.detectChanges();
+    }).catch(error => {
+      console.error('Error al llenar formulario:', error);
+    });
   }
-
-  get permisoMenu_Registro(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Registro.includes(Number(perfil.fkRole))); }
-  get permisoMenu_Consulta(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Consulta.includes(Number(perfil.fkRole))); }
-  get permisoMenu_Reportes(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Reportes.includes(Number(perfil.fkRole))); }
-  get permisoMenu_Asistencia(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Asistencia.includes(Number(perfil.fkRole))); }
-  get permisoMenu_Impresion(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Impresion.includes(Number(perfil.fkRole))); }
-  get permisoMenu_ImpresionManual(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_ImpresionManual.includes(Number(perfil.fkRole))); }
-  get permisoMenu_Digitalizador(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Digitalizador.includes(Number(perfil.fkRole))); }
 }

@@ -577,7 +577,7 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS configuracion (
       nombre TEXT PRIMARY KEY,
       intervalo INTEGER NULL,
-      activado INTEGER NULL,
+      activo INTEGER NULL,
       curp TEXT NULL,
       created_id INTEGER,
       updated_id INTEGER,
@@ -998,3 +998,31 @@ ipcMain.handle('get-filtered-files', (event, { folder, minSize, extension }) => 
     });
   return files.map(file => path.join(folder, file));
 });
+
+ipcMain.handle('move-file-cross-device', async (event, src, dest) => {
+  try {
+    await moveFileCrossDevice(src, dest);
+    return { success: true };
+  } catch (error) {
+    console.error('Error al mover archivo:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+function moveFileCrossDevice(src, dest) {
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(src);
+    const writeStream = fs.createWriteStream(dest);
+
+    readStream.on('error', reject);
+    writeStream.on('error', reject);
+    writeStream.on('close', () => {
+      fs.unlink(src, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    readStream.pipe(writeStream);
+  });
+}

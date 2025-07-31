@@ -42,13 +42,12 @@ import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-arch
 import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion.service';
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
 import { ArchivosNoCargadosService } from './../../services/CRUD/archivos-no-cargados.service';
+import { ConfiguracionService } from '../../services/CRUD/configuracion.service';
 
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
-import { error } from 'console';
-import { environment } from '../../../environments/environment';
 
 const electronAPI = (window as any).electronAPI;
 
@@ -156,7 +155,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private modulosLicitacionService: ModulosLicitacionService,
     private atencionSinCitaService: AtencionSinCitaService,
     private archivosNoCargadosService: ArchivosNoCargadosService,
-
+    private configuracionService: ConfiguracionService,
   ) {
     const electronAPI = (window as any).electronAPI;
 
@@ -221,7 +220,22 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
         await this.syncDataBase();
 
-        this.syncCargarArchivosNoCargados();
+        this.configuracionService.consultar().then((intervalos) => {
+          const configuraciones = this.utilService.mapearConfiguraciones(intervalos);
+
+          const {
+            syncInterval,
+            syncCurpInterval,
+            syncDocumentosInterval,
+            syncMonitorInterval,
+            syncAsistenciaInterval,
+            syncArchivosDigitalizadosInterval,
+            syncCargarArchivosPendientesInterval
+          } = configuraciones;
+
+          if (syncCargarArchivosPendientesInterval.activo) this.syncCargarArchivosNoCargados(syncCargarArchivosPendientesInterval.intervalo * 1000 * 60);
+        })
+
 
         this.getContenedores();
         this.getExtensiones();
@@ -1251,8 +1265,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     XLSX.writeFile(workbook, `${fecha.toISOString().substring(0, 10).replaceAll('-', '')}_${horaImpresion}_${modulo.nombre}.xlsx`);
   }
 
-  syncCargarArchivosNoCargados() {
-    this.intervaloArchivosNoCargados = interval(environment.syncCargarArchivosPendientes)
+  syncCargarArchivosNoCargados(intervalo: number) {
+    this.intervaloArchivosNoCargados = interval(intervalo)
       .pipe(takeWhile(() => this.isAlive))
       .subscribe(async () => {
         const carpetaInterna = path.join(this.appPath, 'archivosDigitalizados');

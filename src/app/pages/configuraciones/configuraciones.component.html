@@ -27,6 +27,15 @@
           <mat-slide-toggle formControlName="enableSyncCurpInterval">Activar</mat-slide-toggle>
         </div>
 
+        <!-- Intervalo documentos -->
+        <div class="form__row__item">
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Intervalo documentos aspirantes</mat-label>
+            <input matInput formControlName="syncDocumentosInterval" type="number">
+          </mat-form-field>
+          <mat-slide-toggle formControlName="enableSyncDocumentosInterval">Activar</mat-slide-toggle>
+        </div>
+
         <!-- Intervalo monitor -->
         <div class="form__row__item">
           <mat-form-field appearance="fill" class="w-full">
@@ -58,9 +67,9 @@
         <div class="form__row__item">
           <mat-form-field appearance="fill" class="w-full">
             <mat-label>Intervalo cargar archivos pendientes</mat-label>
-            <input matInput formControlName="syncCargarArchivosPendientes" type="number">
+            <input matInput formControlName="syncCargarArchivosPendientesInterval" type="number">
           </mat-form-field>
-          <mat-slide-toggle formControlName="enableSyncCargarArchivosPendientes">Activar</mat-slide-toggle>
+          <mat-slide-toggle formControlName="enableSyncCargarArchivosPendientesInterval">Activar</mat-slide-toggle>
         </div>
       </div>
 
