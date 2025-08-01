@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, webContents } = require('electron');
 const { updateElectronApp } = require('update-electron-app');
 const Database = require('better-sqlite3');
 const url = require('url');
@@ -51,7 +51,16 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
+
+  // mainWindow.webContents.on('did-frame-finish-load', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
+
+  // // Abre consola (para debug)
+  // mainWindow.on('ready-to-show', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -92,10 +101,6 @@ function getWindowsSerialNumber() {
 
 function eliminarConfiguracionModulo() {
   try {
-    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
-
-    db = new Database(dbPath);
-
     const row = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cat_ct_configuraciones';").get();
 
     if (row) {
@@ -107,19 +112,11 @@ function eliminarConfiguracionModulo() {
     } else console.log("La tabla no existe, no se puede eliminar el registro.");
   } catch (error) {
     console.error('Error al eliminar el registro:', error);
-  } finally {
-    if (db)
-      db.close();
   }
 }
 
 function addColumnIfNotExists() {
   try {
-    // Ruta de la base de datos en la carpeta de datos del usuario
-    const dbPath = path.join(app.getPath('userData'), 'mydb.sqlite');
-
-    db = new Database(dbPath);
-
     // Verificar y agregar columna 'modulo' en ct_aspirantes_beneficio
     const rowsAspirantes = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
     const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
@@ -145,25 +142,37 @@ function addColumnIfNotExists() {
     // Verificar columna 'tipo'
     const columnExists_tipo = rowsConfig.some(row => row.name === 'tipo');
     if (!columnExists_tipo) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo TEXT NULL;").run();
     }
 
     // Verificar columna 'regex_curp'
     const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp TEXT NULL;").run();
     }
 
     // Verificar columna 'qr'
     const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
     if (!columnExists_qr) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr INTEGER NULL;").run();
     }
 
     // Verificar columna 'barras'
     const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
     if (!columnExists_barras) {
-      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras REAL NULL;").run();
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras INTEGER NULL;").run();
+    }
+
+    // Verificar columna 'fecha_expediente'
+    const columnExists_fecha_expediente = rowsConfig.some(row => row.name === 'fecha_expediente');
+    if (!columnExists_fecha_expediente) {
+      db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
+    }
+
+    // Verificar columna 'grupo'
+    const columnExists_grupo = rowsConfig.some(row => row.name === 'grupo');
+    if (!columnExists_grupo) {
+      db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
     }
 
   } catch (error) {
@@ -539,6 +548,7 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY,
       id_tipo_documento_digitalizacion TEXT,
       nombre_archivo_upload TEXT,
+      fecha_expediente TEXT NULL,
       created_at TEXT
     );
 
@@ -605,26 +615,12 @@ app.whenReady().then(() => {
   });
 });
 
-// Obtener la lista de impresoras en Windows
 ipcMain.handle('get-printers', async () => {
-  return new Promise((resolve, reject) => {
-    exec('wmic printer get name', (error, stdout, stderr) => {
-      if (error) {
-        console.error('Error al obtener impresoras:', error);
-        reject(error);
-        return;
-      }
+  if (!mainWindow) throw new Error('No se ha inicializado la ventana principal');
 
-      // Convertir la salida en una lista de impresoras
-      const printers = stdout.split('\n')
-        .map(line => line.trim())
-        .filter(line => line && line !== 'Name') // Filtrar líneas vacías y encabezado
-        .map(name => ({ name }));
-
-      resolve(printers);
-    });
-  });
+  return await mainWindow.webContents.getPrintersAsync();
 });
+
 
 ipcMain.handle('print', (event, pdfBuffer, printer) => {
   const dirPath = path.join(app.getPath("userData"), "aux");
@@ -814,9 +810,8 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (db) db.close();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 ipcMain.on("save-image", (event, imageData, name, customPath) => {
