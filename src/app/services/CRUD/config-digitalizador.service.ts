@@ -341,8 +341,7 @@ export class ConfigDigitalizadorService {
 
   async consultarGrupos(body: {
     id_tipo_documento_digitalizacion: string,
-    fechaInicio: string,  // Formato: 'YYYY-MM-DD'
-    fechaFin: string      // Formato: 'YYYY-MM-DD'
+    fecha: string,  // Formato: 'YYYY-MM-DD'
   }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
     const sql = `
     SELECT
@@ -350,44 +349,16 @@ export class ConfigDigitalizadorService {
       nombre_archivo_upload
     FROM digitalizador_grupos
     WHERE id_tipo_documento_digitalizacion = ?
-      AND fecha_expediente >= ?  -- Filtro directo (formato YYYY-MM-DD)
-      AND fecha_expediente <= ?  -- No necesita conversión
+      AND fecha_expediente = ?  -- Filtro directo (formato YYYY-MM-DD)
     GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
     ORDER BY id;
   `;
 
     const params = [
       body.id_tipo_documento_digitalizacion.toString(),
-      body.fechaInicio,
-      body.fechaFin
+      body.fecha,
     ];
 
     return await this.databaseService.query(sql, params);
   }
-
-  // async consultarGrupos(body: {
-  //   id_tipo_documento_digitalizacion: string,
-  //   fechaInicio: string,  // Formato: 'YYYY-MM-DD'
-  //   fechaFin: string      // Formato: 'YYYY-MM-DD'
-  // }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
-  //   const sql = `
-  //   SELECT
-  //     MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
-  //     nombre_archivo_upload
-  //   FROM digitalizador_grupos
-  //   WHERE id_tipo_documento_digitalizacion = ?
-  //     AND datetime(created_at) >= datetime(?, 'start of day')
-  //     AND datetime(created_at) <= datetime(?, 'start of day', '+1 day', '-1 second')
-  //   GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
-  //   ORDER BY id;
-  // `;
-
-  //   const params = [
-  //     body.id_tipo_documento_digitalizacion.toString(),
-  //     body.fechaInicio,
-  //     body.fechaFin
-  //   ];
-
-  //   return await this.databaseService.query(sql, params);
-  // }
 }

@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.once('print-id-card-error', reject);
     });
   },
+  moveFileCrossDevice: (src, dest) => ipcRenderer.invoke('move-file-cross-device', src, dest),
   fs: {
     readFileSync: (filePath, encoding = 'utf8') => fs.readFileSync(filePath, encoding),
     writeFileSync: (filePath, data) => fs.writeFileSync(filePath, data),

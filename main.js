@@ -51,13 +51,6 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  //mainWindow.webContents.openDevTools();
-
-  // mainWindow.webContents.on('did-frame-finish-load', () => {
-  //   mainWindow.webContents.openDevTools();
-  // });
-
-  // // Abre consola (para debug)
   // mainWindow.on('ready-to-show', () => {
   //   mainWindow.webContents.openDevTools();
   // });
@@ -581,6 +574,18 @@ function initializeDatabase() {
       deleted_at TEXT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS configuracion (
+      nombre TEXT PRIMARY KEY,
+      intervalo INTEGER NULL,
+      activo INTEGER NULL,
+      curp TEXT NULL,
+      created_id INTEGER,
+      updated_id INTEGER,
+      deleted_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT
+    );
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -993,3 +998,31 @@ ipcMain.handle('get-filtered-files', (event, { folder, minSize, extension }) => 
     });
   return files.map(file => path.join(folder, file));
 });
+
+ipcMain.handle('move-file-cross-device', async (event, src, dest) => {
+  try {
+    await moveFileCrossDevice(src, dest);
+    return { success: true };
+  } catch (error) {
+    console.error('Error al mover archivo:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+function moveFileCrossDevice(src, dest) {
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(src);
+    const writeStream = fs.createWriteStream(dest);
+
+    readStream.on('error', reject);
+    writeStream.on('error', reject);
+    writeStream.on('close', () => {
+      fs.unlink(src, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    readStream.pipe(writeStream);
+  });
+}

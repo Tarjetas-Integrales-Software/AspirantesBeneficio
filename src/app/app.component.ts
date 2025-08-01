@@ -16,6 +16,8 @@ import { DigitalizarArchivosService } from './services/CRUD/digitalizar-archivos
 import { ConfigDigitalizadorService } from './services/CRUD/config-digitalizador.service';
 import { RelacionUsuarioRolesService } from './services/CRUD/relacion-usuario-roles.service';
 import { MenuService } from './services/CRUD/menu.service';
+import { ConfiguracionService } from './services/CRUD/configuracion.service';
+import { UtilService } from './services/util.service';
 
 import { interval, Subscription } from 'rxjs';
 import { switchMap, filter, take } from 'rxjs/operators';
@@ -67,6 +69,8 @@ export class AppComponent implements OnInit, OnDestroy {
     private relacionUsuarioRolesService: RelacionUsuarioRolesService,
     private menuService: MenuService,
     private loginService: LoginService,
+    private configuracionService: ConfiguracionService,
+    private utilService: UtilService,
   ) { }
 
   ngOnInit(): void {
@@ -80,15 +84,29 @@ export class AppComponent implements OnInit, OnDestroy {
     this.checkAndSyncRelacionUsuarioRoles();
     this.checkAndSyncOpcionesMenu();
 
-    this.startSyncAspirantesInterval();
-    this.startSyncDocumentosInterval();
-    this.startSyncCurpInterval();
-    this.startSyncArchivosDigitalizarInterval();
-    this.startSyncRelacionUsuarioRoles();
-    this.startSyncOpcionesMenu();
+    this.configuracionService.consultar().then((intervalos) => {
+      const configuraciones = this.utilService.mapearConfiguraciones(intervalos);
 
-    this.sendInfo_MonitorEquipo();
-    this.startSyncAsistenciaInterval();
+      const {
+        syncInterval,
+        syncCurpInterval,
+        syncDocumentosInterval,
+        syncMonitorInterval,
+        syncAsistenciaInterval,
+        syncArchivosDigitalizadosInterval,
+        syncCargarArchivosPendientesInterval
+      } = configuraciones;
+
+      if (syncInterval.activo) this.startSyncAspirantesInterval(syncInterval.intervalo * 1000 * 60);
+      if (syncCurpInterval.activo) this.startSyncCurpInterval(syncCurpInterval.intervalo * 1000 * 60);
+      if (syncDocumentosInterval.activo) this.startSyncDocumentosInterval(syncDocumentosInterval.intervalo * 1000 * 60);
+      if (syncAsistenciaInterval.activo) this.startSyncAsistenciaInterval(syncAsistenciaInterval.intervalo * 1000 * 60);
+      if (syncArchivosDigitalizadosInterval.activo) this.startSyncArchivosDigitalizarInterval(syncArchivosDigitalizadosInterval.intervalo * 1000 * 60);
+      if (syncInterval.activo) this.startSyncRelacionUsuarioRoles(syncInterval.intervalo * 1000 * 60);
+      if (syncInterval.activo) this.startSyncOpcionesMenu(syncInterval.intervalo * 1000 * 60);
+
+      if (syncMonitorInterval.activo) this.startSyncMonitorEquipoInterval(syncMonitorInterval.intervalo * 1000 * 60);
+    });
   }
 
   ngOnDestroy(): void {
@@ -163,12 +181,12 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
     ).subscribe(() => {
-      this.startSyncMonitorEquipoInterval();
+      this.sendInfo_MonitorEquipo();
     });
   }
 
-  private startSyncAspirantesInterval(): void {
-    this.syncSubscription = interval(environment.syncInterval).pipe(
+  private startSyncAspirantesInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -177,8 +195,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncDocumentosInterval(): void {
-    this.syncSubscription = interval(60000).pipe(
+  private startSyncDocumentosInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -187,8 +205,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncCurpInterval(): void {
-    this.syncSubscription = interval(environment.syncCurpInterval).pipe(
+  private startSyncCurpInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -199,8 +217,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncArchivosDigitalizarInterval(): void {
-    this.syncSubscription = interval(environment.syncArchivosDigitalizadosInterval).pipe(
+  private startSyncArchivosDigitalizarInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -209,8 +227,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncRelacionUsuarioRoles(): void {
-    this.syncSubscription = interval(environment.syncInterval).pipe(
+  private startSyncRelacionUsuarioRoles(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -219,8 +237,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncOpcionesMenu(): void {
-    this.syncSubscription = interval(environment.syncInterval).pipe(
+  private startSyncOpcionesMenu(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -229,8 +247,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncAsistenciaInterval(): void {
-    this.syncSubscription = interval(environment.syncAsistenciaInterval).pipe(
+  private startSyncAsistenciaInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))
@@ -239,8 +257,8 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSyncMonitorEquipoInterval(): void {
-    this.syncSubscription = interval(environment.syncMonitorInterval).pipe(
+  private startSyncMonitorEquipoInterval(intervalo: number): void {
+    this.syncSubscription = interval(intervalo).pipe(
       switchMap(() => this.networkStatusService.isOnline),
       filter(isOnline => isOnline),
       filter(() => this.storageService.exists("token"))

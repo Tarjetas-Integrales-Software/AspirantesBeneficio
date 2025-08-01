@@ -232,7 +232,7 @@ export class DatosGeneralesComponent implements OnInit {
         }
       }).then((result) => {
         if (result.dismiss === Swal.DismissReason.timer) {
-          this.router.navigateByUrl('/inicio/configuraciones');
+          this.router.navigateByUrl('/inicio/modulo-operaciones');
         }
       });
     }

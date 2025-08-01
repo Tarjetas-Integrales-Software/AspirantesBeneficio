@@ -1,0 +1,42 @@
+<div class="bg-gray-100 flex justify-center items-center  h-screen container mx-auto p-0">
+  <div class="px-6 py-5 bg-white h-[80vh] w-[800px] border-0 shadow-lg sm:rounded-3xl">
+    <form [formGroup]="myForm" class="my-2 h-[100%]">
+      <div class="flex flex-col justify-between items-center h-[95%] gap-2">
+
+
+        <mat-card appearance="outlined" class="h-[80px] flex items-center justify-center">
+          <mat-card-content>
+            <table>
+              <tr>
+                <td><img src="./assets/img/settings.png" class="mb-2 h-[64px] w-[64px]" alt="Logo"></td>
+                <td>
+                  <h1 class="text-3xl text-[#414141] mb-4">Configuración operaciones</h1>
+                </td>
+              </tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-form-field class="w-full">
+          <mat-label>Modulos</mat-label>
+          <mat-select class="h-[30px] mat-mdc-select" formControlName="modulo"
+            (selectionChange)="selectedValue_modulo()">
+            <mat-option *ngFor="let modulo of modulos" [value]="modulo.nombre">{{modulo.nombre}}</mat-option>
+          </mat-select>
+          @if( isValidField('modulo') ) {
+          <mat-error class="text-red-500">
+            {{ getFieldError("modulo") }}
+          </mat-error>
+          }
+        </mat-form-field>
+
+        <button (click)="onSubmit()"
+          class="rounded-full w-full flex flex-row justify-center items-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          <mat-icon aria-hidden="false" aria-label="Example settings icon" fontIcon="settings"></mat-icon>
+          GUARDAR
+        </button>
+
+      </div>
+    </form>
+  </div>
+</div>
