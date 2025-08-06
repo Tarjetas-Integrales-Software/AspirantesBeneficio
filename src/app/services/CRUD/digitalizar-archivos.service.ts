@@ -221,6 +221,9 @@ export class DigitalizarArchivosService {
         tipo: tipo
       }
 
+      console.log('Lo que se sube: ', beneficiario, documento, carpetaOrigen, extension);
+      
+
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
           next: (response) => {

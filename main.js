@@ -51,9 +51,9 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.on('ready-to-show', () => {
-  //   mainWindow.webContents.openDevTools();
-  // });
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.webContents.openDevTools();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -118,52 +118,55 @@ function addColumnIfNotExists() {
     }
 
     // Verificar y agregar columnas en sy_config_digitalizador
-    const rowsConfig = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
+    const rowsConfiguracionDigitalizador = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
+    const rowsGruposDigitalizador = db.prepare("PRAGMA table_info(digitalizador_grupos);").all();
+    const rowsArchivosDigitalizar = db.prepare("PRAGMA table_info(archivos_digitalizar);").all();
+
 
     // Verificar columna 'extension'
-    const columnExists_extension = rowsConfig.some(row => row.name === 'extension');
+    const columnExists_extension = rowsConfiguracionDigitalizador.some(row => row.name === 'extension');
     if (!columnExists_extension) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN extension TEXT NULL;").run();
     }
 
     // Verificar columna 'peso_minimo'
-    const columnExists_peso_minimo = rowsConfig.some(row => row.name === 'peso_minimo');
+    const columnExists_peso_minimo = rowsConfiguracionDigitalizador.some(row => row.name === 'peso_minimo');
     if (!columnExists_peso_minimo) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN peso_minimo REAL NULL;").run();
     }
 
     // Verificar columna 'tipo'
-    const columnExists_tipo = rowsConfig.some(row => row.name === 'tipo');
+    const columnExists_tipo = rowsConfiguracionDigitalizador.some(row => row.name === 'tipo');
     if (!columnExists_tipo) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo TEXT NULL;").run();
     }
 
     // Verificar columna 'regex_curp'
-    const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
+    const columnExists_regex_curp = rowsConfiguracionDigitalizador.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp TEXT NULL;").run();
     }
 
     // Verificar columna 'qr'
-    const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
+    const columnExists_qr = rowsConfiguracionDigitalizador.some(row => row.name === 'qr');
     if (!columnExists_qr) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr INTEGER NULL;").run();
     }
 
     // Verificar columna 'barras'
-    const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
+    const columnExists_barras = rowsConfiguracionDigitalizador.some(row => row.name === 'barras');
     if (!columnExists_barras) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras INTEGER NULL;").run();
     }
 
     // Verificar columna 'fecha_expediente'
-    const columnExists_fecha_expediente = rowsConfig.some(row => row.name === 'fecha_expediente');
+    const columnExists_fecha_expediente = rowsGruposDigitalizador.some(row => row.name === 'fecha_expediente');
     if (!columnExists_fecha_expediente) {
       db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
     }
 
     // Verificar columna 'grupo'
-    const columnExists_grupo = rowsConfig.some(row => row.name === 'grupo');
+    const columnExists_grupo = rowsArchivosDigitalizar.some(row => row.name === 'grupo');
     if (!columnExists_grupo) {
       db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
     }

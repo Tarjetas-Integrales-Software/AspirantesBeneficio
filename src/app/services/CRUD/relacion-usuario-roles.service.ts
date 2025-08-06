@@ -17,10 +17,24 @@ export class RelacionUsuarioRolesService {
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
+    const idsDesdeServidor = datos.map(d => d.pkUserPerfil);
+
+    // 1. Elimina registros que ya no están en el servidor
+    if (idsDesdeServidor.length > 0) {
+      const placeholders = idsDesdeServidor.map(() => '?').join(', ');
+      const deleteSql = `
+      DELETE FROM relacion_usuario_roles
+      WHERE pkUserPerfil NOT IN (${placeholders})
+    `;
+      await this.databaseService.execute(deleteSql, idsDesdeServidor);
+    }
+
+    // 2. Inserta o reemplaza los actuales
     for (const item of datos) {
       const sql = `
-        INSERT OR REPLACE INTO relacion_usuario_roles (pkUserPerfil, fkUser, fkRole, deleted_at) VALUES (?, ?, ?, ?)
-      `;
+      INSERT OR REPLACE INTO relacion_usuario_roles (pkUserPerfil, fkUser, fkRole, deleted_at)
+      VALUES (?, ?, ?, ?)
+    `;
       const params = [
         item.pkUserPerfil,
         item.fkUser,

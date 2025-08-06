@@ -48,6 +48,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
+import { arch } from 'os';
 
 const electronAPI = (window as any).electronAPI;
 
@@ -1276,6 +1277,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         const { extension, peso_minimo } = await config;
 
         const archivos = await this.listarArchivos(carpetaInterna, peso_minimo, extension);
+
+        if(archivos.length === 0) return;
 
         const nombresArchivos: string[] = archivos.map(archivo => {
           const [curp, _] = path.basename(archivo).split('.');
