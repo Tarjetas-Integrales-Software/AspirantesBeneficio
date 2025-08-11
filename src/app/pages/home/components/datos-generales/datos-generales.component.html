@@ -39,10 +39,24 @@
 
       <div class="flex flex-row gap-2">
         <mat-form-field class="basis-2/3">
-          <mat-label>Nombre Completo: </mat-label>
-          <input matInput formControlName="nombre_completo" maxlength="200" (input)="toUpperCaseName($event)">
-          <mat-error *ngIf="isValidField('nombre_completo')" class="text-red-500">
-            {{ getFieldError("nombre_completo") }}
+          <mat-label>Nombres:</mat-label>
+          <input matInput formControlName="nombres" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('nombres')" class="text-red-500">
+            {{ getFieldError("nombres") }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="basis-2/3">
+          <mat-label>Apellido Paterno: </mat-label>
+          <input matInput formControlName="apellido_paterno" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('apellido_paterno')" class="text-red-500">
+            {{ getFieldError("apellido_paterno") }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field class="basis-2/3">
+          <mat-label>Apellido Materno: </mat-label>
+          <input matInput formControlName="apellido_materno" maxlength="200" (input)="toUpperCaseName($event)">
+          <mat-error *ngIf="isValidField('apellido_materno')" class="text-red-500">
+            {{ getFieldError("apellido_materno") }}
           </mat-error>
         </mat-form-field>
         <mat-form-field class="basis-1/3">

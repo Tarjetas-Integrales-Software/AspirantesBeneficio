@@ -10,7 +10,7 @@ export interface Aspirante {
   id_modalidad: number;
   id_foto?: string;
   curp: string;
-  nombre_completo: string;
+  nombres: string;
   telefono: string;
   email?: string;
   fecha_nacimiento: string;
@@ -182,7 +182,7 @@ export class AspirantesBeneficioService {
       aspirante.id,
       aspirante.id_modalidad,
       aspirante.curp,
-      aspirante.nombre_completo,
+      aspirante.nombres,
       aspirante.telefono,
       aspirante.email,
       aspirante.fecha_nacimiento,

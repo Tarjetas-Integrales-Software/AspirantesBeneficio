@@ -82,7 +82,7 @@ export class DatosGeneralesComponent implements OnInit {
     id: 0,
     id_modalidad: 0,
     curp: '',
-    nombre_completo: '',
+    nombres: '',
     telefono: '',
     fecha_nacimiento: '',
     email: '',
@@ -128,7 +128,9 @@ export class DatosGeneralesComponent implements OnInit {
       Validators.minLength(18),
       Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
     ], this.editar ? null : this.curpAsyncValidator.bind(this)],
-    nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
+    nombres: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_paterno: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_materno: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['',],
@@ -449,7 +451,7 @@ export class DatosGeneralesComponent implements OnInit {
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
-      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+      nombres: this.myForm.get('nombres')?.value.toUpperCase(),
       id: idApirante,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
@@ -474,7 +476,7 @@ export class DatosGeneralesComponent implements OnInit {
         ...this.myForm.value,
         id: this.editAspirante.id,
         curp: this.editAspirante.curp,
-        nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+        nombres: this.myForm.get('nombres')?.value.toUpperCase(),
         fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
         fecha_evento: this.editAspirante.fecha_evento,
         estado: 'Jalisco',
