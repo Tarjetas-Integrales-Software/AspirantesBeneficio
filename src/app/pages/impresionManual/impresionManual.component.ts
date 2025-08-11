@@ -1,10 +1,11 @@
-import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal, inject } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal, inject, ChangeDetectorRef } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
 import Swal from 'sweetalert2';
 import { ImpresionManualService } from "./impresionManual.service";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
@@ -20,8 +21,9 @@ interface Printer {
 
 @Component({
   selector: 'app-impresion-manual',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatButtonModule],
   templateUrl: './impresionManual.component.html',
+  styleUrl: './impresionManual.component.scss',
   styles: `
     :host {
       display: block;
@@ -40,6 +42,7 @@ export class ImpresionManualComponent implements OnInit {
 
   printers: any[] = [];
   selectedPrinter = signal<string | null>(null);
+  disenoSeleccionado: string = "";
 
   devices: MediaDeviceInfo[] = []
   selectedDevice = ""
@@ -49,8 +52,14 @@ export class ImpresionManualComponent implements OnInit {
   modulo_actual: string | null = null;
 
   formulario: FormGroup;
+  formZapopan: FormGroup;
 
-  constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService, private configuracionesService: ConfiguracionesService) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
+    private impresionManualService: ImpresionManualService,
+    private configuracionesService: ConfiguracionesService
+  ) {
     this.formulario = this.fb.group({
       nombreBeneficiario: ['', [Validators.required, Validators.minLength(4)]],
       curp: ['', [
@@ -63,6 +72,15 @@ export class ImpresionManualComponent implements OnInit {
       noTarjeta: [null, { value: '', disabled: true }],
       foto: [null,]
     });
+
+    this.formZapopan = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(4)]],
+      curp: ['', [
+        Validators.required,
+        Validators.minLength(18),
+        Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
+      ]],
+    })
   }
 
   private router = inject(Router);
@@ -353,5 +371,31 @@ export class ImpresionManualComponent implements OnInit {
 
   deleteImage() {
     this.capturedImage.set(null);
+  }
+
+  async seleccionarDiseno() {
+    const { value: disenoSeleccionado } = await Swal.fire({
+      title: 'Selecciona un diseño',
+      input: 'select',
+      inputOptions: {
+        'null': '- Selecciona una opción -',
+        yoJalisco: 'Yo Jalisco',
+        zapopan: 'Zapopan',
+      },
+      inputValidator: (value) => {
+        return new Promise((resolve) => {
+          if (value !== "null") {
+            resolve();
+          } else {
+            resolve("Debes seleccionar un diseño");
+          }
+        });
+      },
+      icon: 'question',
+      confirmButtonText: 'Seleccionar'
+    });
+
+    this.disenoSeleccionado = disenoSeleccionado;
+    this.cdr.detectChanges();
   }
 }
