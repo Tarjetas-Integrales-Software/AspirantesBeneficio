@@ -756,7 +756,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
 ipcMain.handle('get-app-path', () => app.getPath('userData'))
 
-ipcMain.on('print-id-card-manual', async (event, data) => {
+ipcMain.on('print-id-card-manual', async (event, data, layout) => {
   try {
     const doc = new jsPDF({
       orientation: "landscape",
@@ -777,22 +777,38 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
     const imageBase64 = fs.readFileSync(imagePath, { encoding: "base64" });
     const imageFormat = path.extname(imagePath).toUpperCase().replace(".", "");
 
-    doc.addImage(
-      `data:image/${imageFormat};base64,${imageBase64}`,
-      imageFormat,
-      6.2,
-      10,
-      24,
-      28
-    );
+    if (layout == 1) {
+      doc.addImage(
+        `data:image/${imageFormat};base64,${imageBase64}`,
+        imageFormat,
+        6.2,
+        10,
+        24,
+        28
+      );
 
-    doc.setFontSize(6);
-    doc.text(`${data.nombreBeneficiario}`, 33, 16, { maxWidth: 120, lineBreak: false });
+      doc.setFontSize(6);
+      doc.text(`${data.nombreBeneficiario}`, 33, 16, { maxWidth: 120, lineBreak: false });
 
-    doc.setFontSize(8);
-    doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });
-    doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
-    doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
+      doc.setFontSize(8);
+      doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });
+      doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
+      doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
+    } else if (layout == 2) {
+       doc.addImage(
+        `data:image/${imageFormat};base64,${imageBase64}`,
+        imageFormat,
+        4,
+        16,
+        24,
+        28
+      );
+
+      doc.setFontSize(7);
+
+      doc.text(data.nombreBeneficiario, 33, 21, { maxWidth: 120, lineBreak: false });
+      doc.text(data.curp, 33, 31, { maxWidth: 120, lineBreak: false });
+    }
 
     doc.save(savePath_pdf);
 

@@ -1,181 +1,194 @@
-<div class="bg-gray-100 p-0 container mx-auto">
-  <div class="flex flex-row gap-4 h-screen justify-center items-center">
+<section class="contenedor pt-5">
+  <mat-form-field>
+    <mat-label>Diseño</mat-label>
+    <mat-select [(value)]="disenoSeleccionado" (selectionChange)="confirmarSeleccionLayout()">
+      <mat-option value="0">- Selecciona una opción -</mat-option>
+      @for (layout of layousImpresion; track layout) {
+      <mat-option [value]="layout.id">{{layout.nombre}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</section>
+<main class="main contenedor">
+  @if(disenoSeleccionado == 0) {
+  <mat-card appearance="outlined" class="card--seleccionar">
+    <mat-card-content>Selecciona un diseño de tarjeta</mat-card-content>
+  </mat-card>
+  }
 
+  @if(disenoSeleccionado === 1) {
+  <form [formGroup]="formulario" (ngSubmit)="printManual()"
+    class="px-12 py-5 bg-[#ef8019] border-0 shadow-lg sm:rounded-3xl max-w-3xl mx-auto">
 
+    <div class="grid grid-cols-3 gap-4 *:text-white items-end">
 
-    <div class="basis-5/8">
-      <form [formGroup]="formulario" (ngSubmit)="printManual()">
-        <div class="px-12 py-5 bg-[#ef8019] border-0 shadow-lg sm:rounded-3xl max-w-3xl mx-auto">
+      <div class="w-full rounded-lg overflow-hidden ">
 
-          <div class="grid grid-cols-3 gap-4 *:text-white items-end">
-
-            <div class="w-full rounded-lg overflow-hidden ">
-
-              <div class="w-full">
-                <img class="w-[200px]" src="./assets/img/yoJalisco.png" alt="Yo Jalisco">
-              </div>
-
-            </div>
-
-            <span class="text-[22px] font-bold">Subsidia el 50%</span>
-
-            <div class="">
-              <span>No. de Tarjeta:</span>
-              <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
-                formControlName="noTarjeta" id="">
-            </div>
-          </div>
-
-          <div class="flex gap-4 *:text-white">
-            <div class="max-w-[200px] flex-auto">
-              @if (capturedImage()) {
-              <img [src]="capturedImage()" alt="Captured photo" class="w-full h-full object-cover">
-              } @else {
-              <img class="" src="./assets/img/usuario.png" alt="Escudo de Jalisco">
-              }
-            </div>
-            <div class="flex-auto py-3">
-              <div class="flex flex-col">
-                <label>Nombre del beneficiario:</label>
-                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" minlength="4"
-                  formControlName="nombreBeneficiario" id="" (input)="toUpperCaseName($event)">
-                <div
-                  *ngIf="formulario.get('nombreBeneficiario')?.invalid && formulario.get('nombreBeneficiario')?.touched">
-                  <small class="text-gray-700">El nombre es requerido y debe tener al menos 4 carácteres.</small>
-                </div>
-              </div>
-              <div class="flex flex-col">
-                <label>CURP:</label>
-                <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" formControlName="curp"
-                  (input)="toUpperCaseCurp($event)" id="" maxlength="18" minlength="18">
-                <div *ngIf="formulario.get('curp')?.invalid && formulario.get('curp')?.touched">
-                  <small class="text-gray-700">La CURP es requerida, debe tener 18 caracteres y cumplir con el
-                    formato.</small>
-                </div>
-              </div>
-              <div class="flex flex-row gap-4">
-                <div class="basis-1/2">
-                  <label>Fecha de Expedición:</label>
-                  <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
-                    formControlName="fechaExpedicion">
-                </div>
-                <div class="basis-1/2">
-                  <label>Telefono:</label>
-                  <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
-                    formControlName="telefono" id="" maxlength="10" minlength="10" (keypress)="soloNumeros($event)">
-                  <div *ngIf="formulario.get('telefono')?.invalid && formulario.get('telefono')?.touched">
-                    <small class="text-gray-700">El teléfono es requerido, debe tener 10 dígitos y solo números.</small>
-                  </div>
-                </div>
-              </div>
-              <div class="text-[24px] font-bold pt-2.5">
-                <span>Informes: 33 3030-1225</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-5 gap-4 *:text-white">
-            <div class="col-span-3">
-              <p class="pt-1" style="line-height: 1.2;">
-                Credencial intransferible. <br>
-                No es válida como identificación oficial. <br>
-                El apoyo deberá renovarse en los <br>
-                términos del programa. <br>
-              </p>
-            </div>
-            <div class="">
-              <img class="w-[60px] float-end" src="./assets/img/arbolLeones.png" alt="Arbol de los Leones">
-            </div>
-            <img src="./assets/img/gobiernoJalisco.png" alt="Gobierno de Jalisco">
-          </div>
+        <div class="w-full">
+          <img class="w-[200px]" src="./assets/img/yoJalisco.png" alt="Yo Jalisco">
         </div>
-      </form>
-    </div>
 
-    <div class="basis-3/8 max-w-[432px]">
-
-      <div class="camara-container ">
-        <div
-          class="flex flex-col justify-between gap-1 bg-white border-0 shadow-lg sm:rounded-3xl h-[424px] overflow-hidden">
-          <div class="basis-full">
-
-            <div class="flex flex-col items-center">
-              <div class="flex gap-2 items-center justify-center">
-              <!-- Camera device selection -->
-                <mat-form-field class="w-full">
-                  <mat-label>Cámara</mat-label>
-                  <mat-select [(ngModel)]="selectedDevice" (ngModelChange)="startStream()">
-                    <mat-option value="">- Selecciona una camara -</mat-option>
-                    <mat-option *ngFor="let device of devices; let i = index" [value]="device.deviceId">{{
-                      device.label || 'Camera ' + (i + 1) }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-
-                <mat-form-field class="w-full">
-                  <mat-label>Impresora</mat-label>
-                  <mat-select [ngModel]="selectedPrinter()" (selectionChange)="selectedPrinter.set($event.value)">
-                    <mat-option value="">- Selecciona una impresora-</mat-option>
-                    <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.name">{{
-                      printer.name || 'Printer ' + (i + 1) }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-                <!-- Camera video stream -->
-                <div class="relative w-full aspect-video overflow-hidden">
-                  <video #videoElement autoplay playsinline class="w-full h-full object-cover"></video>
-                  @if (stream) {
-                  <div class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                  }
-                </div>
-
-                <!-- Hidden canvas for capturing photos -->
-                <canvas #canvas hidden></canvas>
-              </div>
-
-
-          </div>
-
-          <div class="basis-full flex flex-col justify-center items-center">
-            <div class="w-full py-2 flex gap-2 items-center flex-row justify-center px-2">
-
-              <!-- Capture button -->
-              <button (click)="capturePhoto()" [disabled]="!stream"
-                class="rounded-full w-16 h-16  bg-[#f26507]  border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
-                  class="w-8 h-8 text-gray-800 mx-auto">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
-                  </path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z">
-                  </path>
-                </svg>
-                <span class="sr-only">Capture photo</span>
-              </button>
-
-              <button (click)="printManual()" [disabled]="formulario.invalid || !capturedImage() || !selectedPrinter()"
-                class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
-                  <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
-                  <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
-                </svg>
-                <span>
-                  Imprimir Tarjeta
-                </span>
-              </button>
-            </div>
-
-          </div>
-        </div>
       </div>
 
+      <span class="text-[22px] font-bold">Subsidia el 50%</span>
+
+      <div class="">
+        <span>No. de Tarjeta:</span>
+        <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text" formControlName="noTarjeta"
+          id="">
+      </div>
     </div>
 
-  </div>
+    <div class="flex gap-4 *:text-white">
+      <div class="max-w-[200px] flex-auto">
+        <img [src]="capturedImage() ? capturedImage(): './assets/img/usuario.png'" alt="Captured photo"
+          class="w-full h-full object-cover">
+      </div>
+      <div class="flex-auto py-3">
+        <div class="flex flex-col">
+          <label>Nombre del beneficiario:</label>
+          <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" minlength="4"
+            formControlName="nombreBeneficiario" id="" (input)="toUpperCaseName($event)">
+          <div *ngIf="formulario.get('nombreBeneficiario')?.invalid && formulario.get('nombreBeneficiario')?.touched">
+            <small class="text-gray-700">El nombre es requerido y debe tener al menos 4 carácteres.</small>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <label>CURP:</label>
+          <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8" type="text" formControlName="curp"
+            (input)="toUpperCaseCurp($event)" id="" maxlength="18" minlength="18">
+          <div *ngIf="formulario.get('curp')?.invalid && formulario.get('curp')?.touched">
+            <small class="text-gray-700">La CURP es requerida, debe tener 18 caracteres y cumplir con el
+              formato.</small>
+          </div>
+        </div>
+        <div class="flex flex-row gap-4">
+          <div class="basis-1/2">
+            <label>Fecha de Expedición:</label>
+            <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
+              formControlName="fechaExpedicion">
+          </div>
+          <div class="basis-1/2">
+            <label>Telefono:</label>
+            <input class="text-slate-800 py-1 px-2 bg-white rounded-sm h-8 w-full" type="text"
+              formControlName="telefono" id="" maxlength="10" minlength="10" (keypress)="soloNumeros($event)">
+            <div *ngIf="formulario.get('telefono')?.invalid && formulario.get('telefono')?.touched">
+              <small class="text-gray-700">El teléfono es requerido, debe tener 10 dígitos y solo números.</small>
+            </div>
+          </div>
+        </div>
+        <div class="text-[24px] font-bold pt-2.5">
+          <span>Informes: 33 3030-1225</span>
+        </div>
+      </div>
+    </div>
 
-</div>
+    <div class="grid grid-cols-5 gap-4 *:text-white">
+      <div class="col-span-3">
+        <p class="pt-1" style="line-height: 1.2;">
+          Credencial intransferible. <br>
+          No es válida como identificación oficial. <br>
+          El apoyo deberá renovarse en los <br>
+          términos del programa. <br>
+        </p>
+      </div>
+      <div class="">
+        <img class="w-[60px] float-end" src="./assets/img/arbolLeones.png" alt="Arbol de los Leones">
+      </div>
+      <img src="./assets/img/gobiernoJalisco.png" alt="Gobierno de Jalisco">
+    </div>
+  </form>
+  }
 
+  @if(disenoSeleccionado === 2) {
+  <section class="card max-w-3xl">
+    <header class="card__header">
+      <img src="./assets/logosTarjetaZapopan/zapopanTeLleva.png" class="card__logo" alt="">
+      <img src="./assets/logosTarjetaZapopan/carita.png" class="card__logo" alt="">
+      <h3>
+        Informes: <br />
+        <b>33 3818 2200</b> ext. <b>2851</b>
+      </h3>
+    </header>
+    <div class="card__body">
+      <img [src]="capturedImage() ? capturedImage(): './assets/img/usuario.png'" class="card__foto" alt="">
+      <div class="card__side">
+        <form [formGroup]="formZapopan" class="card__form">
+          <div class="card__form__row">
+            <mat-form-field class="card__form__item">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="nombre" (input)="toUpperCaseName($event)" class="w-full">
+            </mat-form-field>
+          </div>
+          <div class="card__form__row">
+            <mat-form-field class="card__form__item">
+              <mat-label>CURP</mat-label>
+              <input matInput formControlName="curp" (input)="toUpperCaseCurp($event)" class="w-full">
+            </mat-form-field>
+          </div>
+          <div class="card__form__row">
+            <input hidden type="text" formControlName="fechaExpedicion">
+          </div>
+        </form>
+        <div class="card__logos">
+          <img src="./assets/logosTarjetaZapopan/zapopan.png" class="card__logo" alt="">
+          <img src="./assets/logosTarjetaZapopan/apoyoParaElTransporte.png" class="card__logo" alt="">
+          <img src="./assets/logosTarjetaZapopan/escudo.png" class="card__logo" alt="">
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
+  <section class="camara">
+    <div class="camara__form">
+      <mat-form-field class="w-full">
+        <mat-label>Cámara</mat-label>
+        <mat-select [(ngModel)]="selectedDevice" (ngModelChange)="startStream()">
+          <mat-option value="">- Selecciona una camara -</mat-option>
+          <mat-option *ngFor="let device of devices; let i = index" [value]="device.deviceId">{{
+            device.label || 'Camera ' + (i + 1) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="w-full">
+        <mat-label>Impresora</mat-label>
+        <mat-select [ngModel]="selectedPrinter()" (selectionChange)="selectedPrinter.set($event.value)">
+          <mat-option value="">- Selecciona una impresora-</mat-option>
+          <mat-option *ngFor="let printer of printers; let i = index" [value]="printer.name">{{
+            printer.name || 'Printer ' + (i + 1) }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <video #videoElement autoplay playsinline class="camara__live"></video>
+    <canvas #canvas hidden></canvas>
+    <div class="camara__acciones">
+      <button (click)="capturePhoto()" [disabled]="!stream"
+        class="rounded-full w-16 h-16  bg-[#f26507]  border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white"
+          class="w-8 h-8 text-gray-800 mx-auto">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+          </path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z">
+          </path>
+        </svg>
+        <span class="sr-only">Capture photo</span>
+      </button>
+
+      <button (click)="printManual()" [disabled]="disableRegister()"
+        class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="icon icon-tabler icons-tabler-outline icon-tabler-printer">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+          <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+          <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />
+        </svg>
+        <span>
+          Imprimir Tarjeta
+        </span>
+      </button>
+    </div>
+  </section>
+</main>

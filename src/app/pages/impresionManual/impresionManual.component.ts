@@ -1,13 +1,16 @@
-import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal, inject } from "@angular/core"
+import { Component, type OnInit, ViewChild, type ElementRef, Input, Output, EventEmitter, signal, inject, ChangeDetectorRef } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import Swal from 'sweetalert2';
 import { ImpresionManualService } from "./impresionManual.service";
 import { ConfiguracionesService } from "../../services/CRUD/configuraciones.service";
+import { LayoutsImpresionService } from "../../services/CRUD/layouts-impresion.service";
 import { Router } from "@angular/router";
 
 interface Printer {
@@ -20,8 +23,9 @@ interface Printer {
 
 @Component({
   selector: 'app-impresion-manual',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatCardModule],
   templateUrl: './impresionManual.component.html',
+  styleUrl: './impresionManual.component.scss',
   styles: `
     :host {
       display: block;
@@ -39,18 +43,28 @@ export class ImpresionManualComponent implements OnInit {
   @Output() buttonClicked = new EventEmitter<void>();
 
   printers: any[] = [];
-  selectedPrinter = signal<string | null>(null);
+  devices: MediaDeviceInfo[] = [];
+  layousImpresion: any[] = [];
 
-  devices: MediaDeviceInfo[] = []
-  selectedDevice = ""
-  capturedImage = signal<string | null>(null)
   stream: MediaStream | null = null
   imageFormat: "jpeg" | "webp" = "webp"
+
+  capturedImage = signal<string | null>(null)
+  selectedDevice = ""
   modulo_actual: string | null = null;
+  disenoSeleccionado: number = 0;
+  selectedPrinter = signal<string | null>(null);
 
   formulario: FormGroup;
+  formZapopan: FormGroup;
 
-  constructor(private fb: FormBuilder, private impresionManualService: ImpresionManualService, private configuracionesService: ConfiguracionesService) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private fb: FormBuilder,
+    private impresionManualService: ImpresionManualService,
+    private configuracionesService: ConfiguracionesService,
+    private layoutsImpresionService: LayoutsImpresionService,
+  ) {
     this.formulario = this.fb.group({
       nombreBeneficiario: ['', [Validators.required, Validators.minLength(4)]],
       curp: ['', [
@@ -63,6 +77,16 @@ export class ImpresionManualComponent implements OnInit {
       noTarjeta: [null, { value: '', disabled: true }],
       foto: [null,]
     });
+
+    this.formZapopan = this.fb.group({
+      nombre: ['', [Validators.required, Validators.minLength(4)]],
+      fechaExpedicion: [{ value: this.getFechaActual(), disabled: true }],
+      curp: ['', [
+        Validators.required,
+        Validators.minLength(18),
+        Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
+      ]],
+    })
   }
 
   private router = inject(Router);
@@ -126,7 +150,12 @@ export class ImpresionManualComponent implements OnInit {
     }
     this.getAvailableCameras();
     this.getAvailablePrinters();
+    this.getDisenosTarjeta();
     this.formulario.get('noTarjeta')?.disable();
+  }
+
+  ngOnDestroy() {
+    if (this.stream) this.stopStream()
   }
 
   notifyParent() {
@@ -162,6 +191,17 @@ export class ImpresionManualComponent implements OnInit {
       console.error('Error al obtener impresoras:', error);
       return []; // Fallback seguro
     }
+  }
+
+  getDisenosTarjeta(): void {
+    this.layoutsImpresionService.get().subscribe({
+      next: (response) => {
+        if (response.response) {
+          this.layousImpresion = response.data;
+        }
+      },
+      error: (error) => { },
+    })
   }
 
   async startStream() {
@@ -262,29 +302,40 @@ export class ImpresionManualComponent implements OnInit {
   toUpperCaseName(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
-    this.formulario.get('nombreBeneficiario')?.setValue(input.value);
+
+    this.disenoSeleccionado === 1 ?
+      this.formulario.get('nombreBeneficiario')?.setValue(input.value) :
+      this.formZapopan.get('nombre')?.setValue(input.value);
   }
 
   toUpperCaseCurp(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
-    this.formulario.get('curp')?.setValue(input.value);
+
+    this.disenoSeleccionado === 1 ?
+      this.formulario.get('curp')?.setValue(input.value) :
+      this.formZapopan.get('curp')?.setValue(input.value);
   }
 
 
   async printManual() {
-    if (this.formulario.valid) {
-      const formData = this.formulario.value;
+    if (this.disenoSeleccionado === 1 ? this.formulario.valid : this.formZapopan.valid) {
+      const formData = this.disenoSeleccionado === 1 ? this.formulario.value : this.formZapopan.value;
       const photoPath = this.capturedImage(); // Foto recién tomada
+
+
       try {
         // console.log('Datos enviados para impresión manual:', formData, 'foto', photoPath, 'printer', this.selectedPrinter);
         this.modulo_actual = this.configuracionesService.getSelectedValueModu();
+
+        console.log('Modulo: ', this.modulo_actual);
+
         const fechaExpedicion = await this.getFechaActualFormatoAñoMesDia();
 
         const aspirante = {
-          nombreBeneficiario: formData.nombreBeneficiario,
+          nombreBeneficiario: formData.nombreBeneficiario || formData.nombre,
           curp: formData.curp,
-          telefono: formData.telefono,
+          telefono: formData.telefono || '',
           fechaExpedicion: fechaExpedicion || this.formulario.get('fechaExpedicion')?.value,
           modulo: this.modulo_actual,
         }
@@ -292,6 +343,64 @@ export class ImpresionManualComponent implements OnInit {
         if (!window.electronAPI) {
           throw new Error('Funcionalidad de impresión solo disponible en Electron');
         }
+
+        // Llamar al servicio para registrar la impresión
+        if (this.disenoSeleccionado === 1)
+          this.impresionManualService.registerImpresionYoJalisco(
+            {
+              ...aspirante,
+              fechaExpedicion: fechaExpedicion,
+            }
+          ).subscribe({
+            next: (response) => {
+              console.log('Registro de impresión exitoso:', response);
+              Swal.fire({
+                title: 'Impresión exitosa',
+                text: 'La tarjeta se imprimió correctamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+              });
+            },
+            error: (error) => {
+              console.error('Error al registrar la impresión:', error);
+              Swal.fire({
+                title: 'Error',
+                text: 'No se pudo registrar la impresión.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+              });
+            }
+          });
+
+        if (this.disenoSeleccionado === 2)
+          this.impresionManualService.registerImpresionZapopan(
+            {
+              ...aspirante,
+              fechaExpedicion: fechaExpedicion,
+            }
+          ).subscribe({
+            next: (response) => {
+              console.log('Registro de impresión exitoso:', response);
+              Swal.fire({
+                title: 'Impresión exitosa',
+                text: 'La tarjeta se imprimió correctamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+              });
+            },
+            error: (error) => {
+              console.error('Error al registrar la impresión:', error);
+              Swal.fire({
+                title: 'Error',
+                text: 'No se pudo registrar la impresión.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+              });
+            }
+          });
+
+        this.formulario.reset();
+        this.capturedImage.set(null);
 
         try {
           const printer = this.selectedPrinter(); // Tu método para obtener la impresora seleccionada
@@ -304,45 +413,13 @@ export class ImpresionManualComponent implements OnInit {
             ...aspirante,
             photoPath: photoPath || '',
             printer: printer
-          }, true);
+          }, true, this.disenoSeleccionado);
 
           console.log('Impresión de carnet iniciada correctamente');
         } catch (error) {
           console.error('Error al imprimir carnet:', error);
           throw error; // Relanzar para manejo en el componente
         }
-
-        // Llamar al servicio para registrar la impresión
-        this.impresionManualService.registerImpresion(
-          {
-            ...aspirante,
-            fechaExpedicion: fechaExpedicion,
-          }
-        ).subscribe({
-          next: (response) => {
-            console.log('Registro de impresión exitoso:', response);
-            Swal.fire({
-              title: 'Impresión exitosa',
-              text: 'La tarjeta se imprimió correctamente.',
-              icon: 'success',
-              confirmButtonText: 'Aceptar'
-            });
-          },
-          error: (error) => {
-            console.error('Error al registrar la impresión:', error);
-            Swal.fire({
-              title: 'Error',
-              text: 'No se pudo registrar la impresión.',
-              icon: 'error',
-              confirmButtonText: 'Aceptar'
-            });
-          }
-        });
-
-        this.formulario.reset();
-        this.capturedImage.set(null);
-        this.stopStream();
-
       } catch (error) {
         console.error('Error al enviar los datos para impresión manual:', error);
       }
@@ -353,5 +430,63 @@ export class ImpresionManualComponent implements OnInit {
 
   deleteImage() {
     this.capturedImage.set(null);
+  }
+
+  async seleccionarDiseno() {
+    const { value: disenoSeleccionado } = await Swal.fire({
+      title: 'Selecciona un diseño',
+      input: 'select',
+      inputOptions: {
+        'null': '- Selecciona una opción -',
+        yoJalisco: 'Yo Jalisco',
+        zapopan: 'Zapopan',
+      },
+      inputValidator: (value) => {
+        return new Promise((resolve) => {
+          if (value !== "null") {
+            resolve();
+          } else {
+            resolve("Debes seleccionar un diseño");
+          }
+        });
+      },
+      icon: 'info',
+      confirmButtonText: 'Seleccionar'
+    });
+
+    this.disenoSeleccionado = disenoSeleccionado;
+    this.cdr.detectChanges();
+  }
+
+  disableRegister(): boolean {
+    if (!this.capturedImage()) return true;
+    if (!this.selectedPrinter()) return true;
+
+    if (this.disenoSeleccionado === 1) return this.formulario.invalid
+
+    if (this.disenoSeleccionado === 2) return this.formZapopan.invalid
+
+    return true;
+  }
+
+  confirmarSeleccionLayout(): void {
+    if (this.disenoSeleccionado == 0) return;
+
+    Swal.fire({
+      title: 'Confirmar selección de diseño',
+      text: '¿Estás seguro de que deseas seleccionar este diseño?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, seleccionar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed)
+        Swal.fire('Diseño seleccionado', '', 'success');
+      else {
+        this.disenoSeleccionado = 0;
+        this.cdr.detectChanges();
+      }
+
+    })
   }
 }
