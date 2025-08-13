@@ -29,6 +29,8 @@ export class MenuComponent implements OnInit {
   rolesConPermisoMenu_Impresion: number[] = [111];
   rolesConPermisoMenu_ImpresionManual: number[] = [112];
   rolesConPermisoMenu_Digitalizador: number[] = [113];
+  rolesConPermisoMenu_AprobadasSSAS: number[] = [120];
+  rolesConPermisoMenu_Settings: number[] = [121];
 
   constructor(private router: Router, private storageService: StorageService, private menuService: MenuService, private relacionUsuarioRolesService: RelacionUsuarioRolesService,
     private networkStatusService: NetworkStatusService
@@ -100,7 +102,9 @@ export class MenuComponent implements OnInit {
   }
 
   get permisoMenu_Registro(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Registro.includes(Number(perfil.fkRole))); }
+  get permisoMenu_Settings(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Settings.includes(Number(perfil.fkRole))); }
   get permisoMenu_Consulta(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Consulta.includes(Number(perfil.fkRole))); }
+  get permisoMenu_Aprobadas(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_AprobadasSSAS.includes(Number(perfil.fkRole))); }
   get permisoMenu_Reportes(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Reportes.includes(Number(perfil.fkRole))); }
   get permisoMenu_Asistencia(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Asistencia.includes(Number(perfil.fkRole))); }
   get permisoMenu_Impresion(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Impresion.includes(Number(perfil.fkRole))); }

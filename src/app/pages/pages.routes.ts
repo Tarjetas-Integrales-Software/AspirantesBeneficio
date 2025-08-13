@@ -11,6 +11,7 @@ import { ImpresionManualComponent } from "./impresionManual/impresionManual.comp
 import { DigitalizadorComponent } from "./digitalizador/digitalizador.component";
 import { CortesComponent } from "./cortes/cortes.component";
 import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
+import { AprobadasSsasComponent } from "./aprobadas-ssas/aprobadas-ssas.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -36,6 +37,11 @@ export const pagesRoutes: Routes = [
                 path: 'editar/:id',
                 title: 'Editar',
                 component: HomeComponent
+            },
+            {
+                path: 'aprobadas-ssas',
+                title: 'Aprobadas SSAS',
+                component: AprobadasSsasComponent
             },
             {
                 path: 'reportes',
