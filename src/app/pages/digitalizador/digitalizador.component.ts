@@ -1175,11 +1175,16 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     const { qr, barras } = await config
     const impresora = this.formCaratula.get('impresora')?.value;
+
     const doc = new jsPDF();
-    doc.setFontSize(32);
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 10;
+
+    doc.setFontSize(28);
 
     // Constantes de layout
-    const qrWidth = 90;
+    const qrWidth = 70;
     const barcodeWidth = qrWidth;
     const barcodeHeight = 20;
 
@@ -1212,7 +1217,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           });
 
           const barcodeUrl = canvas.toDataURL('image/png');
-          doc.addImage(barcodeUrl, 'PNG', centerX, 220, barcodeWidth, barcodeHeight);
+
+          const x = pageWidth - barcodeWidth - margin; // esquina derecha
+          const y = pageHeight - barcodeHeight - margin; // parte inferior
+
+          doc.addImage(barcodeUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
           canvas.width = 0;
           canvas.height = 0;
@@ -1278,7 +1287,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
         const archivos = await this.listarArchivos(carpetaInterna, peso_minimo, extension);
 
-        if(archivos.length === 0) return;
+        if (archivos.length === 0) return;
 
         const nombresArchivos: string[] = archivos.map(archivo => {
           const [curp, _] = path.basename(archivo).split('.');
