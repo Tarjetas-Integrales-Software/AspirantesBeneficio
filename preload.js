@@ -56,10 +56,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   print: (pdfBuffer, printer) => ipcRenderer.invoke('print', pdfBuffer, printer),
   getPrinters: () => ipcRenderer.invoke('get-printers'),
-  printIdCard: (data, manual) => {
+  printIdCard: (data, manual, layout) => {
     return new Promise((resolve, reject) => {
       if (manual)
-        ipcRenderer.send('print-id-card-manual', data);
+        ipcRenderer.send('print-id-card-manual', data, layout);
       else
         ipcRenderer.send('print-id-card', data);
 

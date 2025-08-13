@@ -30,7 +30,7 @@ declare global {
             savePhoto: (imageData: ArrayBuffer | string, name: string, path: string) => void;
             savePdf: (pdfData: ArrayBuffer, fileName: string) => Promise<string>;
             getPrinters: () => Promise<Printer[]>;
-            printIdCard: (data: DataImpresionCredencial, manual: boolean) => Promise<void>;
+            printIdCard: (data: DataImpresionCredencial, manual: boolean, layout?: number) => Promise<void>;
             print: (pdfBuffer: ArrayBuffer, printer: string) => Promise<string>;
         };
     }

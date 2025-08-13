@@ -1,45 +1,22 @@
-<section class="contenedor py-3">
-  <button mat-raised-button (click)="seleccionarDiseno()">Seleccionar diseño</button>
+<section class="contenedor pt-5">
+  <mat-form-field>
+    <mat-label>Diseño</mat-label>
+    <mat-select [(value)]="disenoSeleccionado" (selectionChange)="confirmarSeleccionLayout()">
+      <mat-option value="0">- Selecciona una opción -</mat-option>
+      @for (layout of layousImpresion; track layout) {
+      <mat-option [value]="layout.id">{{layout.nombre}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 </section>
 <main class="main contenedor">
-  @if(disenoSeleccionado === 'zapopan') {
-  <section class="card max-w-3xl">
-    <header class="card__header">
-      <img src="./assets/logosTarjetaZapopan/zapopanTeLleva.png" class="card__logo" alt="">
-      <img src="./assets/logosTarjetaZapopan/carita.png" class="card__logo" alt="">
-      <h3>
-        Informes: <br />
-        <b>33 3818 2200</b> ext. <b>2851</b>
-      </h3>
-    </header>
-    <div class="card__body">
-      <img [src]="capturedImage() ? capturedImage(): './assets/img/usuario.png'" class="card__foto" alt="">
-      <div class="card__side">
-        <form [formGroup]="formZapopan" class="card__form">
-          <div class="card__form__row">
-            <mat-form-field class="card__form__item">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="nombre" class="w-full">
-            </mat-form-field>
-          </div>
-          <div class="card__form__row">
-            <mat-form-field class="card__form__item">
-              <mat-label>CURP</mat-label>
-              <input matInput formControlName="curp" class="w-full">
-            </mat-form-field>
-          </div>
-        </form>
-        <div class="card__logos">
-          <img src="./assets/logosTarjetaZapopan/zapopan.png" class="card__logo" alt="">
-          <img src="./assets/logosTarjetaZapopan/apoyoParaElTransporte.png" class="card__logo" alt="">
-          <img src="./assets/logosTarjetaZapopan/escudo.png" class="card__logo" alt="">
-        </div>
-      </div>
-    </div>
-  </section>
+  @if(disenoSeleccionado == 0) {
+  <mat-card appearance="outlined" class="card--seleccionar">
+    <mat-card-content>Selecciona un diseño de tarjeta</mat-card-content>
+  </mat-card>
   }
 
-  @if(disenoSeleccionado === 'yoJalisco') {
+  @if(disenoSeleccionado === 1) {
   <form [formGroup]="formulario" (ngSubmit)="printManual()"
     class="px-12 py-5 bg-[#ef8019] border-0 shadow-lg sm:rounded-3xl max-w-3xl mx-auto">
 
@@ -123,6 +100,46 @@
   </form>
   }
 
+  @if(disenoSeleccionado === 2) {
+  <section class="card max-w-3xl">
+    <header class="card__header">
+      <img src="./assets/logosTarjetaZapopan/zapopanTeLleva.png" class="card__logo" alt="">
+      <img src="./assets/logosTarjetaZapopan/carita.png" class="card__logo" alt="">
+      <h3>
+        Informes: <br />
+        <b>33 3818 2200</b> ext. <b>2851</b>
+      </h3>
+    </header>
+    <div class="card__body">
+      <img [src]="capturedImage() ? capturedImage(): './assets/img/usuario.png'" class="card__foto" alt="">
+      <div class="card__side">
+        <form [formGroup]="formZapopan" class="card__form">
+          <div class="card__form__row">
+            <mat-form-field class="card__form__item">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="nombre" (input)="toUpperCaseName($event)" class="w-full">
+            </mat-form-field>
+          </div>
+          <div class="card__form__row">
+            <mat-form-field class="card__form__item">
+              <mat-label>CURP</mat-label>
+              <input matInput formControlName="curp" (input)="toUpperCaseCurp($event)" class="w-full">
+            </mat-form-field>
+          </div>
+          <div class="card__form__row">
+            <input hidden type="text" formControlName="fechaExpedicion">
+          </div>
+        </form>
+        <div class="card__logos">
+          <img src="./assets/logosTarjetaZapopan/zapopan.png" class="card__logo" alt="">
+          <img src="./assets/logosTarjetaZapopan/apoyoParaElTransporte.png" class="card__logo" alt="">
+          <img src="./assets/logosTarjetaZapopan/escudo.png" class="card__logo" alt="">
+        </div>
+      </div>
+    </div>
+  </section>
+  }
+
   <section class="camara">
     <div class="camara__form">
       <mat-form-field class="w-full">
@@ -158,7 +175,7 @@
         <span class="sr-only">Capture photo</span>
       </button>
 
-      <button (click)="printManual()" [disabled]="formulario.invalid || !capturedImage() || !selectedPrinter()"
+      <button (click)="printManual()" [disabled]="disableRegister()"
         class="rounded-full w-3/4 flex flex-col items-center justify-center bg-blue-500 hover:bg-blue-600 text-xs text-white text-center font-bold p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
