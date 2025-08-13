@@ -8,7 +8,7 @@ import { FotosService } from "../../../../services/CRUD/fotos.service";
 import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspirantes-beneficio-fotos.service";
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from "@angular/router";
-import { switchMap } from "rxjs";
+import { switchMap, of, from, concatMap, tap, catchError, concat, map, last } from "rxjs";
 import { environment } from "../../../../../environments/environment";
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DocumentosService } from "../../../../services/CRUD/documentos.service";
@@ -232,145 +232,185 @@ export class FotoComponent implements OnInit {
     }
   }
 
-  async uploadFoto(): Promise<void> {
+  onSubmit(): void {
     if (!this.datosGeneralesComponent) {
       console.error("DatosGeneralesComponent is not available for uploadDocs.");
       return;
     }
-    const formattedFecha = new Date().toISOString();
-    const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
 
-    try {
-      // Crear foto en la base de datos local
-      await this.fotosService.crearFoto({
-        id_status: 1, // Asignar el estado adecuado
-        fecha: formattedFecha,
-        tipo: 'foto_aspben',
-        archivo: curp + '.webp',
-        path: 'docsaspirantesbeneficio/' + curp + '.webp', // Asignar el path adecuado si es necesario
-        archivoOriginal: `captured_photo.${this.imageFormat}`,
-        extension: this.imageFormat,
-        created_id: 0, // Asignar el ID adecuado si es necesario
-        created_at: formattedFecha
-      });
-    } catch (error) {
-      console.error('Error al guardar la foto en la base de datos local:', error);
-    }
-  }
-
-  async uploadDocs(): Promise<void> {
-    if (!this.datosGeneralesComponent) {
-      console.error("DatosGeneralesComponent is not available for uploadDocs.");
-      return;
-    }
-    const formattedFecha = new Date().toISOString();
-    const curp = this.datosGeneralesComponent.myForm.get('curp')?.value;
-
-    try {
-      // Crear foto en la base de datos local
-      await this.documentosService.crearDocumento({
-        id_status: 1, // Asignar el estado adecuado
-        fecha: formattedFecha,
-        tipo: 'doc_aspben',
-        archivo: curp + '.pdf',
-        path: 'docsaspirantesbeneficio/' + curp + '.pdf', // Asignar el path adecuado si es necesario
-        archivoOriginal: `captured_file.pdf`,
-        extension: 'pdf',
-        created_id: 0, // Asignar el ID adecuado si es necesario
-        created_at: formattedFecha
-      });
-    } catch (error) {
-      console.error('Error al guardar el documento en la base de datos local:', error);
-    }
-  }
-
-  async onSubmit(): Promise<void> {
-    if (!this.datosGeneralesComponent) {
-      console.error("DatosGeneralesComponent is not available for uploadDocs.");
-      return;
-    }
-    // Detener el video de la cámara
     this.stopStream();
 
-    // Verificamos si el formulario es válido
-    if (this.datosGeneralesComponent.myForm.valid) {
-      this.datosGeneralesComponent.onSafe();
+    if (!this.datosGeneralesComponent.myForm.valid) {
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+      this.submitForm.emit();
+      return;
+    }
 
-      try {
-        if (this.capturedImage) {
-          const form: Aspirante = await this.datosGeneralesComponent.getMyForm();
-          // Obtenemos los datos del formulario
-          // Creamos el aspirante con los datos obtenidos del formulario
-          await this.aspirantesBeneficioService.crearAspirante(form);
-          // Subimos la foto del aspirante
-          await this.uploadFoto(); // Subir la foto después de crear el aspirante
+    if (!this.capturedImage) {
+      console.log('No hay imagen capturada para subir');
+      Swal.fire({ title: 'Error', text: 'Debe capturar una imagen antes de guardar.', icon: 'warning', confirmButtonText: 'Aceptar' });
+      this.submitForm.emit();
+      return;
+    }
 
-          this.savePhoto(form.curp);
+    this.datosGeneralesComponent.onSafe();
 
-          // Obtenemos el último ID de la tabla de aspirantes y de la tabla de fotos
-          const lastIdApirante = await this.aspirantesBeneficioService.getLastId() || 0;
-          const lastIdFoto = await this.fotosService.getLastId() || 0;
+    // Variables para rollback
+    let aspiranteCreado: number | null = null;
+    let fotoCreada: number | null = null;
+    let documentoCreado: number | null = null;
+    let relacionFoto: { asp: number, foto: number } | null = null;
+    let relacionDoc: { asp: number, doc: number } | null = null;
 
-          // Guardar el archivo PDF si se ha cargadoI
-          if (this.documentFile.file && this.isCheckboxChecked) {
+    // Obtener datos del formulario (usa Promise -> convertimos con from())
+    from(this.datosGeneralesComponent.getMyForm()).pipe(
+      concatMap((form: Aspirante) => {
+        const formattedFecha = new Date().toISOString();
+        const fotoData = {
+          id_status: 1,
+          fecha: formattedFecha,
+          tipo: 'foto_aspben',
+          archivo: form.curp + '.webp',
+          path: 'docsaspirantesbeneficio/' + form.curp + '.webp',
+            archivoOriginal: `captured_photo.${this.imageFormat}`,
+          extension: this.imageFormat,
+          created_id: 0,
+          created_at: formattedFecha
+        };
+        const documentoData = {
+          id_status: 1,
+          fecha: formattedFecha,
+          tipo: 'doc_aspben',
+          archivo: form.curp + '.pdf',
+          path: 'docsaspirantesbeneficio/' + form.curp + '.pdf',
+          archivoOriginal: `captured_file.pdf`,
+          extension: 'pdf',
+          created_id: 0,
+          created_at: formattedFecha
+        };
 
-            // Subir el documento a la base de datos
-            await this.uploadDocs();
-
-            // Guardar el documento en el directorio local
-            this.savePdf(form.curp);
-
-            // Obtenemos el último ID de la tabla de documentos
-            const lastIdDocumento = await this.documentosService.getLastId() || 0;
-
-            // Creamos la relación entre el aspirante y el documento
-            await this.aspirantesBeneficioDocumentosService.crearRelacion({
-              id_aspirante_beneficio: lastIdApirante,
-              id_documento: lastIdDocumento,
-              id_status: 1,
-              created_id: 0,
-              created_at: ""
-            });
-          }
-
-
-          // Creamos la relación entre el aspirante y la foto
-          await this.aspirantesBeneficioFotosService.crearRelacion({
-            id_aspirante_beneficio: lastIdApirante,
-            id_foto: lastIdFoto,
+        return from(this.aspirantesBeneficioService.crearAspirante(form)).pipe(
+          concatMap(() => this.aspirantesBeneficioService.getLastId()),
+          tap(id => aspiranteCreado = id),
+          concatMap(() => this.fotosService.crearFotoLocal(fotoData)),
+          concatMap(() => this.fotosService.getLastIdObservable()),
+          tap(id => {
+            fotoCreada = id;
+            this.savePhoto(form.curp);
+          }),
+          concatMap(() => this.aspirantesBeneficioFotosService.crearRelacionLocal({
+            id_aspirante_beneficio: aspiranteCreado!,
+            id_foto: fotoCreada!,
             id_status: 1,
             created_id: 0,
-            created_at: ""
-          });
-
-          Swal.fire({
-            title: 'Registro exitoso!',
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-          });
-
-          // Borramos la foto, el archivo PDF y los datos del formulario
-          this.capturedImage = null;
-          this.documentFile.file = null;
-          this.lblUploadingFile = '';
-          this.datosGeneralesComponent.myForm.reset();
-          this.datosGeneralesComponent.myForm.markAsPristine();
-          this.datosGeneralesComponent.disabledGradoCarrera();
-
-        } else {
-          console.log("No hay imagen capturada para subir");
-        }
-      } catch (error) {
-        console.error("Error en el proceso:", error);
+            created_at: fotoData.created_at
+          })),
+          tap(() => relacionFoto = { asp: aspiranteCreado!, foto: fotoCreada! }),
+          concatMap(() => (this.documentFile.file && this.isCheckboxChecked) ?
+            this.documentosService.crearDocumentoLocal(documentoData).pipe(
+              concatMap(() => this.documentosService.getLastIdObservable()),
+              tap(id => documentoCreado = id),
+              concatMap(() => from(this.savePdf(form.curp))),
+              concatMap(() => this.aspirantesBeneficioDocumentosService.crearRelacionLocal({
+                id_aspirante_beneficio: aspiranteCreado!,
+                id_documento: documentoCreado!,
+                id_status: 1,
+                created_id: 0,
+                created_at: documentoData.created_at
+              })),
+              tap(() => relacionDoc = { asp: aspiranteCreado!, doc: documentoCreado! })
+            ) : of(null)
+          ),
+          catchError(err => {
+            // Propagar error para manejar en el subscribe error
+            throw err;
+          })
+        );
+      })
+    ).subscribe({
+      next: () => {},
+      error: (error) => {
+        console.error('Error en el proceso:', error);
+        this.performRollback$(
+          aspiranteCreado,
+          fotoCreada,
+          documentoCreado,
+          relacionFoto,
+          relacionDoc
+        ).subscribe({
+          complete: () => {
+            Swal.fire({ title: 'Error en el registro', text: 'Ocurrió un error durante el proceso de registro. Los datos no se han guardado.', icon: 'error', confirmButtonText: 'Aceptar' });
+            this.submitForm.emit();
+          }
+        });
+      },
+      complete: () => {
+        Swal.fire({ title: 'Registro exitoso!', icon: 'success', timer: 2000, showConfirmButton: false });
+        this.capturedImage = null;
+        this.documentFile.file = null;
+        this.lblUploadingFile = '';
+        this.datosGeneralesComponent!.myForm.reset();
+        this.datosGeneralesComponent!.myForm.markAsPristine();
+        this.datosGeneralesComponent!.disabledGradoCarrera();
+        this.submitForm.emit();
       }
-    } else {
-      // Marcar todos los campos como tocados para mostrar los errores
-      this.datosGeneralesComponent.myForm.markAllAsTouched();
-      // Mostrar los errores en la consola del formulario
-      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+    });
+  }
+
+  private performRollback$(
+    aspiranteCreado: number | null,
+    fotoCreada: number | null,
+    documentoCreado: number | null,
+    relacionFoto: { asp: number, foto: number } | null,
+    relacionDoc: { asp: number, doc: number } | null,
+  ) {
+    const rollbackErrors: string[] = [];
+
+    const tasks: any[] = [];
+
+    const wrap = (label: string, obs$: any) => obs$.pipe(
+      catchError((e: any) => {
+        rollbackErrors.push(`Error en rollback de ${label}: ${e}`);
+        return of(null); // continuar
+      }),
+      map(() => void 0)
+    );
+
+    if (relacionDoc) {
+      tasks.push(wrap('relación documento', this.aspirantesBeneficioDocumentosService.rollbackRelacionDocumento(relacionDoc.asp, relacionDoc.doc)));
     }
-    this.submitForm.emit();
+    if (relacionFoto) {
+      tasks.push(wrap('relación foto', this.aspirantesBeneficioFotosService.rollbackRelacion(relacionFoto.asp, relacionFoto.foto)));
+    }
+    if (documentoCreado) {
+      tasks.push(wrap('documento', this.documentosService.rollbackDocumento(documentoCreado)));
+    }
+    if (fotoCreada) {
+      tasks.push(wrap('foto', this.fotosService.rollbackFoto(fotoCreada)));
+    }
+    if (aspiranteCreado) {
+      tasks.push(wrap('aspirante', this.aspirantesBeneficioService.rollbackAspirante(aspiranteCreado)));
+    }
+
+    if (!tasks.length) {
+      return of(void 0);
+    }
+
+    return concat(...tasks).pipe(
+      last(),
+      tap(() => {
+        if (rollbackErrors.length) {
+          console.error('Errores durante el rollback:', rollbackErrors);
+          Swal.fire({ title: 'Errores durante la limpieza', text: 'Se produjeron algunos errores al limpiar los datos. Revise la consola para más detalles.', icon: 'warning', confirmButtonText: 'Aceptar' });
+        }
+      }),
+      map(() => void 0),
+      catchError(e => {
+        console.error('Error crítico durante el rollback:', e);
+        return of(void 0);
+      })
+    );
   }
 
   async onEdit() {
