@@ -24,13 +24,14 @@ import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
-import { Observable, switchMap } from 'rxjs';
-import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
+import { catchError, map, Observable, of, switchMap } from 'rxjs';
+import { CurpPrevioRegisto, CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
+import { tap } from 'rxjs/operators';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -82,7 +83,9 @@ export class DatosGeneralesComponent implements OnInit {
     id: 0,
     id_modalidad: 0,
     curp: '',
-    nombres: '',
+    nombre: '',
+    apellido_paterno: '',
+    apellido_materno: '',
     telefono: '',
     fecha_nacimiento: '',
     email: '',
@@ -108,7 +111,9 @@ export class DatosGeneralesComponent implements OnInit {
   //options: string[] = [];
   filteredOptions: any[] = [];
 
-  constructor( private networkStatusService: NetworkStatusService
+  private lastCurpAutoFilled?: string;
+
+  constructor(private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
     , private modalidadesService: ModalidadesService
     , private aspirantesBeneficioService: AspirantesBeneficioService
@@ -123,12 +128,12 @@ export class DatosGeneralesComponent implements OnInit {
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['', [
+    curp: ['BADN980406HJCSVS', [
       Validators.required,
       Validators.minLength(18),
       Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
     ], this.editar ? null : this.curpAsyncValidator.bind(this)],
-    nombres: ['', [Validators.required, Validators.minLength(1)]],
+    nombre: ['', [Validators.required, Validators.minLength(1)]],
     apellido_paterno: ['', [Validators.required, Validators.minLength(1)]],
     apellido_materno: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
@@ -137,13 +142,13 @@ export class DatosGeneralesComponent implements OnInit {
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
-    tipo_zona: ['', ],
-    tipo_asentamiento: ['', ],
-    domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    tipo_zona: ['',],
+    tipo_asentamiento: ['',],
+    domicilio: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(1000)]],
     grado: ['',],
     tipo_carrera: ['',],
     carrera: ['',],
-    com_obs: [''],
+    com_obs: ['', [Validators.maxLength(500)]],
   });
 
   filter(): void {
@@ -151,21 +156,72 @@ export class DatosGeneralesComponent implements OnInit {
     this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue));
   }
 
-  curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
-    if (this.editar) {
-      return Promise.resolve(null);
+  curpAsyncValidator(control: AbstractControl): Observable<ValidationErrors | null> {
+    if (this.editar) return of(null);
+    const raw = (control.value || '').toString().trim().toUpperCase();
+    if (raw.length !== 18) return of(null);
+
+    return this.curpsRegistradasService.getAspirantesBeneficioPorCurpPrevioRegistro(raw).pipe(
+      map((response: CurpPrevioRegisto) => {
+        const registro = response?.data?.[0];
+        if (!registro) return null;
+
+        if (registro.beneficiado === '0') {
+          if (this.lastCurpAutoFilled !== raw) {
+            this.lastCurpAutoFilled = raw;
+            Swal.fire({
+              icon: 'info',
+              title: 'Registro previo sin beneficio',
+              text: 'Este usuario ya tiene un registro, pero no fue beneficiado. Serás redireccionad@ al menú de editar registro para tomar la foto y hacer las correcciones necesarias.',
+              confirmButtonText: 'Ir a editar'
+            }).then(() => {
+              this.router.navigate(['/inicio/editar', registro.id]);
+            });
+          } else {
+            this.router.navigate(['/inicio/editar', registro.id]);
+          }
+          return null;
+        }
+        return { curpBeneficiado: true };
+      }),
+      tap((result: ValidationErrors | null) => {
+        if (result && (result as any).curpBeneficiado) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'CURP con beneficio',
+            text: 'Esta CURP ya cuenta con un beneficio registrado.',
+            confirmButtonText: 'Aceptar'
+          });
+        }
+      }),
+      catchError(err => {
+        console.error('Error validando CURP:', err);
+        return of(null);
+      })
+    );
+  }
+
+  private parseNombreCompleto(raw: string): { nombre: string; apellido_paterno: string; apellido_materno: string } {
+    const PARTICULAS = new Set(['DE', 'DEL', 'LA', 'LAS', 'LO', 'LOS', 'Y', 'VAN', 'VON', 'MC', 'MAC', 'SAN', 'SANTA']);
+    const tokens = (raw || '').trim().split(/\s+/).filter(t => t).map(t => t.toUpperCase());
+    let nombre = ''; let apellido_paterno = ''; let apellido_materno = '';
+    if (!tokens.length) return { nombre, apellido_paterno, apellido_materno };
+    if (tokens.length === 1) return { nombre: tokens[0], apellido_paterno, apellido_materno };
+    if (tokens.length === 2) return { nombre: tokens[0], apellido_paterno, apellido_materno: tokens[1] };
+
+    const work = [...tokens];
+    // Materno
+    const maternoParts: string[] = [work.pop()!];
+    while (work.length && PARTICULAS.has(work[work.length - 1])) maternoParts.unshift(work.pop()!);
+    apellido_materno = maternoParts.join(' ');
+    // Paterno
+    if (work.length) {
+      const paternoParts: string[] = [work.pop()!];
+      while (work.length && PARTICULAS.has(work[work.length - 1])) paternoParts.unshift(work.pop()!);
+      apellido_paterno = paternoParts.join(' ');
     }
-    return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
-      if (exists) {
-        Swal.fire({
-          icon: 'error',
-          title: 'CURP ya registrada',
-          text: 'La CURP ingresada ya se encuentra registrada en el sistema.',
-        });
-        return { curpExists: true };
-      }
-      return null;
-    });
+    nombre = work.join(' ');
+    return { nombre: nombre.trim(), apellido_paterno: apellido_paterno.trim(), apellido_materno: apellido_materno.trim() };
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -186,7 +242,9 @@ export class DatosGeneralesComponent implements OnInit {
         case 'minlength':
           return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
         case 'pattern':
-          return 'El formato de la curp no es correcto';
+          return 'El formato de la CURP no es correcto';
+        case 'curpBeneficiado':
+          return 'Esta CURP ya cuenta con un beneficio';
       }
     }
     return null;
@@ -260,11 +318,14 @@ export class DatosGeneralesComponent implements OnInit {
         .pipe(
           switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
         ).subscribe(aspirante => {
+          debugger
           this.editAspirante = aspirante.data;
 
           if (!aspirante) {
             return this.router.navigateByUrl('/');
           }
+
+          const { nombre, apellido_paterno, apellido_materno } = this.parseNombreCompleto(aspirante.data.nombre_completo || '');
 
           // Obtener los IDs correspondientes a los nombres
           const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
@@ -278,6 +339,9 @@ export class DatosGeneralesComponent implements OnInit {
           // Establecer los campos correspondientes en el formulario
           this.myForm.reset({
             ...aspirante.data,
+            nombre: (aspirante.data.nombre || nombre).toUpperCase(),
+            apellido_paterno: (aspirante.data.apellido_paterno || apellido_paterno).toUpperCase(),
+            apellido_materno: (aspirante.data.apellido_materno || apellido_materno).toUpperCase(),
             fecha_nacimiento: aspirante.data.fecha_nacimiento ? new Date(aspirante.data.fecha_nacimiento + 'T00:00:00') : '',
             grado: selectedGrado ? selectedGrado.id : '',
             tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
@@ -473,22 +537,22 @@ export class DatosGeneralesComponent implements OnInit {
     const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.id === this.myForm.get('tipo_carrera')?.value);
 
     return {
-        ...this.myForm.value,
-        id: this.editAspirante.id,
-        curp: this.editAspirante.curp,
-        nombres: this.myForm.get('nombres')?.value.toUpperCase(),
-        fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
-        fecha_evento: this.editAspirante.fecha_evento,
-        estado: 'Jalisco',
-        municipio: this.myForm.get('municipio')?.value,
-        ciudad: this.myForm.get('municipio')?.value,
-        tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
-        tipo_zona: this.myForm.get('tipo_zona')?.value,
-        grado: selectedGrado ? selectedGrado.nombre : '',
-        tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.nombre : '',
-        modulo: this.modulo_actual
+      ...this.myForm.value,
+      id: this.editAspirante.id,
+      curp: this.editAspirante.curp,
+      nombres: this.myForm.get('nombres')?.value.toUpperCase(),
+      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      fecha_evento: this.editAspirante.fecha_evento,
+      estado: 'Jalisco',
+      municipio: this.myForm.get('municipio')?.value,
+      ciudad: this.myForm.get('municipio')?.value,
+      tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
+      tipo_zona: this.myForm.get('tipo_zona')?.value,
+      grado: selectedGrado ? selectedGrado.nombre : '',
+      tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.nombre : '',
+      modulo: this.modulo_actual
     };
-}
+  }
 
   selectedValue2() {
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
