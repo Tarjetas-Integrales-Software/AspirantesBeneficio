@@ -19,8 +19,11 @@ export class ImpresionManualService {
 
   constructor() { }
 
-  registerImpresion(aspirante: AspiranteBeneficio): Observable<AspiranteBeneficio> {
+  registerImpresionYoJalisco(aspirante: AspiranteBeneficio): Observable<AspiranteBeneficio> {
     return this.http.post<AspiranteBeneficio>(environment.apiUrl + '/lic/aspben/impresion_beneficio_cincuenta/register', { ...aspirante });
   }
 
+  registerImpresionZapopan(aspirante: AspiranteBeneficio): Observable<AspiranteBeneficio> {
+    return this.http.post<AspiranteBeneficio>(environment.apiUrl + '/lic/aspben/impresion_zapopan/register', { ...aspirante });
+  }
 }
