@@ -46,6 +46,9 @@ export class ConfiguracionesComponent implements OnInit {
       enableSyncInterval: [true],
       syncInterval: [{ value: 60, disabled: false }, [Validators.required]],
 
+      enableSyncAspirantesInterval: [true],
+      syncAspirantesInterval: [{ value: 5, disabled: false }, [Validators.required]],
+
       enableSyncCurpInterval: [true],
       syncCurpInterval: [{ value: 30, disabled: false }, [Validators.required]],
 
@@ -112,13 +115,12 @@ export class ConfiguracionesComponent implements OnInit {
 
   onSubmit(): void {
     const configuracion = this.formConfiguraciones.getRawValue();
-
     const mensaje = this.procesarConfiguraciones(configuracion);
 
     Swal.fire({
       title: 'Información',
       text: mensaje,
-      icon: 'warning',
+      icon: 'success',
       timer: 1500,
       showConfirmButton: true,
     });
@@ -138,7 +140,13 @@ export class ConfiguracionesComponent implements OnInit {
           nombre,
           intervalo,
           activo
-        });
+        }).then((response => {
+          if (response.changes == 0) this.configuracionService.crear({
+            nombre,
+            intervalo,
+            activo
+          })
+        }));
       }
     });
 
@@ -147,29 +155,22 @@ export class ConfiguracionesComponent implements OnInit {
 
   llenarFormulario(): void {
     this.configuracionService.consultar().then((configuraciones: any[]) => {
-      const form: { [key: string]: any } = {};
-
       configuraciones.forEach(conf => {
         const nombre = conf.nombre;
         const enableKey = `enable${nombre.charAt(0).toUpperCase()}${nombre.slice(1)}`;
-
         const isEnabled = conf.activo === 1;
 
-        form[enableKey] = [conf.activo === 1];
-        form[nombre] = [{ value: conf.intervalo, disabled: !isEnabled }, [Validators.required]];
+        // Si el control ya existe, solo setea el valor
+        if (this.formConfiguraciones.contains(enableKey)) {
+          this.formConfiguraciones.get(enableKey)?.setValue(isEnabled, { emitEvent: false });
+          this.formConfiguraciones.get(nombre)?.setValue(conf.intervalo, { emitEvent: false });
+        } else {
+          // Si no existe, agrega el control dinámicamente
+          this.formConfiguraciones.addControl(enableKey, this.fb.control(isEnabled));
+          this.formConfiguraciones.addControl(nombre, this.fb.control({ value: conf.intervalo, disabled: !isEnabled }, Validators.required));
+        }
 
         this.toggleField(enableKey, nombre);
-      });
-
-      // Crear el formulario dinámicamente basado en la configuración cargada
-      this.formConfiguraciones = this.fb.group(form);
-
-      Object.keys(form).forEach(key => {
-        if (key.startsWith('enableSync')) {
-          const controlName = key.replace(/^enable/, '');
-          const targetControl = controlName.charAt(0).toLowerCase() + controlName.slice(1);
-          this.toggleField(key, targetControl);
-        }
       });
 
       this.cdr.detectChanges();
@@ -177,4 +178,5 @@ export class ConfiguracionesComponent implements OnInit {
       console.error('Error al llenar formulario:', error);
     });
   }
+
 }

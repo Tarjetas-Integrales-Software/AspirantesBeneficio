@@ -89,6 +89,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
       const {
         syncInterval,
+        syncAspirantesInterval,
         syncCurpInterval,
         syncDocumentosInterval,
         syncMonitorInterval,
@@ -97,7 +98,7 @@ export class AppComponent implements OnInit, OnDestroy {
         syncCargarArchivosPendientesInterval
       } = configuraciones;
 
-      if (syncInterval.activo) this.startSyncAspirantesInterval(syncInterval.intervalo * 1000 * 60);
+      if (syncAspirantesInterval.activo) this.startSyncAspirantesInterval(syncAspirantesInterval.intervalo * 1000 * 60);
       if (syncCurpInterval.activo) this.startSyncCurpInterval(syncCurpInterval.intervalo * 1000 * 60);
       if (syncDocumentosInterval.activo) this.startSyncDocumentosInterval(syncDocumentosInterval.intervalo * 1000 * 60);
       if (syncAsistenciaInterval.activo) this.startSyncAsistenciaInterval(syncAsistenciaInterval.intervalo * 1000 * 60);

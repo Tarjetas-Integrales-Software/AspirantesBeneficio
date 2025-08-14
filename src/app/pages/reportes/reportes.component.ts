@@ -95,7 +95,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
+    this.dataSource.paginator = null;
     this.dataSource.sort = this.sort;
   }
 
