@@ -1179,7 +1179,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const doc = new jsPDF();
 
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 10;
+    const marginBottom = 30;
+    const marginEnd = 15;
 
     doc.setFontSize(28);
 
@@ -1218,8 +1219,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
           const barcodeUrl = canvas.toDataURL('image/png');
 
-          const x = pageWidth - barcodeWidth - margin; // esquina derecha
-          const y = pageHeight - barcodeHeight - margin; // parte inferior
+          const x = pageWidth - barcodeWidth - marginEnd; // esquina derecha
+          const y = pageHeight - barcodeHeight - marginBottom; // parte inferior
 
           doc.addImage(barcodeUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
