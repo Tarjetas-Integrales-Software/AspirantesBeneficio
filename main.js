@@ -51,13 +51,6 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  //mainWindow.webContents.openDevTools();
-
-  // mainWindow.webContents.on('did-frame-finish-load', () => {
-  //   mainWindow.webContents.openDevTools();
-  // });
-
-  // // Abre consola (para debug)
   // mainWindow.on('ready-to-show', () => {
   //   mainWindow.webContents.openDevTools();
   // });
@@ -125,52 +118,55 @@ function addColumnIfNotExists() {
     }
 
     // Verificar y agregar columnas en sy_config_digitalizador
-    const rowsConfig = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
+    const rowsConfiguracionDigitalizador = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
+    const rowsGruposDigitalizador = db.prepare("PRAGMA table_info(digitalizador_grupos);").all();
+    const rowsArchivosDigitalizar = db.prepare("PRAGMA table_info(archivos_digitalizar);").all();
+
 
     // Verificar columna 'extension'
-    const columnExists_extension = rowsConfig.some(row => row.name === 'extension');
+    const columnExists_extension = rowsConfiguracionDigitalizador.some(row => row.name === 'extension');
     if (!columnExists_extension) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN extension TEXT NULL;").run();
     }
 
     // Verificar columna 'peso_minimo'
-    const columnExists_peso_minimo = rowsConfig.some(row => row.name === 'peso_minimo');
+    const columnExists_peso_minimo = rowsConfiguracionDigitalizador.some(row => row.name === 'peso_minimo');
     if (!columnExists_peso_minimo) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN peso_minimo REAL NULL;").run();
     }
 
     // Verificar columna 'tipo'
-    const columnExists_tipo = rowsConfig.some(row => row.name === 'tipo');
+    const columnExists_tipo = rowsConfiguracionDigitalizador.some(row => row.name === 'tipo');
     if (!columnExists_tipo) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN tipo TEXT NULL;").run();
     }
 
     // Verificar columna 'regex_curp'
-    const columnExists_regex_curp = rowsConfig.some(row => row.name === 'regex_curp');
+    const columnExists_regex_curp = rowsConfiguracionDigitalizador.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp TEXT NULL;").run();
     }
 
     // Verificar columna 'qr'
-    const columnExists_qr = rowsConfig.some(row => row.name === 'qr');
+    const columnExists_qr = rowsConfiguracionDigitalizador.some(row => row.name === 'qr');
     if (!columnExists_qr) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN qr INTEGER NULL;").run();
     }
 
     // Verificar columna 'barras'
-    const columnExists_barras = rowsConfig.some(row => row.name === 'barras');
+    const columnExists_barras = rowsConfiguracionDigitalizador.some(row => row.name === 'barras');
     if (!columnExists_barras) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN barras INTEGER NULL;").run();
     }
 
     // Verificar columna 'fecha_expediente'
-    const columnExists_fecha_expediente = rowsConfig.some(row => row.name === 'fecha_expediente');
+    const columnExists_fecha_expediente = rowsGruposDigitalizador.some(row => row.name === 'fecha_expediente');
     if (!columnExists_fecha_expediente) {
       db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
     }
 
     // Verificar columna 'grupo'
-    const columnExists_grupo = rowsConfig.some(row => row.name === 'grupo');
+    const columnExists_grupo = rowsArchivosDigitalizar.some(row => row.name === 'grupo');
     if (!columnExists_grupo) {
       db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
     }
@@ -581,6 +577,18 @@ function initializeDatabase() {
       deleted_at TEXT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS configuracion (
+      nombre TEXT PRIMARY KEY,
+      intervalo INTEGER NULL,
+      activo INTEGER NULL,
+      curp TEXT NULL,
+      created_id INTEGER,
+      updated_id INTEGER,
+      deleted_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT
+    );
     `);
   } catch (error) {
     console.error('Error creating table:', error);
@@ -745,7 +753,7 @@ ipcMain.on('print-id-card', async (event, data, name) => {
 
 ipcMain.handle('get-app-path', () => app.getPath('userData'))
 
-ipcMain.on('print-id-card-manual', async (event, data) => {
+ipcMain.on('print-id-card-manual', async (event, data, layout) => {
   try {
     const doc = new jsPDF({
       orientation: "landscape",
@@ -766,22 +774,38 @@ ipcMain.on('print-id-card-manual', async (event, data) => {
     const imageBase64 = fs.readFileSync(imagePath, { encoding: "base64" });
     const imageFormat = path.extname(imagePath).toUpperCase().replace(".", "");
 
-    doc.addImage(
-      `data:image/${imageFormat};base64,${imageBase64}`,
-      imageFormat,
-      6.2,
-      10,
-      24,
-      28
-    );
+    if (layout == 1) {
+      doc.addImage(
+        `data:image/${imageFormat};base64,${imageBase64}`,
+        imageFormat,
+        6.2,
+        10,
+        24,
+        28
+      );
 
-    doc.setFontSize(6);
-    doc.text(`${data.nombreBeneficiario}`, 33, 16, { maxWidth: 120, lineBreak: false });
+      doc.setFontSize(6);
+      doc.text(`${data.nombreBeneficiario}`, 33, 16, { maxWidth: 120, lineBreak: false });
 
-    doc.setFontSize(8);
-    doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });
-    doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
-    doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
+      doc.setFontSize(8);
+      doc.text(`${data.curp}`, 33, 23.5, { maxWidth: 120, lineBreak: false });
+      doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
+      doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
+    } else if (layout == 2) {
+       doc.addImage(
+        `data:image/${imageFormat};base64,${imageBase64}`,
+        imageFormat,
+        4,
+        16,
+        24,
+        28
+      );
+
+      doc.setFontSize(7);
+
+      doc.text(data.nombreBeneficiario, 33, 21, { maxWidth: 120, lineBreak: false });
+      doc.text(data.curp, 33, 31, { maxWidth: 120, lineBreak: false });
+    }
 
     doc.save(savePath_pdf);
 
@@ -993,3 +1017,31 @@ ipcMain.handle('get-filtered-files', (event, { folder, minSize, extension }) => 
     });
   return files.map(file => path.join(folder, file));
 });
+
+ipcMain.handle('move-file-cross-device', async (event, src, dest) => {
+  try {
+    await moveFileCrossDevice(src, dest);
+    return { success: true };
+  } catch (error) {
+    console.error('Error al mover archivo:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+function moveFileCrossDevice(src, dest) {
+  return new Promise((resolve, reject) => {
+    const readStream = fs.createReadStream(src);
+    const writeStream = fs.createWriteStream(dest);
+
+    readStream.on('error', reject);
+    writeStream.on('error', reject);
+    writeStream.on('close', () => {
+      fs.unlink(src, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    readStream.pipe(writeStream);
+  });
+}

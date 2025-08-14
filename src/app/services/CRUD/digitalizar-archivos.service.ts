@@ -221,6 +221,9 @@ export class DigitalizarArchivosService {
         tipo: tipo
       }
 
+      console.log('Lo que se sube: ', beneficiario, documento, carpetaOrigen, extension);
+      
+
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
           next: (response) => {
@@ -231,7 +234,7 @@ export class DigitalizarArchivosService {
               this.actualizarGrupoPorCurp(parsedFileName, grupo);
 
               const destino = path.join(carpetaDestino, path.basename(archivo));
-              fs.renameSync(archivo, destino);
+              electronAPI.moveFileCrossDevice(archivo, destino);
 
               this.edit_archivo_esperado(parsedFileName, 1).subscribe({
                 next: (response) => {
@@ -455,5 +458,9 @@ export class DigitalizarArchivosService {
       console.error('Error al actualizar grupo por CURP:', error);
       throw error; // Propaga el error para manejarlo en el componente
     }
+  }
+
+  filtrarArchivosNoExistentes(archivos: string[]): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/archivos_esperados_digitalizacion/filtrar_archivos_no_existentes', { archivos });
   }
 }

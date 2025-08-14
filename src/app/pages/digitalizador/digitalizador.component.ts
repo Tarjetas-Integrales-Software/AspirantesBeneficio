@@ -41,10 +41,19 @@ import { UtilService } from '../../services/util.service';
 import { DigitalizarArchivosService } from '../../services/CRUD/digitalizar-archivos.service';
 import { ModulosLicitacionService } from '../../services/CRUD/modulos-licitacion.service';
 import { AtencionSinCitaService } from '../../services/CRUD/atencion-sin-cita.service';
+import { ArchivosNoCargadosService } from './../../services/CRUD/archivos-no-cargados.service';
+import { ConfiguracionService } from '../../services/CRUD/configuracion.service';
+
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
+import { arch } from 'os';
+
+const electronAPI = (window as any).electronAPI;
+
+const path = electronAPI?.path;
+const fs = electronAPI?.fs;
 
 Chart.register(...registerables);
 
@@ -85,6 +94,7 @@ export interface Curp {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DigitalizadorComponent implements OnInit, OnDestroy {
+  private appPath: string = '';
 
   @ViewChild('myBarChart') myBarChart!: ElementRef;
   chart!: Chart;
@@ -132,7 +142,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   digitalizadas: number = 0;
   enviadas: number = 0;
 
-
+  private intervaloArchivosNoCargados: Subscription = new Subscription();
   private updateSubscription: Subscription = new Subscription();
   private isAlive = true; // Flag para controlar la suscripción
 
@@ -145,8 +155,13 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     private digitalizarArchivosService: DigitalizarArchivosService,
     private modulosLicitacionService: ModulosLicitacionService,
     private atencionSinCitaService: AtencionSinCitaService,
+    private archivosNoCargadosService: ArchivosNoCargadosService,
+    private configuracionService: ConfiguracionService,
   ) {
     const electronAPI = (window as any).electronAPI;
+
+    this.loadAppPath();
+
     const CURP_REGEX = new RegExp(
       '^[A-Z][AEIOU][A-Z]{2}[0-9]{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z][0-9]$'
     );
@@ -164,8 +179,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
       tipo: '',
       grupo: { value: '', disabled: true },
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
+      fecha: new Date(),
     });
 
     this.formBusqueda = this.fb.nonNullable.group({
@@ -187,6 +201,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     Chart.register(...registerables); // Registra todos los componentes de Chart.js
   }
 
+  private async loadAppPath(): Promise<void> {
+    try {
+      if (window.electronAPI?.getAppPath)
+        this.appPath = await window.electronAPI.getAppPath();
+      else
+        this.appPath = '';
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async ngOnInit() {
     const online = this.networkStatusService.checkConnection();
 
@@ -196,17 +221,34 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
         await this.syncDataBase();
 
+        this.configuracionService.consultar().then((intervalos) => {
+          const configuraciones = this.utilService.mapearConfiguraciones(intervalos);
+
+          const {
+            syncInterval,
+            syncCurpInterval,
+            syncDocumentosInterval,
+            syncMonitorInterval,
+            syncAsistenciaInterval,
+            syncArchivosDigitalizadosInterval,
+            syncCargarArchivosPendientesInterval
+          } = configuraciones;
+
+          if (syncCargarArchivosPendientesInterval.activo) this.syncCargarArchivosNoCargados(syncCargarArchivosPendientesInterval.intervalo * 1000 * 60);
+        })
+
+
         this.getContenedores();
         this.getExtensiones();
         this.getArchivosEsperados();
-        this.getAtencionSinCitaDetalle({ fechaInicio: today, fechaFin: today });
+        this.getAtencionSinCitaDetalle({ fecha: today });
 
         this.initializeChart();
 
         // Carga inicial
         this.updateData();
 
-        this.updateSubscription = interval(5000)
+        this.updateSubscription = interval(1 * 1000 * 60)
           .pipe(takeWhile(() => this.isAlive))
           .subscribe(() => {
             this.updateData();
@@ -250,34 +292,20 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
       if (tipoId) {
-        const fechaInicio = this.formFiltrosDigitalizador.get('fechaInicio')?.value;
-        const fechaFin = this.formFiltrosDigitalizador.get('fechaFin')?.value;
+        const fecha = this.formFiltrosDigitalizador.get('fecha')?.value;
 
-        this.getGrupos({ id_tipo_documento_digitalizacion: tipoId, fechaInicio: fechaInicio?.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10) });
+        this.getGrupos({ id_tipo_documento_digitalizacion: tipoId, fecha: fecha?.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
     });
 
-    this.formFiltrosDigitalizador.get('fechaInicio')?.valueChanges.subscribe(fecha => {
+    this.formFiltrosDigitalizador.get('fecha')?.valueChanges.subscribe(fecha => {
       if (fecha) {
         const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
-        const fechaFin = this.formFiltrosDigitalizador.get('fechaFin')?.value;
 
-        this.getGrupos({ fechaInicio: fecha.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
-        this.getAtencionSinCitaDetalle({ fechaInicio: fecha.toISOString().substring(0, 10), fechaFin: fechaFin?.toISOString().substring(0, 10) });
-        this.formFiltrosDigitalizador.get('grupo')?.reset();
-        this.formFiltrosDigitalizador.get('nombres')?.reset();
-      }
-    });
-
-    this.formFiltrosDigitalizador.get('fechaFin')?.valueChanges.subscribe(fecha => {
-      if (fecha) {
-        const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
-        const fechaInicio = this.formFiltrosDigitalizador.get('fechaInicio')?.value;
-
-        this.getGrupos({ fechaFin: fecha.toISOString().substring(0, 10), fechaInicio: fechaInicio?.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
-        this.getAtencionSinCitaDetalle({ fechaFin: fecha.toISOString().substring(0, 10), fechaInicio: fechaInicio?.toISOString().substring(0, 10) });
+        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
+        this.getAtencionSinCitaDetalle({ fecha: fecha.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -310,7 +338,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   });
 
   myForm_Upload: FormGroup = this.fb.group({
-    fecha_expediente: ['',[Validators.required]],
+    fecha_expediente: ['', [Validators.required]],
     id_extension: ['', [Validators.required]],
     file: ''
   });
@@ -322,11 +350,10 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   get shouldDisableGrupo$(): Observable<boolean> {
     return combineLatest([
       this.formFiltrosDigitalizador.get('tipo')!.valueChanges,
-      this.formFiltrosDigitalizador.get('fechaInicio')!.valueChanges,
-      this.formFiltrosDigitalizador.get('fechaFin')!.valueChanges
+      this.formFiltrosDigitalizador.get('fecha')!.valueChanges,
     ]).pipe(
-      map(([tipo, fechaInicio, fechaFin]) => {
-        return tipo === '' || !fechaInicio || !fechaFin;
+      map(([tipo, fecha]) => {
+        return tipo === '' || !fecha;
       }),
       distinctUntilChanged()
     );
@@ -776,7 +803,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   contenedores: any[] = [];
   extensiones: any[] = [];
 
-  getGrupos(body: { id_tipo_documento_digitalizacion: string, fechaInicio: string, fechaFin: string }): void {
+  getGrupos(body: { id_tipo_documento_digitalizacion: string, fecha: string }): void {
     this.configDigitalizadorService
       .consultarGrupos(body)
       .then((grupos) => {
@@ -859,14 +886,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
-
     const fecha_expediente = this.myForm_Upload.get('fecha_expediente')?.value;
-    console.log(fecha_expediente,'fecha_expediente');
 
     if (fecha_expediente) {
       // Formatea la fecha a YYYY-MM-DD
       const fechaFormateada = this.formatDateToYYYYMMDD(fecha_expediente);
-      console.log(fechaFormateada,'fechaFormateada'); // Ejemplo: "2025-07-21"
 
       const file = event.target.files[0];
       const extension = this.formConfiguracion.get('extension')?.value;
@@ -889,15 +913,15 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         this.documentFileLoaded = false; // Marcar que no hay archivo cargado
       }
 
-    }else{
+    } else {
 
-        Swal.fire({
-          title: 'Advertencia',
-          icon: 'warning',
-          text: 'Seleccione una fecha de expediente',
-          timer: 2500
-        });
-        return;
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione una fecha de expediente',
+        timer: 2500
+      });
+      return;
     }
 
 
@@ -1020,12 +1044,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     );
   }
 
-  getAtencionSinCitaDetalle(body: { fechaInicio: string, fechaFin: string }): void {
-    const { fechaInicio, fechaFin } = body;
+  getAtencionSinCitaDetalle(body: { fecha: string }): void {
+    const { fecha } = body;
 
     this.atencionSinCitaService.getDetalle({
-      fecha_inicio: fechaInicio,
-      fecha_fin: fechaFin
+      fecha: fecha,
     }).subscribe({
       next: (response) => {
         if (response.response) this.atencionSinCitaDetalles = response.data;
@@ -1152,11 +1175,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     const { qr, barras } = await config
     const impresora = this.formCaratula.get('impresora')?.value;
+
     const doc = new jsPDF();
-    doc.setFontSize(32);
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginBottom = 30;
+    const marginEnd = 15;
+
+    doc.setFontSize(28);
 
     // Constantes de layout
-    const qrWidth = 90;
+    const qrWidth = 70;
     const barcodeWidth = qrWidth;
     const barcodeHeight = 20;
 
@@ -1189,7 +1218,11 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           });
 
           const barcodeUrl = canvas.toDataURL('image/png');
-          doc.addImage(barcodeUrl, 'PNG', centerX, 220, barcodeWidth, barcodeHeight);
+
+          const x = pageWidth - barcodeWidth - marginEnd; // esquina derecha
+          const y = pageHeight - barcodeHeight - marginBottom; // parte inferior
+
+          doc.addImage(barcodeUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
           canvas.width = 0;
           canvas.height = 0;
@@ -1241,5 +1274,80 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     // Genera el archivo y lo descarga
     XLSX.writeFile(workbook, `${fecha.toISOString().substring(0, 10).replaceAll('-', '')}_${horaImpresion}_${modulo.nombre}.xlsx`);
+  }
+
+  syncCargarArchivosNoCargados(intervalo: number) {
+    this.intervaloArchivosNoCargados = interval(intervalo)
+      .pipe(takeWhile(() => this.isAlive))
+      .subscribe(async () => {
+        const carpetaInterna = path.join(this.appPath, 'archivosDigitalizados');
+        const config =
+          await this.configDigitalizadorService.consultarConfigDigitalizador();
+
+        const { extension, peso_minimo } = await config;
+
+        const archivos = await this.listarArchivos(carpetaInterna, peso_minimo, extension);
+
+        if (archivos.length === 0) return;
+
+        const nombresArchivos: string[] = archivos.map(archivo => {
+          const [curp, _] = path.basename(archivo).split('.');
+
+          return curp;
+        })
+
+        const fecha = this.formFiltrosDigitalizador.get('fecha')?.value;
+        const tiempo = fecha.toTimeString().replaceAll(":", '').substring(0, 6);
+        const fechaParseada = this.formatDateToYYYYMMDD(fecha);
+        const tipoDocumento = 1;
+        const grupo = 'NO-REGISTRADOS';
+
+        const body = nombresArchivos.map((nombre: string) => {
+          return {
+            extension: extension,
+            fecha_expediente: fechaParseada,
+            id_tipo_documento_digitalizacion: tipoDocumento,
+            nombre_archivo: nombre,
+            nombre_archivo_upload: `${fechaParseada.replaceAll('-', '')}_${tiempo}_${grupo}`,
+          }
+        });
+
+        this.archivosNoCargadosService.insertarNoCargados({ registros: body }).subscribe({
+          next: (res) => {
+            console.log(res);
+
+          },
+          error: (error) => {
+
+          },
+        })
+      });
+  }
+
+  async capturarArchivosNoCargados(): Promise<void> {
+
+  }
+
+  private async listarArchivos(
+    carpetaInterna: string,
+    pesoMinimo: number | null,
+    extension: string | null
+  ): Promise<string[]> {
+    try {
+      const electronAPI = (window as any).electronAPI;
+
+      if (!fs.existsSync(carpetaInterna)) {
+        fs.mkdirSync(carpetaInterna, { recursive: true });
+      }
+
+      return await electronAPI.invoke('get-filtered-files', {
+        folder: carpetaInterna,
+        minSize: pesoMinimo,
+        extension: extension || undefined
+      });
+    } catch (error) {
+      console.error('Error al obtener archivos:', error);
+      return [];
+    }
   }
 }

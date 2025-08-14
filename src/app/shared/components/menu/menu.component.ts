@@ -7,6 +7,8 @@ import { RelacionUsuarioRolesService } from '../../../services/CRUD/relacion-usu
 
 import { OpcionMenuComponent } from '../opcion-menu/opcion-menu.component';
 
+import { NetworkStatusService } from '../../../services/network-status.service';
+
 @Component({
   selector: 'menuComponent',
   imports: [CommonModule, OpcionMenuComponent],
@@ -15,8 +17,9 @@ import { OpcionMenuComponent } from '../opcion-menu/opcion-menu.component';
 })
 export class MenuComponent implements OnInit {
   menuShow: boolean = false;
-  opcionesMenu: any[] = [];
+  idUserSesion: number = 0;
 
+  opcionesMenu: any[] = [];
   rolesUsuario: Array<{ fkRole: number }> = [];
 
   rolesConPermisoMenu_Asistencia: number[] = [106];
@@ -26,18 +29,23 @@ export class MenuComponent implements OnInit {
   rolesConPermisoMenu_Impresion: number[] = [111];
   rolesConPermisoMenu_ImpresionManual: number[] = [112];
   rolesConPermisoMenu_Digitalizador: number[] = [113];
+  rolesConPermisoMenu_AprobadasSSAS: number[] = [120];
+  rolesConPermisoMenu_Settings: number[] = [121];
 
-  constructor(private router: Router, private storageService: StorageService, private menuService: MenuService, private relacionUsuarioRolesService: RelacionUsuarioRolesService) {
+  constructor(private router: Router, private storageService: StorageService, private menuService: MenuService, private relacionUsuarioRolesService: RelacionUsuarioRolesService,
+    private networkStatusService: NetworkStatusService
+  ) {
     if (this.storageService.exists('user')) {
       const user = this.storageService.get('user');
       const { iduser } = user;
 
-      this.relacionUsuarioRolesService.consultarRolesPorUsuario(iduser).then(roles => this.rolesUsuario = roles);
+      this.idUserSesion = iduser;
     }
   }
 
   ngOnInit(): void {
     this.getOpcionesMenu();
+    this.getRolesUsuario(this.idUserSesion);
   }
 
   toggleMenu() {
@@ -71,8 +79,32 @@ export class MenuComponent implements OnInit {
     });
   }
 
+  getRolesUsuario(idUser: number) {
+    if (this.networkStatusService.checkConnection()) {
+      this.relacionUsuarioRolesService.getRelaciones().subscribe({
+        next: (response) => {
+          if (response.response) this.relacionUsuarioRolesService.syncLocalDataBase(response.data).then(() => {
+            this.relacionUsuarioRolesService.consultarRolesPorUsuario(idUser).then((roles) => {
+              this.rolesUsuario = roles;
+            });
+          })
+        },
+        error: (error) => {
+          console.log(error);
+
+        }
+      })
+    }
+    else
+      this.relacionUsuarioRolesService.consultarRolesPorUsuario(idUser).then((roles) => {
+        this.rolesUsuario = roles
+      });
+  }
+
   get permisoMenu_Registro(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Registro.includes(Number(perfil.fkRole))); }
+  get permisoMenu_Settings(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Settings.includes(Number(perfil.fkRole))); }
   get permisoMenu_Consulta(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Consulta.includes(Number(perfil.fkRole))); }
+  get permisoMenu_Aprobadas(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_AprobadasSSAS.includes(Number(perfil.fkRole))); }
   get permisoMenu_Reportes(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Reportes.includes(Number(perfil.fkRole))); }
   get permisoMenu_Asistencia(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Asistencia.includes(Number(perfil.fkRole))); }
   get permisoMenu_Impresion(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Impresion.includes(Number(perfil.fkRole))); }

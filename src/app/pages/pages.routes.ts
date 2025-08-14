@@ -3,13 +3,15 @@ import { HomeComponent } from "./home/home.component";
 import { ConsultaComponent } from "./consulta/consulta.component";
 import { PagesComponent } from "./pages.component";
 import { ReportesComponent } from "./reportes/reportes.component";
-import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
+import { ModuloOperacionesComponent } from "./modulo-operaciones/modulo-operaciones.component";
 import { AsistenciaComponent } from "./asistencia/asistencia.component";
 import { ImpresionCredencialComponent } from "./impresion-credencial/impresion-credencial.component";
 import { AccionesComponent } from "./acciones/acciones.component";
 import { ImpresionManualComponent } from "./impresionManual/impresionManual.component";
 import { DigitalizadorComponent } from "./digitalizador/digitalizador.component";
 import { CortesComponent } from "./cortes/cortes.component";
+import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
+import { AprobadasSsasComponent } from "./aprobadas-ssas/aprobadas-ssas.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -17,9 +19,9 @@ export const pagesRoutes: Routes = [
         component: PagesComponent,
         children: [
             {
-                path: 'configuraciones',
-                title: 'Configuraciones',
-                component: ConfiguracionesComponent
+                path: 'modulo-operaciones',
+                title: 'Módulo operaciones',
+                component: ModuloOperacionesComponent
             },
             {
                 path: 'registro',
@@ -35,6 +37,11 @@ export const pagesRoutes: Routes = [
                 path: 'editar/:id',
                 title: 'Editar',
                 component: HomeComponent
+            },
+            {
+                path: 'aprobadas-ssas',
+                title: 'Aprobadas SSAS',
+                component: AprobadasSsasComponent
             },
             {
                 path: 'reportes',
@@ -70,6 +77,11 @@ export const pagesRoutes: Routes = [
               path: 'cortes',
               title: 'Cortes',
               component: CortesComponent
+            },
+            {
+              path: 'configuraciones',
+              title: 'Configuraciones',
+              component: ConfiguracionesComponent
             },
             {
                 path: '**',

@@ -5,16 +5,19 @@ import { CurpsAprobadasSsasService } from './CRUD/curps-aprobadas-ssas.service';
 import { Observable } from 'rxjs';
 import { DigitalizarArchivosService } from './CRUD/digitalizar-archivos.service';
 
+type ConfigItem = {
+  nombre: string;
+  intervalo: number;
+  activo: number;
+};
+
 @Injectable({
   providedIn: 'root'
 })
 export class UtilService {
-
-
   constructor(private http: HttpClient, private curpsAprobadasSsasService: CurpsAprobadasSsasService,
-            private digitalizarArchivosService: DigitalizarArchivosService
-  )
-   { }
+    private digitalizarArchivosService: DigitalizarArchivosService
+  ) { }
 
   leerExcel(archivo: File): Promise<any[]> {
     return new Promise((resolve, reject) => {
@@ -40,13 +43,13 @@ export class UtilService {
 
         //const workbook = XLSX.read(data, { type: 'array' });
         const workbook = XLSX.read(e.target.result, { type: 'binary' });
-        console.log(workbook,'workbook');
+        console.log(workbook, 'workbook');
 
         const sheetName = workbook.SheetNames[0];
-        console.log(sheetName,'sheetName');
+        console.log(sheetName, 'sheetName');
 
         const worksheet = workbook.Sheets[sheetName];
-        console.log(worksheet,'worksheet');
+        console.log(worksheet, 'worksheet');
 
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
         console.log(jsonData);
@@ -103,4 +106,13 @@ export class UtilService {
     });
   }
 
+  mapearConfiguraciones(configs: ConfigItem[]): Record<string, { intervalo: number; activo: number }> {
+    return configs.reduce((acc, item) => {
+      acc[item.nombre] = {
+        intervalo: item.intervalo,
+        activo: item.activo,
+      };
+      return acc;
+    }, {} as Record<string, { intervalo: number; activo: number }>);
+  }
 }

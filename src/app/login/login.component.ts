@@ -113,7 +113,7 @@ export class LoginComponent implements OnInit {
 
                       // Navegación basada en permisos
                       if (menuOptions['menu_habilitar_configurar'] === '1') {
-                        this.router.navigate(['/inicio/configuraciones']);
+                        this.router.navigate(['/inicio/modulo-operaciones']);
                       } else if (menuOptions['menu_habilitar_consulta'] === '1') {
                         this.router.navigate(['/inicio/consulta']);
                       } else if (menuOptions['menu_habilitar_impresion'] === '1') {
@@ -168,7 +168,7 @@ export class LoginComponent implements OnInit {
 
               // Crear un mapa de rutas basado en las claves del menú
               const routeMap: { [key: string]: string } = {
-                menu_habilitar_configurar: '/inicio/configuraciones',
+                menu_habilitar_configurar: '/inicio/modulo-operaciones',
                 menu_habilitar_consulta: '/inicio/consulta',
                 menu_habilitar_impresion: '/inicio/impresion-credencial',
                 menu_habilitar_reportes: '/inicio/reportes',
@@ -201,7 +201,7 @@ export class LoginComponent implements OnInit {
             }).catch(err => {
               console.error('Error al obtener opciones de menú locales:', err);
               // Fallback a configuraciones en caso de error
-              this.router.navigate(['/inicio/configuraciones']);
+              this.router.navigate(['/inicio/modulo-operaciones']);
             });
           } else {
             Swal.fire('Usuario y/o password incorrectos!', '', 'warning');
