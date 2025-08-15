@@ -701,15 +701,43 @@ export class DatosGeneralesComponent implements OnInit {
     input.value = input.value.toUpperCase();
     this.myForm.get('curp')?.setValue(input.value);
 
-
     const curp = input.value;
+
+    // Validar si la CURP está completa (18 caracteres) y verificar duplicados
+    if (curp.length === 18) {
+      this.aspirantesBeneficioService.consultarAspirantePorCurpDbLocal(curp)
+        .then((existingAspirante) => {
+          const curpControl = this.myForm.get('curp');
+          if (existingAspirante) {
+            // Si existe, mostrar SweetAlert y limpiar el campo
+            Swal.fire({
+              title: 'CURP Duplicada',
+              text: `La CURP ${curp} ya está registrada en la base de datos local.`,
+              icon: 'warning',
+              confirmButtonText: 'Aceptar'
+            }).then(() => {
+              // Limpiar el campo CURP y el input del DOM
+              const input = event.target as HTMLInputElement;
+              input.value = '';
+              curpControl?.setValue('');
+
+              // También limpiar la fecha de nacimiento que se auto-llenó
+              this.myForm.get('fecha_nacimiento')?.setValue('');
+            });
+          }
+        })
+        .catch((error) => {
+          console.error('Error al validar CURP duplicada:', error);
+        });
+    }
+
+    // Extraer fecha de nacimiento de la CURP
     const birthDateMatch = curp.match(/^.{4}(\d{2})(\d{2})(\d{2})/);
     if (birthDateMatch) {
       const year = parseInt(birthDateMatch[1], 10) + (parseInt(birthDateMatch[1], 10) > 25 ? 1900 : 2000);
       const month = parseInt(birthDateMatch[2], 10) - 1;
       const day = parseInt(birthDateMatch[3], 10);
       const birthDate = new Date(year, month, day);
-
 
       this.myForm.get('fecha_nacimiento')?.setValue(birthDate);
     }
