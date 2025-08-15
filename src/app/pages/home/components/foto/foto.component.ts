@@ -356,7 +356,7 @@ export class FotoComponent implements OnInit {
           tipo: 'foto_aspben',
           archivo: form.curp + '.webp',
           path: 'docsaspirantesbeneficio/' + form.curp + '.webp',
-            archivoOriginal: `captured_photo.${this.imageFormat}`,
+          archivoOriginal: `captured_photo.${this.imageFormat}`,
           extension: this.imageFormat,
           created_id: 0,
           created_at: formattedFecha
@@ -422,9 +422,23 @@ export class FotoComponent implements OnInit {
         );
       })
     ).subscribe({
-      next: () => {},
+      next: () => { },
       error: (error) => {
         console.error('Error en el proceso:', error);
+
+        // Verificar si el error es por CURP duplicada
+        if (error.message && error.message.includes('ya está registrada en la base de datos local')) {
+          Swal.fire({
+            title: 'CURP Duplicada',
+            text: error.message,
+            icon: 'warning',
+            confirmButtonText: 'Aceptar'
+          });
+          this.submitForm.emit();
+          return;
+        }
+
+        // Para otros tipos de errores, ejecutar rollback
         this.performRollback$(
           aspiranteCreado,
           fotoCreada,
