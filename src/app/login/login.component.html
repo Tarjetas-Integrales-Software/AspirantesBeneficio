@@ -45,7 +45,10 @@
       </div>
       <!-- Login Button -->
       <button type="submit" [disabled]="loginForm.invalid || loading"
-        class="bg-[#f2660c] hover:bg-[#143b8d] text-white font-semibold rounded-md py-2 px-4 w-full">Entrar</button>
+        class="relative flex items-center justify-center bg-[#f2660c] hover:bg-[#143b8d] disabled:opacity-60 disabled:cursor-not-allowed transition-colors text-white font-semibold rounded-md py-2 px-4 w-full">
+        <span *ngIf="loading" class="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5 mr-2"></span>
+        <span>{{ loading ? 'Validando...' : 'Entrar' }}</span>
+      </button>
     </form>
   </div>
 </div>

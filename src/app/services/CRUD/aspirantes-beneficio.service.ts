@@ -10,7 +10,10 @@ export interface Aspirante {
   id_modalidad: number;
   id_foto?: string;
   curp: string;
-  nombre_completo: string;
+  nombre_completo?: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
   telefono: string;
   email?: string;
   fecha_nacimiento: string;
@@ -96,93 +99,120 @@ export class AspirantesBeneficioService {
   }
 
   async syncLocalDataBase(datos: any[]): Promise<void> {
+
     for (const item of datos) {
-      const sql = `
-      INSERT OR REPLACE INTO ct_aspirantes_beneficio (
-        id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+      item.nombre_completo = [item.nombre, item.apellido_paterno, item.apellido_materno]
+        .map(v => (v || '').toString().trim().toUpperCase())
+        .filter(Boolean)
+        .join(' ');
+    }
+
+    for (const item of datos) {
+      const sql = `INSERT OR REPLACE INTO ct_aspirantes_beneficio (
+        id, id_modalidad, curp, nombre, apellido_paterno, apellido_materno, nombre_completo, telefono, email, fecha_nacimiento,
         grado, tipo_carrera, carrera,
         estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona,
         domicilio, com_obs, fecha_evento, modulo, created_id, updated_id, deleted_id,
         created_at, updated_at, deleted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const params = [
-          item.id,
-          item.id_modalidad,
-          item.curp,
-          item.nombre_completo,
-          item.telefono,
-          item.email,
-          item.fecha_nacimiento,
-          item.grado,
-          item.tipo_carrera,
-          item.carrera,
-          item.estado,
-          item.municipio,
-          item.ciudad,
-          item.cp,
-          item.colonia,
-          item.tipo_asentamiento,
-          item.tipo_zona,
-          item.domicilio,
-          item.com_obs,
-          item.fecha_evento,
-          item.modulo,
-          item.created_id,
-          item.updated_id,
-          item.deleted_id,
-          item.created_at,
-          item.updated_at,
-          item.deleted_at,
-        ];
-
-        await this.databaseService.execute(sql, params);
-      }
-    }
-
-    async ensureTableSchema() {
-      const sql = `
-      PRAGMA table_info(ct_aspirantes_beneficio);
-      `;
-      const result = await this.databaseService.query(sql);
-
-      const columns = result.map((row: any) => row.name);
-      const requiredColumns = [
-        'id', 'id_modalidad', 'curp', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento',
-        'grado', 'tipo_carrera', 'carrera', 'estado', 'municipio', 'ciudad', 'cp', 'colonia',
-        'tipo_asentamiento', 'tipo_zona', 'domicilio', 'com_obs', 'fecha_evento', 'created_id',
-        'updated_id', 'deleted_id', 'created_at', 'updated_at', 'deleted_at'
+      ) VALUES (${Array.from({length:30},()=>'?').join(', ')} )`;
+      const params = [
+        item.id,
+        item.id_modalidad,
+        item.curp,
+        item.nombre,
+        item.apellido_paterno,
+        item.apellido_materno,
+        item.nombre_completo,
+        item.telefono,
+        item.email,
+        item.fecha_nacimiento,
+        item.grado,
+        item.tipo_carrera,
+        item.carrera,
+        item.estado,
+        item.municipio,
+        item.ciudad,
+        item.cp,
+        item.colonia,
+        item.tipo_asentamiento,
+        item.tipo_zona,
+        item.domicilio,
+        item.com_obs,
+        item.fecha_evento,
+        item.modulo,
+        item.created_id,
+        item.updated_id,
+        item.deleted_id,
+        item.created_at,
+        item.updated_at,
+        item.deleted_at,
       ];
 
-      for (const column of requiredColumns) {
-        if (!columns.includes(column)) {
-          const alterSql = `ALTER TABLE ct_aspirantes_beneficio ADD COLUMN ${column} TEXT;`;
-          await this.databaseService.execute(alterSql);
-        }
+      await this.databaseService.execute(sql, params);
+    }
+  }
+
+  async ensureTableSchema() {
+    const sql = `PRAGMA table_info(ct_aspirantes_beneficio);`;
+    const result = await this.databaseService.query(sql);
+
+    const columns = result.map((row: any) => row.name);
+    const requiredColumns = [
+      'id', 'id_modalidad', 'curp', 'nombre', 'apellido_paterno', 'apellido_materno', 'nombre_completo', 'telefono', 'email', 'fecha_nacimiento',
+      'grado', 'tipo_carrera', 'carrera', 'estado', 'municipio', 'ciudad', 'cp', 'colonia',
+      'tipo_asentamiento', 'tipo_zona', 'domicilio', 'com_obs', 'fecha_evento', 'created_id',
+      'updated_id', 'deleted_id', 'created_at', 'updated_at', 'deleted_at'
+    ];
+
+    for (const column of requiredColumns) {
+      if (!columns.includes(column)) {
+        const alterSql = `ALTER TABLE ct_aspirantes_beneficio ADD COLUMN ${column} TEXT;`;
+        await this.databaseService.execute(alterSql);
       }
     }
+
+    // Rellenar nombre_completo cuando esté vacío
+    await this.databaseService.execute(`UPDATE ct_aspirantes_beneficio SET nombre_completo = UPPER(TRIM(COALESCE(nombre,'') || ' ' || COALESCE(apellido_paterno,'') || ' ' || COALESCE(apellido_materno,''))) WHERE (nombre_completo IS NULL OR TRIM(nombre_completo)='') AND (nombre IS NOT NULL OR apellido_paterno IS NOT NULL OR apellido_materno IS NOT NULL);`);
+  }
+
+  private buildNombreCompleto(a: Aspirante) {
+    return [a.nombre, a.apellido_paterno, a.apellido_materno]
+      .map(v => (v || '').toString().trim().toUpperCase())
+      .filter(Boolean)
+      .join(' ');
+  }
 
   // Crear un nuevo aspirante
   async crearAspirante(aspirante: Aspirante): Promise<any> {
-    await this.ensureTableSchema(); // Asegurarse de que la tabla tenga las columnas necesarias
-
+    await this.ensureTableSchema();
     const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
-
     if (curpRegistrada) return;
 
-    const sql = `
-      INSERT OR REPLACE INTO ct_aspirantes_beneficio (
-        id, id_modalidad, curp, nombre_completo, telefono, email, fecha_nacimiento,
+    let nombre_completo = (this.buildNombreCompleto(aspirante) || '').trim();
+    if (!nombre_completo) {
+      // Fallback adicional por si buildNombreCompleto cambiara
+      nombre_completo = [aspirante.nombre, aspirante.apellido_paterno, aspirante.apellido_materno]
+        .map(v => (v || '').toString().trim().toUpperCase())
+        .filter(Boolean)
+        .join(' ');
+    }
+    // Garantizar nunca NULL (NOT NULL en schema)
+    if (nombre_completo === null || nombre_completo === undefined) nombre_completo = '';
+
+    const sql = `INSERT OR REPLACE INTO ct_aspirantes_beneficio (
+        id, id_modalidad, curp, nombre, apellido_paterno, apellido_materno, nombre_completo, telefono, email, fecha_nacimiento,
         grado, tipo_carrera, carrera,
         estado, municipio, ciudad, cp, colonia, tipo_asentamiento, tipo_zona, domicilio, com_obs,
         fecha_evento, modulo, created_id, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    `;
+      ) VALUES (${Array.from({length:26},()=>'?').join(', ')});`;
     const params = [
       aspirante.id,
       aspirante.id_modalidad,
       aspirante.curp,
-      aspirante.nombre_completo,
+      aspirante.nombre,
+      aspirante.apellido_paterno,
+      aspirante.apellido_materno,
+      nombre_completo, // asegurado no null
       aspirante.telefono,
       aspirante.email,
       aspirante.fecha_nacimiento,
@@ -203,7 +233,7 @@ export class AspirantesBeneficioService {
       aspirante.created_id,
       aspirante.created_at,
     ];
-
+    console.debug('Insert aspirante params', params);
     return await this.databaseService.execute(sql, params);
   }
 
@@ -237,6 +267,16 @@ export class AspirantesBeneficioService {
     }
   }
 
+  // Versión en Observable para obtener el último id (paridad con otros servicios)
+  getLastIdObservable(): Observable<number> {
+    return new Observable<number>(observer => {
+      const sql = `SELECT id FROM ct_aspirantes_beneficio ORDER BY id DESC LIMIT 1`;
+      this.databaseService.query(sql)
+        .then(result => { observer.next(result.length ? result[0].id : 0); observer.complete(); })
+        .catch(err => observer.error(err));
+    });
+  }
+
   async editarAspirante(aspirante: Aspirante): Promise<any> {
     try {
       const response = await this.editAspirante(aspirante).toPromise();
@@ -258,5 +298,15 @@ export class AspirantesBeneficioService {
     const params = [curp];
     const resultados = await this.databaseService.query(sql, params);
     return resultados.length > 0 ? resultados[0] : null;
+  }
+
+  // Rollback de aspirante: elimina el registro local por id (uso transaccional)
+  rollbackAspirante(id: number): Observable<void> {
+    return new Observable<void>(observer => {
+      const sql = 'DELETE FROM ct_aspirantes_beneficio WHERE id = ?';
+      this.databaseService.execute(sql, [id])
+        .then(() => { observer.next(); observer.complete(); })
+        .catch(err => { console.error(`Error en rollback de aspirante ${id}:`, err); observer.error(err); });
+    });
   }
 }

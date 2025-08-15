@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { StorageService } from '../../../services/storage.service';
@@ -16,6 +16,10 @@ import { NetworkStatusService } from '../../../services/network-status.service';
   styleUrl: './menu.component.scss'
 })
 export class MenuComponent implements OnInit {
+  @ViewChild('menuRef') menuRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('toggleBtnRef') toggleBtnRef?: ElementRef<HTMLButtonElement>;
+
+
   menuShow: boolean = false;
   idUserSesion: number = 0;
 
@@ -53,6 +57,20 @@ export class MenuComponent implements OnInit {
   }
 
   cerrarMenu() {
+    this.menuShow = false;
+  }
+
+  // Cierra el menú si se hace click fuera del contenedor del menú y del botón toggle
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.menuShow) return;
+    const target = event.target as Node;
+    const menuEl = this.menuRef?.nativeElement;
+    const toggleBtnEl = this.toggleBtnRef?.nativeElement;
+
+    if (menuEl && menuEl.contains(target)) return;
+    if (toggleBtnEl && toggleBtnEl.contains(target)) return;
+
     this.menuShow = false;
   }
 

@@ -1,195 +1,224 @@
 <div class="bg-gray-100 p-0">
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
-    <mat-card appearance="outlined" class="h-[30px] flex items-center justify-center bg-black text-white p-4"
-      style="background-color: black;">
-      <mat-card-content><b>{{modulo_actual}}</b></mat-card-content>
-    </mat-card>
-
-
-    <!-- <h2 class="text-3xl">Datos Generales</h2> -->
-    @if (editar) {
-    <h2 class="text-3xl">editar page</h2>
-    }
-
-    <form [formGroup]="myForm" class="my-2">
-
-      <div class="flex flex-row gap-2">
-
-        <mat-form-field class="basis-1/2 ">
-          <mat-label>CURP: </mat-label>
-          <input formControlName="curp" matInput maxlength="18" (input)="toUpperCaseCurp($event)">
-          <mat-error *ngIf="isValidField('curp')" class="text-red-500">
-            {{ getFieldError("curp") }}
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field class="basis-1/2 ">
-          <mat-label>Modalidad</mat-label>
-          <mat-select formControlName="id_modalidad" (selectionChange)="selectedValue2()">
-            <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
-          </mat-select>
-          @if( isValidField('id_modalidad') ) {
-          <mat-error class="text-red-500">
-            {{ getFieldError("id_modalidad") }}
-          </mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-2/3">
-          <mat-label>Nombre Completo: </mat-label>
-          <input matInput formControlName="nombre_completo" maxlength="200" (input)="toUpperCaseName($event)">
-          <mat-error *ngIf="isValidField('nombre_completo')" class="text-red-500">
-            {{ getFieldError("nombre_completo") }}
-          </mat-error>
-        </mat-form-field>
-        <mat-form-field class="basis-1/3">
-          <mat-label>Fecha de nacimiento</mat-label>
-          <input matInput [matDatepicker]="picker" formControlName="fecha_nacimiento">
+    <form [formGroup]="myForm">
+      <div class="flex justify-center gap-2">
+        <div [class]="editar ? 'basis-1/2' : 'basis-full'">
+          <mat-card appearance="outlined" class="flex items-center justify-center bg-black text-white p-4"
+            [ngStyle]="{ height: editar ? 'calc(100% - 20px)' : '30px', 'background-color': 'black' }">
+            <mat-card-content><b>{{modulo_actual}}</b></mat-card-content>
+          </mat-card>
+        </div>
+        @if( editar) {
+        <mat-form-field class="basis-1/2">
+          <mat-label>Fecha de evento</mat-label>
+          <input matInput [matDatepicker]="pickerEvento" formControlName="fecha_evento">
           <mat-hint>DD/MM/YYYY</mat-hint>
-          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
+          <mat-datepicker-toggle matIconSuffix [for]="pickerEvento"></mat-datepicker-toggle>
+          <mat-datepicker #pickerEvento></mat-datepicker>
         </mat-form-field>
-      </div>
-
-      <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/2">
-          <mat-label>Telefono</mat-label>
-          <span matTextPrefix>+52 &nbsp;</span>
-          <input type="tel" matInput formControlName="telefono" placeholder="333-555-1234" maxlength="10">
-          <mat-icon matSuffix>mode_edit</mat-icon>
-          @if( isValidField('telefono') ) {
-          <mat-error class="text-red-500">
-            {{ getFieldError("telefono") }}
-          </mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field class="basis-1/2">
-          <mat-label>Correo Electronico</mat-label>
-          <input type="email" matInput formControlName="email" placeholder="Ej. usuario@ejemplo.com">
-          @if( isValidField('email') ) {
-          <mat-error class="text-red-500">
-            {{ getFieldError("email") }}
-          </mat-error>
-          }
-        </mat-form-field>
-      </div>
-
-      <div class="flex flex-row gap-2">
-
-        <mat-form-field class="basis-1/4">
-          <mat-label>Grado </mat-label>
-          <mat-select [(ngModel)]="grado" formControlName="grado" (selectionChange)="onGradoChange($event.value)">
-            <mat-option *ngFor="let grado of grados" [value]="grado.id">
-              {{ grado.nombre }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field class="basis-1/4">
-          <mat-label>Tipo Carrera </mat-label>
-          <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera"
-            (selectionChange)="onTipoCarreraChange($event.value)">
-            <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.id">
-              {{ tipo_carrera.nombre }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field class="basis-2/4">
-          <mat-label>Carrera</mat-label>
-          <mat-select formControlName="carrera">
-            <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
-              {{ carrera.nombre }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
+        }
       </div>
 
 
-      <div class="flex flex-row gap-2">
+      <!-- <h2 class="text-3xl">Datos Generales</h2> -->
+      @if (editar) {
+      <h2 class="text-3xl">editar page</h2>
+      }
+
+      <div class="my-2">
+
+        <div class="flex flex-row gap-2">
+
+          <mat-form-field class="basis-1/2 ">
+            <mat-label>CURP: </mat-label>
+            <input formControlName="curp" matInput maxlength="18" (input)="toUpperCaseCurp($event)">
+            <mat-error *ngIf="isValidField('curp')" class="text-red-500">
+              {{ getFieldError("curp") }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field class="basis-1/2 ">
+            <mat-label>Modalidad</mat-label>
+            <mat-select formControlName="id_modalidad" (selectionChange)="selectedValue2()">
+              <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.id">{{modalidad.nombre}}</mat-option>
+            </mat-select>
+            @if( isValidField('id_modalidad') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("id_modalidad") }}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-row gap-2">
+          <mat-form-field class="basis-2/3">
+            <mat-label>Nombre:</mat-label>
+            <input matInput formControlName="nombre" maxlength="200" (input)="toUpperCaseName($event)">
+            <mat-error *ngIf="isValidField('nombre')" class="text-red-500">
+              {{ getFieldError("nombre") }}
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field class="basis-2/3">
+            <mat-label>Apellido Paterno: </mat-label>
+            <input matInput formControlName="apellido_paterno" maxlength="200" (input)="toUpperCaseName($event)">
+            <mat-error *ngIf="isValidField('apellido_paterno')" class="text-red-500">
+              {{ getFieldError("apellido_paterno") }}
+            </mat-error>
+          </mat-form-field>
+          <mat-form-field class="basis-2/3">
+            <mat-label>Apellido Materno: </mat-label>
+            <input matInput formControlName="apellido_materno" maxlength="200" (input)="toUpperCaseName($event)">
+            <mat-error *ngIf="isValidField('apellido_materno')" class="text-red-500">
+              {{ getFieldError("apellido_materno") }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-row gap-2">
+          <mat-form-field class="basis-1/3">
+            <mat-label>Fecha de nacimiento</mat-label>
+            <input matInput [matDatepicker]="pickerNacimiento" formControlName="fecha_nacimiento">
+            <mat-hint>DD/MM/YYYY</mat-hint>
+            <mat-datepicker-toggle matIconSuffix [for]="pickerNacimiento"></mat-datepicker-toggle>
+            <mat-datepicker #pickerNacimiento></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field class="basis-1/3">
+            <mat-label>Telefono</mat-label>
+            <span matTextPrefix>+52 &nbsp;</span>
+            <input type="tel" matInput formControlName="telefono" placeholder="333-555-1234" maxlength="10">
+            <mat-icon matSuffix>mode_edit</mat-icon>
+            @if( isValidField('telefono') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("telefono") }}
+            </mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field class="basis-1/3">
+            <mat-label>Correo Electronico</mat-label>
+            <input type="email" matInput formControlName="email" placeholder="Ej. usuario@ejemplo.com">
+            @if( isValidField('email') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("email") }}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-row gap-2">
+
+          <mat-form-field class="basis-1/4">
+            <mat-label>Grado </mat-label>
+            <mat-select [(ngModel)]="grado" formControlName="grado" (selectionChange)="onGradoChange($event.value)">
+              <mat-option *ngFor="let grado of grados" [value]="grado.id">
+                {{ grado.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="basis-1/4">
+            <mat-label>Tipo Carrera </mat-label>
+            <mat-select [(ngModel)]="tipo_carrera" formControlName="tipo_carrera"
+              (selectionChange)="onTipoCarreraChange($event.value)">
+              <mat-option *ngFor="let tipo_carrera of tipos_carreras" [value]="tipo_carrera.id">
+                {{ tipo_carrera.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="basis-2/4">
+            <mat-label>Carrera</mat-label>
+            <mat-select formControlName="carrera">
+              <mat-option *ngFor="let carrera of carreras" [value]="carrera.nombre">
+                {{ carrera.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+        </div>
 
 
-        <mat-form-field class="basis-2/3">
-          <mat-label>Municipio</mat-label>
-          <mat-select [(ngModel)]="municipio" formControlName="municipio" name="municipio"
-            (selectionChange)="getCodigosPostales({municipio: $event.value})">
-            <mat-option *ngFor="let municipio of municipios" [value]="municipio.municipio">
-              {{ municipio.municipio }}
-            </mat-option>
-          </mat-select>
-          @if( isValidField('municipio') ) {
-          <mat-error class="text-red-500">
-
-            {{ getFieldError("municipio") }}
-          </mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field class="basis-1/3">
-          <mat-label>Codigo Postal</mat-label>
-          <input #input type="text" matInput formControlName="cp" [matAutocomplete]="auto" (input)="filter()"
-            (focus)="filter()">
-          <mat-autocomplete requireSelection #auto="matAutocomplete" (optionSelected)="getColoniasByCP()">
-            <mat-option *ngFor="let option of filteredOptions" [value]="option.cp">{{option.cp}}</mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
+        <div class="flex flex-row gap-2">
 
 
-      </div>
+          <mat-form-field class="basis-2/3">
+            <mat-label>Municipio</mat-label>
+            <mat-select [(ngModel)]="municipio" formControlName="municipio" name="municipio"
+              (selectionChange)="onMunicipioChange($event.value)">
+              <mat-option *ngFor="let municipio of municipios" [value]="municipio.municipio">
+                {{ municipio.municipio }}
+              </mat-option>
+            </mat-select>
+            @if( isValidField('municipio') ) {
+            <mat-error class="text-red-500">
 
-      <div class="flex flex-row">
-        <mat-form-field class="basis-full ">
-          <mat-label>Colonia</mat-label>
-          <mat-select formControlName="colonia" (selectionChange)="onColoniaChange($event.value)">
-            <mat-option *ngFor="let colonia of colonias" [value]="colonia.colonia">{{ colonia.colonia }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="isValidField('colonia')" class="text-red-500">
-            {{ getFieldError("colonia") }}
-          </mat-error>
-        </mat-form-field>
-      </div>
+              {{ getFieldError("municipio") }}
+            </mat-error>
+            }
+          </mat-form-field>
 
-      <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
-      <div class="flex flex-row gap-2">
-        <mat-form-field class="basis-1/2">
-          <mat-label>Tipo Asentamiento</mat-label>
-          <input matInput [value]="tipoAsentamiento" formControlName="tipo_asentamiento">
-        </mat-form-field>
-        <mat-form-field class="basis-1/2">
-          <mat-label>Tipo Zona</mat-label>
-          <input matInput [value]="tipoZona" formControlName="tipo_zona">
-        </mat-form-field>
-      </div>
+          <mat-form-field class="basis-1/3">
+            <mat-label>Codigo Postal</mat-label>
+            <input #input type="text" matInput formControlName="cp" [matAutocomplete]="auto" (input)="filter()"
+              (focus)="filter()">
+            <mat-autocomplete requireSelection #auto="matAutocomplete" (optionSelected)="getColoniasByCP()">
+              <mat-option *ngFor="let option of filteredOptions" [value]="option.cp">{{option.cp}}</mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
 
-      <div class="flex flex-row">
-        <mat-form-field class="basis-full">
-          <mat-label>Domicilio: </mat-label>
-          <input matInput formControlName="domicilio">
-          @if( isValidField('domicilio') ) {
-          <mat-error class="text-red-500">
-            {{ getFieldError("domicilio") }}
-          </mat-error>
-          }
-        </mat-form-field>
-      </div>
-      <div class="flex flex-row">
-        <mat-form-field class="basis-full">
-          <mat-label>Comentarios y/o observaciones: </mat-label>
-          <input matInput formControlName="com_obs">
-          @if( isValidField('domicilio') ) {
-          <mat-error class="text-red-500">
-            {{ getFieldError("domicilio") }}
-          </mat-error>
-          }
-        </mat-form-field>
+
+        </div>
+
+        <div class="flex flex-row">
+          <mat-form-field class="basis-full ">
+            <mat-label>Colonia</mat-label>
+            <mat-select formControlName="colonia" (selectionChange)="onColoniaChange($event.value)">
+              <mat-option *ngFor="let colonia of colonias" [value]="colonia.colonia">{{ colonia.colonia }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="isValidField('colonia')" class="text-red-500">
+              {{ getFieldError("colonia") }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Estos se inabilitan y se reyenaran solos dependiendo de la informacion que se ponga en la colonia -->
+        <div class="flex flex-row gap-2">
+          <mat-form-field class="basis-1/2">
+            <mat-label>Tipo Asentamiento</mat-label>
+            <input matInput [value]="tipoAsentamiento" formControlName="tipo_asentamiento">
+          </mat-form-field>
+          <mat-form-field class="basis-1/2">
+            <mat-label>Tipo Zona</mat-label>
+            <input matInput [value]="tipoZona" formControlName="tipo_zona">
+          </mat-form-field>
+        </div>
+
+        <div class="flex flex-row">
+          <mat-form-field class="basis-full">
+            <mat-label>Domicilio: </mat-label>
+            <input matInput formControlName="domicilio">
+            @if( isValidField('domicilio') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("domicilio") }}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="flex flex-row">
+          <mat-form-field class="basis-full">
+            <mat-label>Comentarios y/o observaciones: </mat-label>
+            <input matInput formControlName="com_obs">
+            @if( isValidField('com_obs') ) {
+            <mat-error class="text-red-500">
+              {{ getFieldError("com_obs") }}
+            </mat-error>
+            }
+          </mat-form-field>
+        </div>
+
       </div>
 
     </form>
-
   </div>
-</div>
