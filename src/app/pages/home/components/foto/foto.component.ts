@@ -9,6 +9,7 @@ import { AspirantesBeneficioFotosService } from "../../../../services/CRUD/aspir
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from "@angular/router";
 import { switchMap, of, from, concatMap, tap, catchError, concat, map, last } from "rxjs";
+import { finalize } from 'rxjs/operators';
 import { environment } from "../../../../../environments/environment";
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DocumentosService } from "../../../../services/CRUD/documentos.service";
@@ -75,6 +76,7 @@ export class FotoComponent implements OnInit {
           return;
         }
         const imgfoto = aspirante.data;
+        this.prevFotoId = imgfoto?.id_foto ? Number(imgfoto.id_foto) : null;
 
         this.fotosService.getAspiranteFotoId(imgfoto.id_foto).subscribe({
           next: (response) => {
@@ -520,7 +522,30 @@ export class FotoComponent implements OnInit {
     );
   }
 
-  async onEdit() {
+  // Rollback específico para edición: restaura relación previa y elimina foto nueva si fue creada
+  private performEditRollback$(
+    aspiranteId: number,
+    newPhotoId: number | null,
+    relationUpdated: boolean
+  ) {
+    const steps: any[] = [];
+    const wrap = (label: string, obs$: any) => obs$.pipe(
+      catchError((e: any) => { console.error(`Error en rollback de ${label}:`, e); return of(null); }),
+      map(() => void 0)
+    );
+
+    if (relationUpdated && this.prevFotoId != null) {
+      steps.push(wrap('restaurar relación foto previa', this.aspirantesBeneficioFotosService.createRelacion({ id_aspirante_beneficio: aspiranteId, id_foto: this.prevFotoId })));
+    }
+    if (newPhotoId) {
+      steps.push(wrap('eliminar foto creada', this.fotosService.deleteFoto(newPhotoId)));
+    }
+
+    if (!steps.length) return of(void 0);
+    return concat(...steps).pipe(last(), map(() => void 0), catchError(() => of(void 0)));
+  }
+
+  onEdit() {
     if (!this.datosGeneralesComponent) {
       console.error("DatosGeneralesComponent is not available for uploadDocs.");
       return;
@@ -529,81 +554,98 @@ export class FotoComponent implements OnInit {
     this.stopStream();
 
     // Verificamos si el formulario es válido
-    if (this.datosGeneralesComponent.myForm.valid) {
-      // obtengo la informacion del formulario a editar
-      const form: Aspirante = await this.datosGeneralesComponent.getMyFormEdit();
-      try {
-        const response = await this.aspirantesBeneficioService.editarAspirante(form);
-        if (response.success) {
+    if (!this.datosGeneralesComponent.myForm.valid) {
+      this.datosGeneralesComponent.myForm.markAllAsTouched();
+      this.mostrarErrores(this.datosGeneralesComponent.myForm);
+      return;
+    }
+
+    let newPhotoId: number | null = null;
+    let relationUpdated = false;
+
+    of(this.datosGeneralesComponent.getMyFormEdit() as Aspirante).pipe(
+      tap(() => {
+        Swal.fire({
+          title: 'Actualizando...',
+          html: 'Por favor, espera.',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => { Swal.showLoading(); }
+        }).then(() => {
+          // Mostrar mensaje de éxito por 3 segundos y luego redireccionar automáticamente
           Swal.fire({
-            title: 'Actualización exitosa!',
-            text: response.message,
+            title: '¡Registro editado con éxito!',
+            text: 'Los cambios se guardaron correctamente.',
             icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
+            timer: 1000,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false
+          }).then(() => {
+            this.router.navigateByUrl('/inicio/registro');
           });
-        } else {
-          Swal.fire({
-            title: 'Error en la actualización',
-            text: response.message,
-            icon: 'error',
-            confirmButtonText: 'Aceptar'
+        });
+      }),
+      concatMap((form: Aspirante) =>
+        this.aspirantesBeneficioService.editAspirante(form).pipe(
+          map(() => form)
+        )
+      ),
+      concatMap((form: Aspirante) => {
+        if (!(this.capturedImage && this.imgFoto())) return of(null);
+        const formattedFecha = new Date().toISOString();
+        const curp = form.curp;
+        const nuevaFoto = {
+          id_status: 1,
+          fecha: formattedFecha,
+          tipo: 'foto_aspben',
+          archivo: curp + '.webp',
+          path: 'docsaspirantesbeneficio/' + curp + '.webp',
+          archivoOriginal: `captured_photo.${this.imageFormat}`,
+          extension: this.imageFormat,
+          created_id: 0,
+          created_at: formattedFecha
+        };
+
+        return this.fotosService.createFoto(nuevaFoto).pipe(
+          tap((responseFoto: any) => { newPhotoId = responseFoto?.data?.id ?? null; }),
+          concatMap(() => this.aspirantesBeneficioFotosService.createRelacion({ id_aspirante_beneficio: form.id, id_foto: newPhotoId! })),
+          tap(() => { relationUpdated = true; this.savePhoto(curp); }),
+          concatMap(() => this.fotosService.registerPhoto(form, nuevaFoto)),
+          map(() => null)
+        );
+      }),
+      finalize(() => Swal.close())
+    ).subscribe({
+      next: () => {
+        // Refrescar la imagen mostrada si se actualizó la relación y hay nueva foto
+        if (relationUpdated && newPhotoId) {
+          this.prevFotoId = newPhotoId;
+          this.fotosService.getAspiranteFotoId(String(newPhotoId)).subscribe({
+            next: (response) => {
+              const refreshed = environment.baseUrl + '/' + response.data + '?t=' + Date.now();
+              this.imgFoto.set(refreshed);
+              this.capturedImage = null; // limpiar la captura temporal
+            },
+            error: (err) => console.error('Error refrescando foto:', err)
           });
         }
-      } catch (error) {
-        console.error("Error en el proceso:", error);
-        Swal.fire({
-          title: 'Error en la actualización',
-          text: 'Ocurrió un error al intentar actualizar el aspirante',
-          icon: 'error',
-          confirmButtonText: 'Aceptar'
+
+      },
+      error: async (error) => {
+        console.error("Error en la actualización:", error);
+        const form = await this.datosGeneralesComponent!.getMyFormEdit();
+        this.performEditRollback$(form.id, newPhotoId, relationUpdated).subscribe({
+          complete: () => {
+            Swal.fire({
+              title: 'Error en la actualización',
+              text: 'Ocurrió un error y se revirtieron los cambios.',
+              icon: 'error',
+              confirmButtonText: 'Aceptar'
+            });
+          }
         });
       }
-
-      if (this.capturedImage && this.imgFoto()) {
-        try {
-          // Crear la nueva foto en la base de datos
-          const formattedFecha = new Date().toISOString();
-          const curp = form.curp;
-          const nuevaFoto = {
-            id_status: 1,
-            fecha: formattedFecha,
-            tipo: 'foto_aspben',
-            archivo: curp + '.webp',
-            path: 'docsaspirantesbeneficio/' + curp + '.webp',
-            archivoOriginal: `captured_photo.${this.imageFormat}`,
-            extension: this.imageFormat,
-            created_id: 0,
-            created_at: formattedFecha
-          };
-
-          const responseFoto = await this.fotosService.createFoto(nuevaFoto).toPromise();
-          const newPhotoId = responseFoto?.data.id;
-
-          if (newPhotoId) {
-
-            // Actualizar la relación con el nuevo ID de la foto
-            await this.aspirantesBeneficioFotosService.editRelacion({
-              id_aspirante_beneficio: form.id,
-              id_foto: newPhotoId
-            });
-
-            // Guardar la foto en el directorio local
-            this.savePhoto(curp);
-
-            // Subir la foto al servidor
-            await this.fotosService.registerPhoto(form, nuevaFoto);
-          }
-        } catch (error) {
-          console.error("Error al registrar la nueva foto, actualizar la relación o subir la foto:", error);
-        }
-      }
-
-    } else {
-      // Marcar todos los campos como tocados para mostrar los errores
-      this.datosGeneralesComponent.myForm.markAllAsTouched();
-      // Mostrar los errores en la consola del formulario
-      this.mostrarErrores(this.datosGeneralesComponent.myForm);
-    }
+    });
   }
 }
