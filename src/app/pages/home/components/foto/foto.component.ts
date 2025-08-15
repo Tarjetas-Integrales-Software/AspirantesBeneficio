@@ -375,17 +375,8 @@ export class FotoComponent implements OnInit {
           created_at: formattedFecha
         };
 
-        // Verificar si la CURP ya existe en la base de datos local antes de crear el aspirante
-        return from(this.aspirantesBeneficioService.consultarAspirantePorCurpDbLocal(form.curp)).pipe(
-          concatMap((existingAspirante) => {
-            if (existingAspirante) {
-              // Si ya existe un aspirante con esta CURP, lanzar un error específico
-              throw new Error(`La CURP ${form.curp} ya está registrada en la base de datos local.`);
-            }
-
-            // Si no existe, proceder con la creación del aspirante
-            return from(this.aspirantesBeneficioService.crearAspirante(form));
-          }),
+        // Si no existe, proceder con la creación del aspirante
+        return from(this.aspirantesBeneficioService.crearAspirante(form)).pipe(
           concatMap(() => this.aspirantesBeneficioService.getLastId()),
           tap(id => aspiranteCreado = id),
           concatMap(() => this.fotosService.crearFotoLocal(fotoData)),
@@ -428,19 +419,7 @@ export class FotoComponent implements OnInit {
       error: (error) => {
         console.error('Error en el proceso:', error);
 
-        // Verificar si el error es por CURP duplicada
-        if (error.message && error.message.includes('ya está registrada en la base de datos local')) {
-          Swal.fire({
-            title: 'CURP Duplicada',
-            text: error.message,
-            icon: 'warning',
-            confirmButtonText: 'Aceptar'
-          });
-          this.submitForm.emit();
-          return;
-        }
-
-        // Para otros tipos de errores, ejecutar rollback
+        // Para todos los errores, ejecutar rollback
         this.performRollback$(
           aspiranteCreado,
           fotoCreada,
