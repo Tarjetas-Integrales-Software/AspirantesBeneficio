@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, AfterViewInit, Component, OnInit, ViewChild, i
 import { DatePipe, CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import { RouterLink } from '@angular/router';
 
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
@@ -36,7 +37,7 @@ import { UsersService } from '../../services/CRUD/users.service';
 import { ModulosService } from '../../services/CRUD/modulos.service';
 import { ModalidadesService } from '../../services/CRUD/modalidades.service';
 import { StorageService } from '../../services/storage.service';
-import { RouterLink } from '@angular/router';
+import { AspirantesBeneficioFotosService } from '../../services/CRUD/aspirantes-beneficio-fotos.service';
 
 export interface AspiranteBeneficio {
   id: string;
@@ -85,7 +86,10 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
     private modulosService: ModulosService,
     private modalidadesService: ModalidadesService,
     private usersService: UsersService,
-    private storageService: StorageService) {
+    private storageService: StorageService,
+    private fotosService: FotosService,
+    private aspirantesBeneficioFotosService: AspirantesBeneficioFotosService,
+  ) {
     this.dataSource = new MatTableDataSource();
 
     if (this.storageService.exists("perfiles"))
@@ -390,6 +394,112 @@ export class ConsultaComponent implements OnInit, AfterViewInit {
 
     // Vuelve a cargar los datos
     this.getAspirantesBeneficio();
+  }
+
+  async syncAspirantesBeneficio(): Promise<void> {
+    try {
+      const items = await this.aspirantesBeneficioFotosService.consultarRelacionesDesincronizadas();
+
+      for (const relacion of items) {
+        const { id_aspirante_beneficio, id_foto } = relacion;
+
+        try {
+          const aspirante = await this.aspirantesBeneficioService.consultarAspirantePorId(id_aspirante_beneficio);
+          const foto = await this.fotosService.consultarFotoPorId(id_foto);
+
+          let nuevoAspirante = {};
+          let nuevaFoto = {};
+          let nuevoIdAspirante: number | null = null;
+          let nuevoIdFoto: number | null = null;
+
+          // Crear aspirante y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.aspirantesBeneficioService.createAspirante(aspirante).subscribe({
+              next: async (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdAspirante = response.data.id;
+                  nuevoAspirante = response.data;
+                }
+
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear aspirante:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Crear foto y obtener su ID
+          await new Promise<void>((resolve, reject) => {
+            this.fotosService.createFoto(foto).subscribe({
+              next: (response) => {
+                if (response.response && response.data?.id !== undefined) {
+                  nuevoIdFoto = response.data.id;
+                  nuevaFoto = response.data;
+                }
+                resolve();
+              },
+              error: (error) => {
+                console.error("Error al crear foto:", error);
+                reject(error);
+              }
+            });
+          });
+
+          // Verificamos que los IDs sean números válidos antes de crear la relación
+          if (typeof nuevoIdAspirante === "number" && typeof nuevoIdFoto === "number") {
+            const nuevaRelacion = {
+              id_aspirante_beneficio: nuevoIdAspirante,
+              id_foto: nuevoIdFoto
+            };
+
+            this.aspirantesBeneficioFotosService.createRelacion(nuevaRelacion).subscribe({
+              next: (response) => {
+                if (response.response) {
+                  this.aspirantesBeneficioFotosService.eliminarRelacion(relacion.id);
+
+                  this.fotosService.registerPhoto(nuevoAspirante, nuevaFoto)
+                }
+              },
+              error: (error) => {
+                this.eliminarRelacionadosAspirante(nuevoIdAspirante, nuevoIdFoto);
+
+                console.error("Error al crear relación:", error);
+              }
+            });
+          } else {
+            console.error("No se pudo crear la relación porque faltan IDs válidos");
+
+            this.eliminarRelacionadosAspirante(nuevoIdAspirante, nuevoIdFoto);
+          }
+        } catch (error) {
+          console.error("Error obteniendo aspirante o foto:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error consultando relaciones:", error);
+    }
+  }
+
+  eliminarRelacionadosAspirante(nuevoIdAspirante: null | number, nuevoIdFoto: null | number): void {
+    if (typeof nuevoIdAspirante === "number") this.aspirantesBeneficioService.deleteAspiranteBeneficio(nuevoIdAspirante).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdAspirante = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
+
+    if (typeof nuevoIdFoto === "number") this.fotosService.deleteFoto(nuevoIdFoto).subscribe({
+      next: async (response) => {
+        if (response.response && response.data?.id !== undefined) nuevoIdFoto = null;
+      },
+      error: (error) => {
+        console.error("Error al crear aspirante:", error);
+      }
+    });
   }
 }
 

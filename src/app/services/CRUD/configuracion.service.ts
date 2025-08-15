@@ -14,6 +14,9 @@ export class ConfiguracionService {
     nombre: 'syncInterval', intervalo: 60, activo: 1
   },
   {
+    nombre: 'syncAspirantesInterval', intervalo: 5, activo: 1
+  },
+  {
     nombre: 'syncCurpInterval', intervalo: 30, activo: 1
   },
   {
