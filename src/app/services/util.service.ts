@@ -63,6 +63,8 @@ export class UtilService {
           modulo: row['MODULO'] ? String(row['MODULO']).trim() : null,
           telefono: row['TELEFONO'] ? String(row['TELEFONO']).trim() : null,
           celular: row['CELULAR'] ? String(row['CELULAR']).trim() : null,
+          modalidad: row['MODALIDAD'] ? String(row['MODALIDAD']).trim() : null,
+          fpu: row['FPU'] ? String(row['FPU']).trim() : null,
         }));
 
         console.log(registros);
