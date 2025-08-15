@@ -201,6 +201,31 @@ export class DatosGeneralesComponent implements OnInit {
     );
   }
 
+  /**
+   * Convierte una fecha string a Date object manejando correctamente la zona horaria
+   * Para evitar problemas de desplazamiento de días por zona horaria
+   */
+  private parseLocalDate(dateString: string): Date {
+    if (!dateString) return new Date();
+
+    // Si viene en formato "YYYY-MM-DD" (solo fecha)
+    if (dateString.length === 10 && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-').map(n => parseInt(n, 10));
+      return new Date(year, month - 1, day); // month - 1 porque Date usa índice 0-11 para meses
+    }
+
+    // Si viene en formato "YYYY-MM-DD HH:mm:ss" (fecha con hora)
+    if (dateString.includes(' ')) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [year, month, day] = datePart.split('-').map(n => parseInt(n, 10));
+      const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
+      return new Date(year, month - 1, day, hour, minute, second);
+    }
+
+    // Fallback para otros formatos
+    return new Date(dateString);
+  }
+
   private parseNombreCompleto(raw: string): { nombre: string; apellido_paterno: string; apellido_materno: string } {
     const PARTICULAS = new Set(['DE', 'DEL', 'LA', 'LAS', 'LO', 'LOS', 'Y', 'VAN', 'VON', 'MC', 'MAC', 'SAN', 'SANTA']);
     const tokens = (raw || '').trim().split(/\s+/).filter(t => t).map(t => t.toUpperCase());

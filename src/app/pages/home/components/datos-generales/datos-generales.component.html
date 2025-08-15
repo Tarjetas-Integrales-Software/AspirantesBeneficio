@@ -1,10 +1,24 @@
 <div class="bg-gray-100 p-0">
   <div class="px-6 py-5 bg-white border-0 shadow-lg sm:rounded-3xl">
 
-    <mat-card appearance="outlined" class="h-[30px] flex items-center justify-center bg-black text-white p-4"
-      style="background-color: black;">
-      <mat-card-content><b>{{modulo_actual}}</b></mat-card-content>
-    </mat-card>
+    <form [formGroup]="myForm">
+      <div class="flex justify-center gap-2">
+        <div [class]="editar ? 'basis-1/2' : 'basis-full'">
+          <mat-card appearance="outlined" class="flex items-center justify-center bg-black text-white p-4"
+            [ngStyle]="{ height: editar ? 'calc(100% - 20px)' : '30px', 'background-color': 'black' }">
+            <mat-card-content><b>{{modulo_actual}}</b></mat-card-content>
+          </mat-card>
+        </div>
+        @if( editar) {
+        <mat-form-field class="basis-1/2">
+          <mat-label>Fecha de evento</mat-label>
+          <input matInput [matDatepicker]="pickerEvento" formControlName="fecha_evento">
+          <mat-hint>DD/MM/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="pickerEvento"></mat-datepicker-toggle>
+          <mat-datepicker #pickerEvento></mat-datepicker>
+        </mat-form-field>
+        }
+      </div>
 
 
     <!-- <h2 class="text-3xl">Datos Generales</h2> -->
