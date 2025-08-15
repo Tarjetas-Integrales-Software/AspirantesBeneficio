@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, DestroyRef } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,13 +24,15 @@ import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
-import { Observable, switchMap } from 'rxjs';
-import { CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
+import { catchError, map, Observable, of, switchMap, from } from 'rxjs';
+import { CurpPrevioRegisto, CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
+import { tap, finalize } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -82,7 +84,9 @@ export class DatosGeneralesComponent implements OnInit {
     id: 0,
     id_modalidad: 0,
     curp: '',
-    nombre_completo: '',
+    nombre: '',
+    apellido_paterno: '',
+    apellido_materno: '',
     telefono: '',
     fecha_nacimiento: '',
     email: '',
@@ -108,7 +112,10 @@ export class DatosGeneralesComponent implements OnInit {
   //options: string[] = [];
   filteredOptions: any[] = [];
 
-  constructor( private networkStatusService: NetworkStatusService
+  private lastCurpAutoFilled?: string;
+  private destroyRef = inject(DestroyRef)
+
+  constructor(private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
     , private modalidadesService: ModalidadesService
     , private aspirantesBeneficioService: AspirantesBeneficioService
@@ -128,20 +135,23 @@ export class DatosGeneralesComponent implements OnInit {
       Validators.minLength(18),
       Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
     ], this.editar ? null : this.curpAsyncValidator.bind(this)],
-    nombre_completo: ['', [Validators.required, Validators.minLength(1)]],
+    nombre: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_paterno: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_materno: ['', [Validators.required, Validators.minLength(1)]],
     telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
     email: ['',],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
-    tipo_zona: ['', ],
-    tipo_asentamiento: ['', ],
-    domicilio: ['', [Validators.required, Validators.minLength(5)]],
+    tipo_zona: ['',],
+    tipo_asentamiento: ['',],
+    domicilio: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(1000)]],
     grado: ['',],
     tipo_carrera: ['',],
     carrera: ['',],
-    com_obs: [''],
+    com_obs: ['', [Validators.maxLength(500)]],
+    fecha_evento: [''],
   });
 
   filter(): void {
@@ -149,21 +159,97 @@ export class DatosGeneralesComponent implements OnInit {
     this.filteredOptions = this.codigosPostales.filter(o => o.cp.toString().includes(filterValue));
   }
 
-  curpAsyncValidator(control: AbstractControl): Promise<ValidationErrors | null> | Observable<ValidationErrors | null> {
-    if (this.editar) {
-      return Promise.resolve(null);
+  curpAsyncValidator(control: AbstractControl): Observable<ValidationErrors | null> {
+    if (this.editar) return of(null);
+    const raw = (control.value || '').toString().trim().toUpperCase();
+    if (raw.length !== 18) return of(null);
+
+    return this.curpsRegistradasService.getAspirantesBeneficioPorCurpPrevioRegistro(raw).pipe(
+      map((response: CurpPrevioRegisto) => {
+        const registro = response?.data?.[0];
+        if (!registro) return null;
+
+        if (registro.beneficiado === '0') {
+          if (this.lastCurpAutoFilled !== raw) {
+            this.lastCurpAutoFilled = raw;
+            Swal.fire({
+              icon: 'info',
+              title: 'Registro previo sin beneficio',
+              text: 'Este usuario ya tiene un registro, pero no fue beneficiado. Serás redireccionad@ al menú de editar registro para tomar la foto y hacer las correcciones necesarias.',
+              confirmButtonText: 'Ir a editar'
+            }).then(() => {
+              this.router.navigate(['/inicio/editar', registro.id]);
+            });
+          } else {
+            this.router.navigate(['/inicio/editar', registro.id]);
+          }
+          return null;
+        }
+        return { curpBeneficiado: true };
+      }),
+      tap((result: ValidationErrors | null) => {
+        if (result && (result as any).curpBeneficiado) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'CURP con beneficio',
+            text: 'Esta CURP ya cuenta con un beneficio registrado.',
+            confirmButtonText: 'Aceptar'
+          });
+        }
+      }),
+      catchError(err => {
+        console.error('Error validando CURP:', err);
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Convierte una fecha string a Date object manejando correctamente la zona horaria
+   * Para evitar problemas de desplazamiento de días por zona horaria
+   */
+  private parseLocalDate(dateString: string): Date {
+    if (!dateString) return new Date();
+
+    // Si viene en formato "YYYY-MM-DD" (solo fecha)
+    if (dateString.length === 10 && dateString.includes('-')) {
+      const [year, month, day] = dateString.split('-').map(n => parseInt(n, 10));
+      return new Date(year, month - 1, day); // month - 1 porque Date usa índice 0-11 para meses
     }
-    return this.curpsRegistradasService.existeCurp(control.value).then(exists => {
-      if (exists) {
-        Swal.fire({
-          icon: 'error',
-          title: 'CURP ya registrada',
-          text: 'La CURP ingresada ya se encuentra registrada en el sistema.',
-        });
-        return { curpExists: true };
-      }
-      return null;
-    });
+
+    // Si viene en formato "YYYY-MM-DD HH:mm:ss" (fecha con hora)
+    if (dateString.includes(' ')) {
+      const [datePart, timePart] = dateString.split(' ');
+      const [year, month, day] = datePart.split('-').map(n => parseInt(n, 10));
+      const [hour, minute, second] = timePart.split(':').map(n => parseInt(n, 10));
+      return new Date(year, month - 1, day, hour, minute, second);
+    }
+
+    // Fallback para otros formatos
+    return new Date(dateString);
+  }
+
+  private parseNombreCompleto(raw: string): { nombre: string; apellido_paterno: string; apellido_materno: string } {
+    const PARTICULAS = new Set(['DE', 'DEL', 'LA', 'LAS', 'LO', 'LOS', 'Y', 'VAN', 'VON', 'MC', 'MAC', 'SAN', 'SANTA']);
+    const tokens = (raw || '').trim().split(/\s+/).filter(t => t).map(t => t.toUpperCase());
+    let nombre = ''; let apellido_paterno = ''; let apellido_materno = '';
+    if (!tokens.length) return { nombre, apellido_paterno, apellido_materno };
+    if (tokens.length === 1) return { nombre: tokens[0], apellido_paterno, apellido_materno };
+    if (tokens.length === 2) return { nombre: tokens[0], apellido_paterno, apellido_materno: tokens[1] };
+
+    const work = [...tokens];
+    // Materno
+    const maternoParts: string[] = [work.pop()!];
+    while (work.length && PARTICULAS.has(work[work.length - 1])) maternoParts.unshift(work.pop()!);
+    apellido_materno = maternoParts.join(' ');
+    // Paterno
+    if (work.length) {
+      const paternoParts: string[] = [work.pop()!];
+      while (work.length && PARTICULAS.has(work[work.length - 1])) paternoParts.unshift(work.pop()!);
+      apellido_paterno = paternoParts.join(' ');
+    }
+    nombre = work.join(' ');
+    return { nombre: nombre.trim(), apellido_paterno: apellido_paterno.trim(), apellido_materno: apellido_materno.trim() };
   }
 
   isValidField(fieldName: string): boolean | null {
@@ -184,7 +270,9 @@ export class DatosGeneralesComponent implements OnInit {
         case 'minlength':
           return `Este campo debe tener al menos ${errors[key].requiredLength} caracteres`;
         case 'pattern':
-          return 'El formato de la curp no es correcto';
+          return 'El formato de la CURP no es correcto';
+        case 'curpBeneficiado':
+          return 'Esta CURP ya cuenta con un beneficio';
       }
     }
     return null;
@@ -256,13 +344,30 @@ export class DatosGeneralesComponent implements OnInit {
 
       this.activatedRoute.params
         .pipe(
-          switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
-        ).subscribe(aspirante => {
+          tap(() => {
+            Swal.fire({
+              title: 'Cargando datos...',
+              html: 'Por favor, espera.',
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              didOpen: () => { Swal.showLoading(); }
+            });
+          }),
+          switchMap(({ id }) =>
+            this.aspirantesBeneficioService.getAspiranteBeneficioId(+id).pipe(
+              finalize(() => Swal.close())
+            )
+          ),
+        )
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(aspirante => {
           this.editAspirante = aspirante.data;
 
           if (!aspirante) {
             return this.router.navigateByUrl('/');
           }
+
+          const { nombre, apellido_paterno, apellido_materno } = this.parseNombreCompleto(aspirante.data.nombre_completo || '');
 
           // Obtener los IDs correspondientes a los nombres
           const selectedGrado = this.grados.find(grado => grado.nombre === aspirante.data.grado);
@@ -271,19 +376,22 @@ export class DatosGeneralesComponent implements OnInit {
           const selectedModalidad = this.modalidades.find(modalidad => modalidad.id === parseInt(aspirante.data.id_modalidad, 10));
           const selectedCP = this.allCodigosPostales.find(cp => cp.cp === aspirante.data.cp);
 
-          this.getCodigosPostales({ municipio: aspirante.data.municipio });
+          this.getCodigosPostales({ municipio: aspirante.data.municipio }).subscribe();
 
           // Establecer los campos correspondientes en el formulario
           this.myForm.reset({
             ...aspirante.data,
-            fecha_nacimiento: aspirante.data.fecha_nacimiento ? new Date(aspirante.data.fecha_nacimiento + 'T00:00:00') : '',
+            fecha_evento: aspirante.data.fecha_evento ? this.parseLocalDate(aspirante.data.fecha_evento) : '',
+            nombre: (aspirante.data.nombre || nombre).toUpperCase(),
+            apellido_paterno: (aspirante.data.apellido_paterno || apellido_paterno).toUpperCase(),
+            apellido_materno: (aspirante.data.apellido_materno || apellido_materno).toUpperCase(),
+            fecha_nacimiento: aspirante.data.fecha_nacimiento ? this.parseLocalDate(aspirante.data.fecha_nacimiento) : '',
             grado: selectedGrado ? selectedGrado.id : '',
             tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
             carrera: selectedCarrera ? selectedCarrera.nombre : '',
             id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
             cp: aspirante.data.cp
           });
-
           return;
         });
     }
@@ -372,18 +480,43 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
 
-  async getCodigosPostales(params: { municipio?: string }): Promise<void> {
+  /**
+   * Obtiene códigos postales filtrados por municipio y actualiza las listas locales
+   * @param params Parámetros de filtrado, principalmente municipio
+   * @returns Observable<void> para manejar la subscripción externamente
+   */
+  getCodigosPostales(params: { municipio?: string }): Observable<void> {
     const { municipio } = params;
 
-    await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
-      this.allCodigosPostales = codigos;
-    }).catch(error => {
-      console.error('Error al consultar códigos postales:', error);
-    });
+    return this.codigosPostalesService.consultarCodigosPostales({ municipio }).pipe(
+      tap((codigos: any[]) => {
+        // Guardar todos los códigos postales obtenidos
+        this.allCodigosPostales = codigos;
 
-    this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
-      return this.allCodigosPostales.find(item => item.cp === cp);
-    });
+        // Crear lista única de códigos postales sin duplicados
+        // Optimización: Usar Map para mejor performance en listas grandes
+        const uniqueCPs = new Map<string, any>();
+        codigos.forEach(item => {
+          if (!uniqueCPs.has(item.cp)) {
+            uniqueCPs.set(item.cp, item);
+          }
+        });
+
+        this.codigosPostales = Array.from(uniqueCPs.values()).sort((a, b) => a.cp.localeCompare(b.cp));
+
+        console.log(`Códigos postales cargados: ${this.codigosPostales.length} únicos de ${codigos.length} totales`);
+      }),
+      map(() => void 0), // Mantener signatura void
+      catchError(error => {
+        console.error('Error al consultar códigos postales:', error);
+
+        // Limpiar datos en caso de error
+        this.allCodigosPostales = [];
+        this.codigosPostales = [];
+
+        return of(void 0);
+      })
+    );
   }
 
   getColoniasByCP(): void {
@@ -410,6 +543,55 @@ export class DatosGeneralesComponent implements OnInit {
       this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
       this.tipoZona = selectedColonia.tipo_zona;
     }
+  }
+
+  onMunicipioChange(municipio: string): void {
+    this.getCodigosPostales({ municipio }).subscribe();
+  }
+
+  /**
+   * Método mejorado para cargar códigos postales con caché
+   * Evita consultas innecesarias si ya se tiene la información
+   */
+  loadCodigosPostalesWithCache(municipio: string): Observable<void> {
+    // Si no hay municipio, limpiar listas
+    if (!municipio) {
+      this.codigosPostales = [];
+      this.allCodigosPostales = [];
+      return of(void 0);
+    }
+
+    // Verificar si ya tenemos datos para este municipio
+    const hasDataForMunicipio = this.allCodigosPostales.some(cp =>
+      cp.municipio && cp.municipio.toLowerCase().includes(municipio.toLowerCase())
+    );
+
+    if (hasDataForMunicipio) {
+      // Filtrar los datos existentes
+      const filteredData = this.allCodigosPostales.filter(cp =>
+        cp.municipio && cp.municipio.toLowerCase().includes(municipio.toLowerCase())
+      );
+
+      this.updateCodigosPostalesList(filteredData);
+      return of(void 0);
+    }
+
+    // Si no hay datos en caché, hacer la consulta usando el método Observable
+    return this.getCodigosPostales({ municipio });
+  }
+
+  /**
+   * Método utilitario para actualizar la lista de códigos postales
+   */
+  private updateCodigosPostalesList(codigos: any[]): void {
+    const uniqueCPs = new Map<string, any>();
+    codigos.forEach(item => {
+      if (!uniqueCPs.has(item.cp)) {
+        uniqueCPs.set(item.cp, item);
+      }
+    });
+
+    this.codigosPostales = Array.from(uniqueCPs.values()).sort((a, b) => a.cp.localeCompare(b.cp));
   }
 
   syncDataBase(): void {
@@ -449,7 +631,7 @@ export class DatosGeneralesComponent implements OnInit {
     const formattedDate = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)} ${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:${('0' + now.getSeconds()).slice(-2)}`;
     return {
       ...this.myForm.value,
-      nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
+      nombres: this.myForm.get('nombres')?.value.toUpperCase(),
       id: idApirante,
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
       estado: 'Jalisco',
@@ -470,23 +652,28 @@ export class DatosGeneralesComponent implements OnInit {
     const selectedGrado = this.grados.find(grado => grado.id === this.myForm.get('grado')?.value);
     const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.id === this.myForm.get('tipo_carrera')?.value);
 
+    const nombreCompleto = `${this.myForm.get('nombre')?.value} ${this.myForm.get('apellido_paterno')?.value} ${this.myForm.get('apellido_materno')?.value}`.trim();
+
     return {
-        ...this.myForm.value,
-        id: this.editAspirante.id,
-        curp: this.editAspirante.curp,
-        nombre_completo: this.myForm.get('nombre_completo')?.value.toUpperCase(),
-        fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
-        fecha_evento: this.editAspirante.fecha_evento,
-        estado: 'Jalisco',
-        municipio: this.myForm.get('municipio')?.value,
-        ciudad: this.myForm.get('municipio')?.value,
-        tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
-        tipo_zona: this.myForm.get('tipo_zona')?.value,
-        grado: selectedGrado ? selectedGrado.nombre : '',
-        tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.nombre : '',
-        modulo: this.modulo_actual
+      ...this.myForm.value,
+      id: this.editAspirante.id,
+      curp: this.editAspirante.curp,
+      nombre_completo: nombreCompleto.toUpperCase(),
+      nombre: this.myForm.get('nombres')?.value.toUpperCase(),
+      apellido_paterno: this.myForm.get('apellido_paterno')?.value.toUpperCase(),
+      apellido_materno: this.myForm.get('apellido_materno')?.value.toUpperCase(),
+      fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
+      fecha_evento: this.formatDate(this.myForm.get('fecha_evento')?.value),
+      estado: 'Jalisco',
+      municipio: this.myForm.get('municipio')?.value,
+      ciudad: this.myForm.get('municipio')?.value,
+      tipo_asentamiento: this.myForm.get('tipo_asentamiento')?.value,
+      tipo_zona: this.myForm.get('tipo_zona')?.value,
+      grado: selectedGrado ? selectedGrado.nombre : '',
+      tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.nombre : '',
+      modulo: this.modulo_actual
     };
-}
+  }
 
   selectedValue2() {
     this.selectedValue = this.myForm.get('id_modalidad')?.value;
@@ -531,7 +718,12 @@ export class DatosGeneralesComponent implements OnInit {
   toUpperCaseName(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
-    this.myForm.get('nombreCompleto')?.setValue(input.value);
+
+    // Obtener el nombre del FormControl desde el atributo formControlName
+    const formControlName = input.getAttribute('formcontrolname');
+    if (formControlName) {
+      this.myForm.get(formControlName)?.setValue(input.value);
+    }
   }
 
   capitalizeWords(event: Event): void {

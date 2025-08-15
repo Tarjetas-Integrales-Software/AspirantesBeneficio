@@ -27,6 +27,37 @@ export class AspirantesBeneficioFotosService {
   }
 
   // Crear una nueva relación aspirante-beneficio-foto
+  crearRelacionLocal(relacion: {
+    id_aspirante_beneficio: number;
+    id_foto: number;
+    id_status: number;
+    created_id: number;
+    created_at: string;
+  }): Observable<any> {
+    return new Observable(observer => {
+      const sql = `
+        INSERT OR REPLACE INTO sy_aspirantes_beneficio_fotos (
+          id_aspirante_beneficio, id_foto, id_status, created_id, created_at
+        ) VALUES (?, ?, ?, ?, ?);
+      `;
+      const params = [
+        relacion.id_aspirante_beneficio,
+        relacion.id_foto,
+        relacion.id_status,
+        relacion.created_id,
+        relacion.created_at,
+      ];
+
+      this.databaseService.execute(sql, params).then(result => {
+        observer.next(result);
+        observer.complete();
+      }).catch(error => {
+        observer.error(error);
+      });
+    });
+  }
+
+  // Método async mantenido para compatibilidad
   async crearRelacion(relacion: {
     id_aspirante_beneficio: number;
     id_foto: number;
@@ -168,6 +199,23 @@ export class AspirantesBeneficioFotosService {
     const params = [id_aspirante_beneficio];
 
     return await this.databaseService.execute(sql, params);
+  }
+
+  // Rollback relación aspirante-foto (Observable)
+  rollbackRelacion(id_aspirante_beneficio: number, id_foto: number): Observable<void> {
+    return new Observable<void>(observer => {
+      const sql = 'DELETE FROM sy_aspirantes_beneficio_fotos WHERE id_aspirante_beneficio = ? AND id_foto = ?';
+      this.databaseService.execute(sql, [id_aspirante_beneficio, id_foto])
+        .then(() => {
+          console.log(`Rollback: Relación aspirante-foto (${id_aspirante_beneficio}, ${id_foto}) eliminada exitosamente`);
+          observer.next();
+          observer.complete();
+        })
+        .catch(error => {
+          console.error(`Error en rollback de relación aspirante-foto (${id_aspirante_beneficio}, ${id_foto}):`, error);
+            observer.error(error);
+        });
+    });
   }
 
 }

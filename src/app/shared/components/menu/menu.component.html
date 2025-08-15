@@ -1,23 +1,16 @@
 <div class="relative">
-  <div
-    class="fixed bottom-1 right-5 flex flex-col items-end justify-center z-[100]"
-  >
-    @if (menuShow) {
-    <div class="menu">
-      <div
-        x-show="open"
-        click.away="open = false"
-        class="menu__list"
-      >
-        @if (permisoMenu_Digitalizador) {
+  <div class="fixed bottom-1 right-5 flex flex-col items-end justify-center z-[100]">
+
+    <div class="menu" #menuRef *ngIf="menuShow">
+      <div x-show="open" click.away="open = false" class="menu__list">
+
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_digitalizador')"
+          *ngIf="permisoMenu_Digitalizador && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_digitalizador')"
           texto="Digitalizador"
           ruta="/inicio/digitalizador"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /><path d="M8 12h8" /><path d="M8 9h6" /><path d="M8 15h4" />'
         ></app-opcion-menu>
-        }
 
         <app-opcion-menu
           *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_cortes')"
@@ -35,36 +28,32 @@
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 4v16l13 -8z" />'
         ></app-opcion-menu>
 
-        @if (permisoMenu_ImpresionManual) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_impr_manual')"
+          *ngIf="permisoMenu_ImpresionManual && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_impr_manual')"
           texto="Impr Manual"
           ruta="/inicio/impresion-manuales"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Asistencia) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_asistencia')"
+          *ngIf="permisoMenu_Asistencia && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_asistencia')"
           texto="Asistencia"
           ruta="/inicio/asistencia"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M20.942 13.021a9 9 0 1 0 -9.407 7.967" /><path d="M12 7v5l3 3" /><path d="M15 19l2 2l4 -4" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Impresion) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_impresion')"
+          *ngIf="permisoMenu_Impresion && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_impresion')"
           texto="Impresión"
           ruta="/inicio/impresion-credencial"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Reportes) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_reportes')"
+          *ngIf="permisoMenu_Reportes && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_reportes')"
           texto="Reportes"
           ruta="/inicio/reportes"
           [accion]="cerrarMenu.bind(this)"
@@ -76,9 +65,8 @@
           <path d="M15 17v-3" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Aprobadas) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_aprobadas_ssas')"
+          *ngIf="permisoMenu_Aprobadas && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_aprobadas_ssas')"
           texto="Aprobadas SSAS"
           ruta="/inicio/aprobadas-ssas"
           [accion]="cerrarMenu.bind(this)"
@@ -89,41 +77,42 @@
             <path d="M5 12.1v-7.1a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-2.3" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Consulta) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_consulta')"
+          *ngIf="permisoMenu_Consulta && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_consulta')"
           texto="Consulta"
           ruta="/inicio/consulta"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />'
         ></app-opcion-menu>
 
-        } @if (permisoMenu_Registro) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_registro')"
+          *ngIf="permisoMenu_Registro && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_registro')"
           texto="Registro"
           ruta="/inicio/registro"
           [accion]="cerrarMenu.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4c.96 0 1.84 .338 2.53 .901" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M16 19h6" /><path d="M19 16v6" />'
         ></app-opcion-menu>
-        }
 
-        @if (permisoMenu_Settings) {
         <app-opcion-menu
-          *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_settings')"
+          *ngIf="permisoMenu_Settings && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_settings')"
           texto="Configuración"
           ruta="/inicio/configuraciones"
           [accion]="cerrarMenu.bind(this)"
-          icono='<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#364153"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>'
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                 <path d="M10 6h4l1 3h3l.75 3l-2.25 1.5l.5 3l-2.5 1.5l-2 -1l-2 1l-2.5 -1.5l.5 -3l-2.25 -1.5l.75 -3h3z"/>
+                 <path d="M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0 -6"/>'
         ></app-opcion-menu>
-        }
 
         <app-opcion-menu
           *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_configurar')"
           texto="Operaciones"
           ruta="/inicio/modulo-operaciones"
           [accion]="cerrarMenu.bind(this)"
-          icono='<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#364153"><path d="M160-120q-33 0-56.5-23.5T80-200v-560q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v560q0 33-23.5 56.5T800-120H160Zm0-80h640v-560H160v560Zm40-80h200v-80H200v80Zm382-80 198-198-57-57-141 142-57-57-56 57 113 113Zm-382-80h200v-80H200v80Zm0-160h200v-80H200v80Zm-40 400v-560 560Z"/></svg>'
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                 <path d="M4 4h6v8H4z"/>
+                 <path d="M14 4h6v4h-6z"/>
+                 <path d="M14 12h6v8h-6z"/>
+                 <path d="M4 16h6v4H4z"/>'
         ></app-opcion-menu>
 
         <app-opcion-menu
@@ -132,11 +121,12 @@
           [accion]="cerrarSesion.bind(this)"
           icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2" /><path d="M3 12h13l-3 -3" /><path d="M13 15l3 -3" />'
         ></app-opcion-menu>
+
       </div>
     </div>
-    }
 
     <button
+      #toggleBtnRef
       (click)="toggleMenu()"
       class="w-[60px] h-[60px] flex flex-col items-center justify-center bg-[#f26507] hover:bg-[#d25502] text-white text-xs font-bold p-2 rounded-full focus:outline-none focus:ring-2 focus:shadow-orange-200 xl:mb-4"
     >

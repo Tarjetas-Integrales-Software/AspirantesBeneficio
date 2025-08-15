@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { environment } from './../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, from } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { DatabaseService } from '../../services/database.service';
 import { NetworkStatusService } from '../network-status.service';
 
@@ -77,38 +78,57 @@ export class CodigosPostalesService {
     return resultados.map((row: any) => row.cp);
   }
 
-  async consultarCodigosPostales(query: { cp?: string, colonia?: string, municipio?: string }): Promise<any[]> {
+  /**
+   * Consulta códigos postales con filtros opcionales usando Observable pattern
+   * @param query Objeto con filtros opcionales (cp, colonia, municipio)
+   * @returns Observable<any[]> Lista de códigos postales que coinciden con los filtros
+   */
+  consultarCodigosPostales(query: { cp?: string, colonia?: string, municipio?: string }): Observable<any[]> {
     const { cp, municipio, colonia } = query;
 
-    // Si se filtra por municipio, seleccionar CP únicos
+    // Si se filtra por municipio, seleccionar CP únicos con ORDER BY para consistencia
     if (municipio) {
-      let sql = 'SELECT DISTINCT cp FROM CS_CodigosPostales_Colonias WHERE 1=1';
-      const params: any[] = [];
+      const sql = 'SELECT DISTINCT cp FROM CS_CodigosPostales_Colonias WHERE municipio LIKE ? ORDER BY cp';
+      const params = [`%${municipio}%`];
 
-      // Filtro por municipio
-      sql += ' AND municipio LIKE ?';
-      params.push(`%${municipio}%`);
-
-      // Ejecutar la consulta
-      return await this.databaseService.query(sql, params);
+      return from(this.databaseService.query(sql, params)).pipe(
+        map(resultados => resultados),
+        catchError(error => {
+          console.error('Error al consultar códigos postales por municipio:', error);
+          throw error;
+        })
+      );
     }
 
-    // Si no se filtra por municipio, mantener la lógica original
-    let sql = 'SELECT * FROM CS_CodigosPostales_Colonias WHERE 1=1';
+    // Construcción dinámica de consulta optimizada
+    let sql = 'SELECT DISTINCT cp, colonia, municipio, tipo_asentamiento, tipo_zona FROM CS_CodigosPostales_Colonias';
+    const conditions: string[] = [];
     const params: any[] = [];
 
-    // Filtros opcionales
+    // Agregar condiciones de forma más limpia
     if (cp) {
-      sql += ' AND cp = ?';
+      conditions.push('cp = ?');
       params.push(cp);
     }
     if (colonia) {
-      sql += ' AND colonia LIKE ?';
+      conditions.push('colonia LIKE ?');
       params.push(`%${colonia}%`);
     }
 
-    // Ejecutar la consulta
-    return await this.databaseService.query(sql, params);
+    // Agregar WHERE solo si hay condiciones
+    if (conditions.length > 0) {
+      sql += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    sql += ' ORDER BY cp, colonia';
+
+    return from(this.databaseService.query(sql, params)).pipe(
+      map(resultados => resultados),
+      catchError(error => {
+        console.error('Error al consultar códigos postales:', error);
+        throw error;
+      })
+    );
   }
 
   async consultarMunicipios(): Promise<{ id: number; municipio: string }[]> {
