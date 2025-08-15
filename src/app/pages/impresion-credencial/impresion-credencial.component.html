@@ -65,20 +65,7 @@
         <div class="card">
           <div class="card-body">
             <div class="d-flex flex-column flex-md-row align-items-center justify-content-between" style="gap: 10px;">
-              <div>
-                <label for="txtFile" class="btn">
-                  <i class="fa fa-cloud-upload bg-orange-300 hover:bg-green-350 text-white font-bold py-2 px-4 rounded">
-                    Importar Curps Aprobadas XLSX
-                  </i>
-                </label>
-                <div class="input-group">
-                  <input type="file" #fileInput id="txtFile" accept=".xls,.xlsx" style="display:none;" name="file"
-                    formControlName="file" (change)="onFileSelected($event)">
-                </div>
-                <div *ngIf="lblUploadingFile" style="margin: 0;font-size: 18px;color: #5270ae;">
-                  <label style="font-weight: 500;">{{lblUploadingFile}}</label>
-                </div>
-              </div>
+              
             </div>
           </div>
         </div>

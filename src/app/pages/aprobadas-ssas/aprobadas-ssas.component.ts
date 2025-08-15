@@ -30,6 +30,8 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 
+import { EditDialogComponent } from './edit-dialog/edit-dialog.component';
+
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AspirantesBeneficioService } from '../../services/CRUD/aspirantes-beneficio.service';
 import { FotosService } from '../../services/CRUD/fotos.service';
@@ -37,13 +39,26 @@ import { UsersService } from '../../services/CRUD/users.service';
 import { ModulosService } from '../../services/CRUD/modulos.service';
 import { ModalidadesService } from '../../services/CRUD/modalidades.service';
 import { StorageService } from '../../services/storage.service';
-import { CurpsAprobadasSsasService } from '../../services/CRUD/curps-aprobadas-ssas.service';
+import { CurpsAprobadasSsasService } from '../../services/CRUD/curps-aprobadas-ssas.service'
+import { UtilService } from '../../services/util.service';
 
-export interface AspiranteBeneficio {
-  id: string;
-  name: string;
-  progress: string;
-  fruit: string;
+export interface CurpAprobadaSsas {
+  id: number;
+  curp: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  modulo: string;
+  telefono: string;
+  celular: string;
+  modalidad: string | null;
+  fpu: string | null;
+  created_id: string;
+  updated_id: string | null;
+  deleted_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 @Component({
@@ -53,13 +68,15 @@ export interface AspiranteBeneficio {
   styleUrl: './aprobadas-ssas.component.scss'
 })
 export class AprobadasSsasComponent {
-  displayedColumns: string[] = ['credencializado', 'curp', 'nombre_completo', 'nombre_modalidad', 'modulo', 'fecha_evento', 'email_cajero', 'telefono', 'email', 'fecha_nacimiento', 'estado', 'municipio', 'cp', 'colonia', 'domicilio', 'grado', 'tipo_carrera', 'carrera', 'acciones'];
-  dataSource: MatTableDataSource<AspiranteBeneficio>;
+  displayedColumns: string[] = ['curp', 'nombre', 'apellido_paterno', 'apellido_materno', 'modalidad', 'fpu', 'modulo', 'telefono', 'celular', 'created_at', 'created_id', 'updated_at', 'updated_id', 'acciones'];
+  dataSource: MatTableDataSource<CurpAprobadaSsas>;
 
   modulos: any[] = [];
   modalidades: any[] = [];
-  cajeros: any[] = [];
 
+  editingRow: number | null = null;
+
+  editForm!: FormGroup;
   formConsulta: FormGroup;
 
   rolesConPermiso: number[] = [103, 104];
@@ -73,6 +90,16 @@ export class AprobadasSsasComponent {
   loading: boolean = false;
   generado: boolean = false;
 
+  lblUploadingFile: string = '';
+  documentFileLoaded: boolean = false;
+  documentFile: any = {
+    file: '',
+    archivos: []
+  }
+
+  datosExcel: any[] = [];
+  mensaje: string = '';
+
   readonly dialog = inject(MatDialog);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -81,12 +108,12 @@ export class AprobadasSsasComponent {
     private cdr: ChangeDetectorRef,
     private fb: FormBuilder,
     private networkStatusService: NetworkStatusService,
-    private aspirantesBeneficioService: AspirantesBeneficioService,
     private modulosService: ModulosService,
     private modalidadesService: ModalidadesService,
     private usersService: UsersService,
     private storageService: StorageService,
     private curpsAprobadasSsasService: CurpsAprobadasSsasService,
+    private utilService: UtilService,
   ) {
     this.dataSource = new MatTableDataSource();
 
@@ -97,10 +124,6 @@ export class AprobadasSsasComponent {
       search: '',
       modulo: '',
       modalidad: '',
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      cajero: '',
-      credencializado: ''
     });
   }
 
@@ -112,7 +135,6 @@ export class AprobadasSsasComponent {
     this.getCurpsAprovadasSsas();
     this.getModulos();
     this.getModalidades();
-    this.getCajeros();
   }
 
   ngAfterViewInit() {
@@ -177,20 +199,6 @@ export class AprobadasSsasComponent {
       })
     });
   }
-  getCajeros(): void {
-    this.usersService.getUsers().subscribe({
-      next: ((response) => {
-        if (response.response) {
-          this.cajeros = response.data["usuarios_aspben"];
-        }
-      }),
-      complete: () => {
-        this.cdr.detectChanges();
-      },
-      error: ((error) => {
-      })
-    });
-  }
 
   deleteAspiranteBeneficio(id: number): void {
     Swal.fire({
@@ -202,7 +210,7 @@ export class AprobadasSsasComponent {
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed)
-        this.aspirantesBeneficioService.deleteAspiranteBeneficio(id).subscribe({
+        this.curpsAprobadasSsasService.deleteCurpAprobada(id).subscribe({
           next: ((response) => {
             Swal.fire('Eliminado con éxito!', '', 'success')
             this.getCurpsAprovadasSsas();
@@ -211,26 +219,6 @@ export class AprobadasSsasComponent {
         });
     })
 
-  }
-
-  onRowClick(event: MouseEvent, rowId: number) {
-    // Verifica si el clic se realizó en la celda de acciones
-    const isActionCell = (event.target as HTMLElement).closest('.action-cell');
-
-    // Si no es la celda de acciones, abre el diálogo
-    if (!isActionCell) {
-      this.openDialog(rowId);
-    }
-  }
-
-  openDialog(id: number) {
-    /*
-    this.dialog.open(DialogAspiranteBeneficio, {
-      height: '600px',
-      width: '800px',
-      data: { id: id }
-    });
-    */
   }
 
   get permisoAcciones(): boolean {
@@ -247,17 +235,11 @@ export class AprobadasSsasComponent {
   downloadPdf() {
     const body = this.getBody();
 
-    this.aspirantesBeneficioService.getAspirantesBeneficioAll(body).subscribe(response => {
+    this.curpsAprobadasSsasService.getAll(body).subscribe(response => {
       if (response["response"]) {
         const prepare = response["data"].map((aspirante: any) => {
           return [
-            aspirante.curp,
-            aspirante.nombre_completo,
-            aspirante.nombre_modalidad,
-            aspirante.grado,
-            aspirante.modulo,
-            aspirante.fecha_evento,
-            aspirante.email_cajero
+            aspirante.curp, aspirante.nombre, aspirante.apellido_paterno, aspirante.apellido_materno, aspirante.modalidad, aspirante.fpu, aspirante.modulo, aspirante.telefono, aspirante.celular, aspirante.created_at, aspirante.created_id, aspirante.updated_at, aspirante.updated_id,
           ];
         });
 
@@ -265,13 +247,7 @@ export class AprobadasSsasComponent {
         autoTable(doc, {
           theme: 'grid',
           head: [[
-            "CURP",
-            "Nombre Completo",
-            "Nombre Modalidad",
-            "Grado",
-            "Módulo",
-            "Fecha Evento",
-            "Email Cajero"
+            'CURP', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Modalidad', 'FPU', 'Módulo', 'Teléfono', 'Celular', 'created_at', 'created_id', 'updated_at', 'updated_id'
           ]],
           body: prepare,
           bodyStyles: { fontSize: 8 }
@@ -284,67 +260,23 @@ export class AprobadasSsasComponent {
   downloadExcel() {
     const body = this.getBody();
 
-    this.aspirantesBeneficioService.getAspirantesBeneficioAll(body).subscribe(response => {
+    this.curpsAprobadasSsasService.getAll(body).subscribe(response => {
       if (response["response"]) {
         const prepare = response["data"].map((aspirante: any) => {
           return [
-            aspirante.id,
-            aspirante.id_modalidad,
-            aspirante.curp,
-            aspirante.nombre_completo,
-            aspirante.nombre_modalidad,
-            aspirante.modulo,
-            aspirante.fecha_evento,
-            aspirante.email_cajero,
-            aspirante.telefono,
-            aspirante.email,
-            aspirante.fecha_nacimiento,
-            aspirante.estado,
-            aspirante.municipio,
-            aspirante.ciudad,
-            aspirante.cp,
-            aspirante.colonia,
-            aspirante.tipo_asentamiento,
-            aspirante.tipo_zona,
-            aspirante.domicilio,
-            aspirante.grado,
-            aspirante.tipo_carrera,
-            aspirante.carrera,
-            aspirante.com_obs,
+            aspirante.curp, aspirante.nombre, aspirante.apellido_paterno, aspirante.apellido_materno, aspirante.modalidad, aspirante.fpu, aspirante.modulo, aspirante.telefono, aspirante.celular, aspirante.created_at, aspirante.created_id, aspirante.updated_at, aspirante.updated_id,
           ];
         });
 
         prepare.unshift([
-          "ID",
-          "ID Modalidad",
-          "CURP",
-          "Nombre Completo",
-          "Nombre Modalidad",
-          "Módulo",
-          "Fecha Evento",
-          "Email Cajero",
-          "Teléfono",
-          "Email",
-          "Fecha Nacimiento",
-          "Estado",
-          "Municipio",
-          "Ciudad",
-          "Código Postal",
-          "Colonia",
-          "Tipo Asentamiento",
-          "Tipo Zona",
-          "Domicilio",
-          "Grado",
-          "Tipo Carrera",
-          "Carrera",
-          "Comentarios / Observaciones"
+          'CURP', 'Nombre', 'Apellido paterno', 'Apellido materno', 'Modalidad', 'FPU', 'Módulo', 'Teléfono', 'Celular', 'created_at', 'created_id', 'updated_at', 'updated_id'
         ]);
 
         const worksheet = XLSX.utils.aoa_to_sheet(prepare);
 
         // Crea un libro de trabajo y agrega la hoja
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Aspirantes');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Aprobadas');
 
         // Genera el archivo y lo descarga
         XLSX.writeFile(workbook, `${this.getFileName()}.xlsx`);
@@ -352,8 +284,25 @@ export class AprobadasSsasComponent {
     });
   }
 
+  downloadPlantilla() {
+    const prepare = [
+      [
+        'CURP', 'NOMBRE', 'PATERNO', 'MATERNO', 'TELEFONO', 'CELULAR', 'CELULAR', 'MODALIDAD', 'FPU', 'MODULO'
+      ]
+    ]
+
+    const worksheet = XLSX.utils.aoa_to_sheet(prepare);
+
+    // Crea un libro de trabajo y agrega la hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
+
+    // Genera el archivo y lo descarga
+    XLSX.writeFile(workbook, `plantillaCargaAprobados.xlsx`);
+  }
+
   getFileName(): string {
-    return "Aspirantes";
+    return "CURPs aprobadas SSAS";
   }
 
   getBody(paginated: boolean = false): {
@@ -363,10 +312,6 @@ export class AprobadasSsasComponent {
   } {
     const _modulo = this.formConsulta.get('modulo')?.value,
       _modalidad = this.formConsulta.get('modalidad')?.value,
-      _fechaInicio = this.formConsulta.get('fechaInicio')?.value,
-      _fechaFin = this.formConsulta.get('fechaFin')?.value,
-      _cajero = this.formConsulta.get('cajero')?.value,
-      _credencializado = this.formConsulta.get('credencializado')?.value,
       _search = this.formConsulta.get('search')?.value;
 
     const body: any = {}
@@ -378,10 +323,6 @@ export class AprobadasSsasComponent {
 
     if (_modulo !== "") body['modulo'] = _modulo;
     if (_modalidad !== "") body['modalidad'] = _modalidad;
-    if (_fechaInicio !== null) body['fechaInicio'] = _fechaInicio.toISOString().substring(0, 10);
-    if (_fechaFin !== null) body['fechaFin'] = _fechaFin.toISOString().substring(0, 10);
-    if (_cajero !== "") body['cajero'] = _cajero;
-    if (_credencializado !== "") body['credencializado'] = _credencializado;
     if (_search !== "") body['search'] = _search;
 
     return body;
@@ -394,5 +335,88 @@ export class AprobadasSsasComponent {
 
     // Vuelve a cargar los datos
     this.getCurpsAprovadasSsas();
+  }
+
+  editRow(row: CurpAprobadaSsas) {
+    const dialogRef = this.dialog.open(EditDialogComponent, {
+      width: '500px',
+      data: { row, modulos: this.modulos.map(m => m.nombre), modalidades: this.modalidades.map(m => m.nombre) }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        const index = this.dataSource.data.findIndex(d => d.id === result.id);
+
+        this.curpsAprobadasSsasService.edit(result).subscribe({
+          next: (response) => {
+            if (response.response) {
+              Swal.fire('Actualizado con éxito!', '', 'success');
+              this.dataSource.data[index] = result;
+            } else {
+              Swal.fire('Error', 'No se pudo actualizar el registro', 'error');
+            }
+          },
+          error: (error) => {
+            Swal.fire('Error', 'Ocurrió un error al actualizar el registro', 'error');
+          }
+        })
+      }
+    });
+  }
+
+  // importar curps aprobadas
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    console.log(file, 'file');
+    if (file && (file.type === 'application/vnd.ms-excel' || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')) {
+      this.lblUploadingFile = file.name;
+      this.documentFile.file = file;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(file); // Eliminar esta línea
+      this.documentFileLoaded = true; // Marcar que el archivo ha sido cargado
+
+      this.importarExcel_v2(this.documentFile.file);
+
+    } else {
+      Swal.fire('Error', 'Solo se permiten archivos EXCEL', 'error');
+      this.lblUploadingFile = '';
+      this.documentFile.file = null;
+      // No establecer el valor del campo de entrada de archivo directamente
+      // this.formCita.get('file')?.setValue(null); // Eliminar esta línea
+      this.documentFileLoaded = false; // Marcar que no hay archivo cargado
+    }
+  }
+
+  async importarExcel_v2(file: any) {
+    const archivo = file; //event.target.files[0];
+    if (archivo) {
+      await this.utilService.leerExcel_v2(archivo).then(
+        (response) => {
+          if (response) {
+            console.log('Respuesta del servidor:', response);
+            this.mensaje = 'Datos importados exitosamente.';
+
+            this.datosExcel = [];
+
+            Swal.fire({
+              title: 'Importacion Generada con Éxito !!!',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            console.error('Error al enviar los datos:', response);
+            this.mensaje = 'Hubo un error al importar los datos.';
+            Swal.fire({
+              title: 'Ocurrio un Error en la Importacion',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        }
+      );
+
+    }
   }
 }

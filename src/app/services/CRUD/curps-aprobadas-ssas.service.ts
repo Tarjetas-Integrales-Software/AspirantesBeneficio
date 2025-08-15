@@ -7,12 +7,20 @@ import { DatabaseService } from '../../services/database.service';
 export interface CurpAprobadaSsas {
   id: number;
   curp: string;
-  nombre?: string;
-  paterno?: string;
-  materno?: string;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
   modulo: string;
-  fecha_inicio: string;
-  fecha_fin: string;
+  telefono: string;
+  celular: string;
+  modalidad: string | null;
+  fpu: string | null;
+  created_id: string;
+  updated_id: string | null;
+  deleted_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 @Injectable({
@@ -51,9 +59,11 @@ export class CurpsAprobadasSsasService {
     return of(null);
   }
 
-
-
   deleteCurpAprobada(id: number): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/delete', { id: id });
+  }
+
+  edit(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/edit', { ...body });
   }
 }
