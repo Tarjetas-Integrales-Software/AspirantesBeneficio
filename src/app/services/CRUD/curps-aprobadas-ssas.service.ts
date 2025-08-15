@@ -19,12 +19,20 @@ export interface CurpAprobadaSsas {
   providedIn: 'root'
 })
 export class CurpsAprobadasSsasService {
-
   private http = inject(HttpClient);
+
   constructor(private databaseService: DatabaseService) { }
 
+  getAll(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas_all', { ...body });
+  }
+
+  getPaginated(body: any): Observable<any> {
+    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas_paginated', { ...body });
+  }
+
   BulkInsertCurpAprobadaSsas(curpAprobadaSsas: CurpAprobadaSsas[]): Observable<any> {
-    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/bulk-insert', { registros : curpAprobadaSsas });
+    return this.http.post(environment.apiUrl + '/lic/aspben/curps_aprobadas/bulk-insert', { registros: curpAprobadaSsas });
   }
 
 
