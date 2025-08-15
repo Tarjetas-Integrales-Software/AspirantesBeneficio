@@ -209,25 +209,107 @@ export class FotoComponent implements OnInit {
     }
   }
 
+  /**
+   * Obtiene un mensaje de error personalizado para un campo específico
+   * @param fieldName Nombre del campo del formulario
+   * @param errors Objeto de errores del campo
+   * @returns Mensaje de error amigable para el usuario
+   */
+  private getPersonalizedErrorMessage(fieldName: string, errors: any): string {
+    const fieldDisplayNames: { [key: string]: string } = {
+      'id_modalidad': 'Modalidad',
+      'curp': 'CURP',
+      'nombre': 'Nombre',
+      'apellido_paterno': 'Apellido Paterno',
+      'apellido_materno': 'Apellido Materno',
+      'telefono': 'Teléfono',
+      'fecha_nacimiento': 'Fecha de Nacimiento',
+      'email': 'Correo Electrónico',
+      'municipio': 'Municipio',
+      'cp': 'Código Postal',
+      'colonia': 'Colonia',
+      'domicilio': 'Domicilio',
+      'com_obs': 'Comentarios y Observaciones',
+      'fecha_evento': 'Fecha de Evento'
+    };
+
+    const fieldDisplayName = fieldDisplayNames[fieldName] || fieldName;
+
+    for (const errorType of Object.keys(errors)) {
+      switch (errorType) {
+        case 'required':
+          return `⚠️ El campo "${fieldDisplayName}" es obligatorio.`;
+
+        case 'email':
+          return `📧 Ingrese un correo electrónico válido en "${fieldDisplayName}".`;
+
+        case 'minlength':
+          const minLength = errors[errorType].requiredLength;
+          const actualLength = errors[errorType].actualLength;
+          return `📏 "${fieldDisplayName}" debe tener al menos ${minLength} caracteres (actualmente tiene ${actualLength}).`;
+
+        case 'maxlength':
+          const maxLength = errors[errorType].requiredLength;
+          return `📏 "${fieldDisplayName}" no puede tener más de ${maxLength} caracteres.`;
+
+        case 'pattern':
+          if (fieldName === 'curp') {
+            return `🆔 La CURP ingresada no tiene el formato correcto. Verifique que tenga 18 caracteres y el formato válido.`;
+          }
+          return `❌ El formato de "${fieldDisplayName}" no es válido.`;
+
+        case 'curpBeneficiado':
+          return `⛔ Esta CURP ya cuenta con un beneficio registrado anteriormente.`;
+
+        default:
+          return `❌ Error en "${fieldDisplayName}": ${errorType}`;
+      }
+    }
+
+    return `❌ Error en el campo "${fieldDisplayName}".`;
+  }
+
   mostrarErrores(form: FormGroup) {
-    let errorMessages = '';
+    const errorMessages: string[] = [];
+    let errorCount = 0;
+
     Object.keys(form.controls).forEach(key => {
       const control = form.get(key);
       const controlErrors = control ? control.errors : null;
-      if (controlErrors != null) {
-        Object.keys(controlErrors).forEach(keyError => {
-          const errorMessage = `Error en el control ${key}: ${keyError}, valor: ${controlErrors[keyError]}`;
-          errorMessages += `${errorMessage}\n`;
-        });
+
+      if (controlErrors != null && control?.touched) {
+        errorCount++;
+        const personalizedMessage = this.getPersonalizedErrorMessage(key, controlErrors);
+        errorMessages.push(personalizedMessage);
       }
     });
 
-    if (errorMessages) {
+    if (errorMessages.length > 0) {
+      const title = errorCount === 1
+        ? 'Error en el formulario'
+        : `Errores en el formulario (${errorCount})`;
+
+      const htmlContent = `
+        <div style="text-align: left; line-height: 1.6;">
+          <p style="margin-bottom: 15px; color: #d32f2f;">
+            <strong>Por favor, corrija ${errorCount === 1 ? 'el siguiente error' : 'los siguientes errores'}:</strong>
+          </p>
+          <ul style="margin: 0; padding-left: 20px;">
+            ${errorMessages.map(msg => `<li style="margin-bottom: 8px;">${msg}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
       Swal.fire({
-        title: 'Errores en el formulario',
-        text: errorMessages,
+        title: title,
+        html: htmlContent,
         icon: 'error',
-        confirmButtonText: 'Aceptar'
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#d32f2f',
+        width: '500px',
+        customClass: {
+          htmlContainer: 'text-left'
+        }
       });
     }
   }
