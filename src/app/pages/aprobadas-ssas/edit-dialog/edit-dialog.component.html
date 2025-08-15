@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Editar registro</h2>
+<mat-dialog-content>
+    <form [formGroup]="form">
+        <mat-form-field class="w-full">
+            <mat-label>CURP</mat-label>
+            <input matInput formControlName="curp">
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre">
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Apellido Paterno</mat-label>
+            <input matInput formControlName="apellido_paterno">
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Módulo</mat-label>
+            <mat-select formControlName="modulo">
+                @for (modulo of data.modulos; track modulo) {
+                <mat-option [value]="modulo">{{modulo}}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Modalidad</mat-label>
+            <mat-select formControlName="modalidad">
+                @for (modalidad of data.modalidades; track modalidad) {
+                <mat-option [value]="modalidad">{{modalidad}}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="telefono">
+        </mat-form-field>
+
+        <mat-form-field class="w-full">
+            <mat-label>Celular</mat-label>
+            <input matInput formControlName="celular">
+        </mat-form-field>
+    </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="save()">Guardar</button>
+</mat-dialog-actions>
