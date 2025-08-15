@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild, ElementRef, AfterViewInit, DestroyRef } from '@angular/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatInput, MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,14 +24,15 @@ import { Aspirante, AspirantesBeneficioService } from '../../../../services/CRUD
 import { GradosService } from '../../../../services/CRUD/grados.service';
 import { TiposCarrerasService } from '../../../../services/CRUD/tipos-carreras.service';
 import { CarrerasService } from '../../../../services/CRUD/carreras.service';
-import { catchError, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, map, Observable, of, switchMap, from } from 'rxjs';
 import { CurpPrevioRegisto, CurpsRegistradasService } from '../../../../services/CRUD/curps-registradas.service';
 import Swal from 'sweetalert2';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ConfiguracionesService } from '../../../../services/CRUD/configuraciones.service';
-import { tap } from 'rxjs/operators';
+import { tap, finalize } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'datosGeneralesComponent',
@@ -112,6 +113,7 @@ export class DatosGeneralesComponent implements OnInit {
   filteredOptions: any[] = [];
 
   private lastCurpAutoFilled?: string;
+  private destroyRef = inject(DestroyRef)
 
   constructor(private networkStatusService: NetworkStatusService
     , private codigosPostalesService: CodigosPostalesService
@@ -128,7 +130,7 @@ export class DatosGeneralesComponent implements OnInit {
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['BADN980406HJCSVS', [
+    curp: ['', [
       Validators.required,
       Validators.minLength(18),
       Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
@@ -149,6 +151,7 @@ export class DatosGeneralesComponent implements OnInit {
     tipo_carrera: ['',],
     carrera: ['',],
     com_obs: ['', [Validators.maxLength(500)]],
+    fecha_evento: [''],
   });
 
   filter(): void {
@@ -341,9 +344,23 @@ export class DatosGeneralesComponent implements OnInit {
 
       this.activatedRoute.params
         .pipe(
-          switchMap(({ id }) => this.aspirantesBeneficioService.getAspiranteBeneficioId(id)),
-        ).subscribe(aspirante => {
-          debugger
+          tap(() => {
+            Swal.fire({
+              title: 'Cargando datos...',
+              html: 'Por favor, espera.',
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              didOpen: () => { Swal.showLoading(); }
+            });
+          }),
+          switchMap(({ id }) =>
+            this.aspirantesBeneficioService.getAspiranteBeneficioId(+id).pipe(
+              finalize(() => Swal.close())
+            )
+          ),
+        )
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(aspirante => {
           this.editAspirante = aspirante.data;
 
           if (!aspirante) {
@@ -359,22 +376,22 @@ export class DatosGeneralesComponent implements OnInit {
           const selectedModalidad = this.modalidades.find(modalidad => modalidad.id === parseInt(aspirante.data.id_modalidad, 10));
           const selectedCP = this.allCodigosPostales.find(cp => cp.cp === aspirante.data.cp);
 
-          this.getCodigosPostales({ municipio: aspirante.data.municipio });
+          this.getCodigosPostales({ municipio: aspirante.data.municipio }).subscribe();
 
           // Establecer los campos correspondientes en el formulario
           this.myForm.reset({
             ...aspirante.data,
+            fecha_evento: aspirante.data.fecha_evento ? this.parseLocalDate(aspirante.data.fecha_evento) : '',
             nombre: (aspirante.data.nombre || nombre).toUpperCase(),
             apellido_paterno: (aspirante.data.apellido_paterno || apellido_paterno).toUpperCase(),
             apellido_materno: (aspirante.data.apellido_materno || apellido_materno).toUpperCase(),
-            fecha_nacimiento: aspirante.data.fecha_nacimiento ? new Date(aspirante.data.fecha_nacimiento + 'T00:00:00') : '',
+            fecha_nacimiento: aspirante.data.fecha_nacimiento ? this.parseLocalDate(aspirante.data.fecha_nacimiento) : '',
             grado: selectedGrado ? selectedGrado.id : '',
             tipo_carrera: selectedTipoCarrera ? selectedTipoCarrera.id : '',
             carrera: selectedCarrera ? selectedCarrera.nombre : '',
             id_modalidad: selectedModalidad ? parseInt(selectedModalidad.id, 10) : '',
             cp: aspirante.data.cp
           });
-
           return;
         });
     }
@@ -463,18 +480,43 @@ export class DatosGeneralesComponent implements OnInit {
       .catch((error) => console.error('Error al obtener municipios:', error));
   }
 
-  async getCodigosPostales(params: { municipio?: string }): Promise<void> {
+  /**
+   * Obtiene códigos postales filtrados por municipio y actualiza las listas locales
+   * @param params Parámetros de filtrado, principalmente municipio
+   * @returns Observable<void> para manejar la subscripción externamente
+   */
+  getCodigosPostales(params: { municipio?: string }): Observable<void> {
     const { municipio } = params;
 
-    await this.codigosPostalesService.consultarCodigosPostales({ municipio }).then(codigos => {
-      this.allCodigosPostales = codigos;
-    }).catch(error => {
-      console.error('Error al consultar códigos postales:', error);
-    });
+    return this.codigosPostalesService.consultarCodigosPostales({ municipio }).pipe(
+      tap((codigos: any[]) => {
+        // Guardar todos los códigos postales obtenidos
+        this.allCodigosPostales = codigos;
 
-    this.codigosPostales = Array.from(new Set(this.allCodigosPostales.map(cp => cp.cp))).map(cp => {
-      return this.allCodigosPostales.find(item => item.cp === cp);
-    });
+        // Crear lista única de códigos postales sin duplicados
+        // Optimización: Usar Map para mejor performance en listas grandes
+        const uniqueCPs = new Map<string, any>();
+        codigos.forEach(item => {
+          if (!uniqueCPs.has(item.cp)) {
+            uniqueCPs.set(item.cp, item);
+          }
+        });
+
+        this.codigosPostales = Array.from(uniqueCPs.values()).sort((a, b) => a.cp.localeCompare(b.cp));
+
+        console.log(`Códigos postales cargados: ${this.codigosPostales.length} únicos de ${codigos.length} totales`);
+      }),
+      map(() => void 0), // Mantener signatura void
+      catchError(error => {
+        console.error('Error al consultar códigos postales:', error);
+
+        // Limpiar datos en caso de error
+        this.allCodigosPostales = [];
+        this.codigosPostales = [];
+
+        return of(void 0);
+      })
+    );
   }
 
   getColoniasByCP(): void {
@@ -501,6 +543,55 @@ export class DatosGeneralesComponent implements OnInit {
       this.tipoAsentamiento = selectedColonia.tipo_asentamiento;
       this.tipoZona = selectedColonia.tipo_zona;
     }
+  }
+
+  onMunicipioChange(municipio: string): void {
+    this.getCodigosPostales({ municipio }).subscribe();
+  }
+
+  /**
+   * Método mejorado para cargar códigos postales con caché
+   * Evita consultas innecesarias si ya se tiene la información
+   */
+  loadCodigosPostalesWithCache(municipio: string): Observable<void> {
+    // Si no hay municipio, limpiar listas
+    if (!municipio) {
+      this.codigosPostales = [];
+      this.allCodigosPostales = [];
+      return of(void 0);
+    }
+
+    // Verificar si ya tenemos datos para este municipio
+    const hasDataForMunicipio = this.allCodigosPostales.some(cp =>
+      cp.municipio && cp.municipio.toLowerCase().includes(municipio.toLowerCase())
+    );
+
+    if (hasDataForMunicipio) {
+      // Filtrar los datos existentes
+      const filteredData = this.allCodigosPostales.filter(cp =>
+        cp.municipio && cp.municipio.toLowerCase().includes(municipio.toLowerCase())
+      );
+
+      this.updateCodigosPostalesList(filteredData);
+      return of(void 0);
+    }
+
+    // Si no hay datos en caché, hacer la consulta usando el método Observable
+    return this.getCodigosPostales({ municipio });
+  }
+
+  /**
+   * Método utilitario para actualizar la lista de códigos postales
+   */
+  private updateCodigosPostalesList(codigos: any[]): void {
+    const uniqueCPs = new Map<string, any>();
+    codigos.forEach(item => {
+      if (!uniqueCPs.has(item.cp)) {
+        uniqueCPs.set(item.cp, item);
+      }
+    });
+
+    this.codigosPostales = Array.from(uniqueCPs.values()).sort((a, b) => a.cp.localeCompare(b.cp));
   }
 
   syncDataBase(): void {
@@ -561,13 +652,18 @@ export class DatosGeneralesComponent implements OnInit {
     const selectedGrado = this.grados.find(grado => grado.id === this.myForm.get('grado')?.value);
     const selectedTipoCarrera = this.tipos_carreras.find(tipoCarrera => tipoCarrera.id === this.myForm.get('tipo_carrera')?.value);
 
+    const nombreCompleto = `${this.myForm.get('nombre')?.value} ${this.myForm.get('apellido_paterno')?.value} ${this.myForm.get('apellido_materno')?.value}`.trim();
+
     return {
       ...this.myForm.value,
       id: this.editAspirante.id,
       curp: this.editAspirante.curp,
-      nombres: this.myForm.get('nombres')?.value.toUpperCase(),
+      nombre_completo: nombreCompleto.toUpperCase(),
+      nombre: this.myForm.get('nombres')?.value.toUpperCase(),
+      apellido_paterno: this.myForm.get('apellido_paterno')?.value.toUpperCase(),
+      apellido_materno: this.myForm.get('apellido_materno')?.value.toUpperCase(),
       fecha_nacimiento: this.formatDate(this.myForm.get('fecha_nacimiento')?.value),
-      fecha_evento: this.editAspirante.fecha_evento,
+      fecha_evento: this.formatDate(this.myForm.get('fecha_evento')?.value),
       estado: 'Jalisco',
       municipio: this.myForm.get('municipio')?.value,
       ciudad: this.myForm.get('municipio')?.value,
@@ -622,7 +718,12 @@ export class DatosGeneralesComponent implements OnInit {
   toUpperCaseName(event: Event): void {
     const input = event.target as HTMLInputElement;
     input.value = input.value.toUpperCase();
-    this.myForm.get('nombreCompleto')?.setValue(input.value);
+
+    // Obtener el nombre del FormControl desde el atributo formControlName
+    const formControlName = input.getAttribute('formcontrolname');
+    if (formControlName) {
+      this.myForm.get(formControlName)?.setValue(input.value);
+    }
   }
 
   capitalizeWords(event: Event): void {
