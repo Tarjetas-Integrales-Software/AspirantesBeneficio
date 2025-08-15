@@ -55,6 +55,7 @@ export class FotoComponent implements OnInit {
     archivos: []
   }
   habilitarSubirDocumento: string = '';
+  prevFotoId: number | null = null;
 
   ngOnInit() {
     this.getAvailableCameras()
@@ -372,7 +373,17 @@ export class FotoComponent implements OnInit {
           created_at: formattedFecha
         };
 
-        return from(this.aspirantesBeneficioService.crearAspirante(form)).pipe(
+        // Verificar si la CURP ya existe en la base de datos local antes de crear el aspirante
+        return from(this.aspirantesBeneficioService.consultarAspirantePorCurpDbLocal(form.curp)).pipe(
+          concatMap((existingAspirante) => {
+            if (existingAspirante) {
+              // Si ya existe un aspirante con esta CURP, lanzar un error específico
+              throw new Error(`La CURP ${form.curp} ya está registrada en la base de datos local.`);
+            }
+
+            // Si no existe, proceder con la creación del aspirante
+            return from(this.aspirantesBeneficioService.crearAspirante(form));
+          }),
           concatMap(() => this.aspirantesBeneficioService.getLastId()),
           tap(id => aspiranteCreado = id),
           concatMap(() => this.fotosService.crearFotoLocal(fotoData)),
