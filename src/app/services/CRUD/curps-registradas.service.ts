@@ -62,55 +62,55 @@ export class CurpsRegistradasService {
     return this.http.get(environment.apiUrl + '/lic/aspben/curps_registradas');
   }
 
-async syncLocalDataBase(datos: string[]): Promise<void> {
-  // 0) Normaliza y deduplica lo que viene del servicio
-  const incomingSet = new Set(
-    (datos || [])
-      .filter(Boolean)
-      .map(c => c.trim().toUpperCase())
-  );
+  async syncLocalDataBase(datos: string[]): Promise<void> {
+    // 0) Normaliza y deduplica lo que viene del servicio
+    const incomingSet = new Set(
+      (datos || [])
+        .filter(Boolean)
+        .map(c => c.trim().toUpperCase())
+    );
 
-  // Si deseas que un array vacío deje la tabla vacía, mantenlo así:
-  const wipeAll = incomingSet.size === 0;
+    // Si deseas que un array vacío deje la tabla vacía, mantenlo así:
+    const wipeAll = incomingSet.size === 0;
 
-  // 1) Transacción
-  await this.databaseService.execute('BEGIN IMMEDIATE');
-  try {
-    // 2) Cargar existentes
-    const existingRows = await this.databaseService.query(`
+    // 1) Transacción
+    await this.databaseService.execute('BEGIN IMMEDIATE');
+    try {
+      // 2) Cargar existentes
+      const existingRows = await this.databaseService.query(`
       SELECT curp FROM cat_curps_registradas
     `);
 
-    // Preparar statements (si tu wrapper no soporta prepare, deja execute directo)
-    const insertSQL = `INSERT OR IGNORE INTO cat_curps_registradas (curp) VALUES (?)`;
-    const deleteSQL = `DELETE FROM cat_curps_registradas WHERE curp = ?`;
+      // Preparar statements (si tu wrapper no soporta prepare, deja execute directo)
+      const insertSQL = `INSERT OR IGNORE INTO cat_curps_registradas (curp) VALUES (?)`;
+      const deleteSQL = `DELETE FROM cat_curps_registradas WHERE curp = ?`;
 
-    // 3) Insertar faltantes
-    for (const curp of incomingSet) {
-      await this.databaseService.execute(insertSQL, [curp]);
-    }
+      // 3) Insertar faltantes
+      for (const curp of incomingSet) {
+        await this.databaseService.execute(insertSQL, [curp]);
+      }
 
-    // 4) Eliminar los que no llegaron
-    if (wipeAll) {
-      await this.databaseService.execute(`DELETE FROM cat_curps_registradas`);
-    } else {
-      // Compara usando una versión normalizada para pertenencia,
-      // pero borra usando el valor exacto que está en la DB
-      for (const row of existingRows) {
-        const storedRaw = String(row.curp ?? '');
-        const storedNorm = storedRaw.trim().toUpperCase();
-        if (!incomingSet.has(storedNorm)) {
-          await this.databaseService.execute(deleteSQL, [storedRaw]);
+      // 4) Eliminar los que no llegaron
+      if (wipeAll) {
+        await this.databaseService.execute(`DELETE FROM cat_curps_registradas`);
+      } else {
+        // Compara usando una versión normalizada para pertenencia,
+        // pero borra usando el valor exacto que está en la DB
+        for (const row of existingRows) {
+          const storedRaw = String(row.curp ?? '');
+          const storedNorm = storedRaw.trim().toUpperCase();
+          if (!incomingSet.has(storedNorm)) {
+            await this.databaseService.execute(deleteSQL, [storedRaw]);
+          }
         }
       }
-    }
 
-    await this.databaseService.execute('COMMIT');
-  } catch (e) {
-    await this.databaseService.execute('ROLLBACK');
-    throw e;
+      await this.databaseService.execute('COMMIT');
+    } catch (e) {
+      await this.databaseService.execute('ROLLBACK');
+      throw e;
+    }
   }
-}
 
 
   async consultarCurpsRegistradas(): Promise<any[]> {

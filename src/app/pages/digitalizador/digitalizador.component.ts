@@ -1136,7 +1136,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     } else this.crearCaratula([curp]);
   }
 
-  async crearCaratula(caratulas: string[]): Promise<void> {
+  async crearCaratula(caratulas: string[], fechaExpediente: string): Promise<void> {
     if (this.imprimiendo) return;
 
     this.imprimiendo = true;
@@ -1192,14 +1192,14 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const pageWidth = doc.internal.pageSize.getWidth();
     const centerX = (pageWidth - qrWidth) / 2;
 
-    for (const cita of caratulas) {
-      doc.text(cita, 50, 40);
+    for (const curpCita of caratulas) {
+      doc.text(curpCita, 50, 40);
 
       // Agregar QR centrado
       if (Boolean(qr)) {
         try {
-          const qrUrl = await QRCode.toDataURL(cita);
-          doc.addImage(qrUrl, 'PNG', centerX, 70, qrWidth, qrWidth, cita, 'FAST', 0);
+          const qrUrl = await QRCode.toDataURL(curpCita);
+          doc.addImage(qrUrl, 'PNG', centerX, 70, qrWidth, qrWidth, curpCita, 'FAST', 0);
         } catch (err) {
           console.error('Error generando QR:', err);
         }
@@ -1209,7 +1209,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       if (Boolean(barras)) {
         try {
           const canvas = document.createElement('canvas');
-          JsBarcode(canvas, cita, {
+          JsBarcode(canvas, curpCita + '_' + fechaExpediente, {
             format: 'CODE128',
             displayValue: false,
             width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px

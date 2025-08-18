@@ -223,28 +223,31 @@
 
             <form [formGroup]="formCaratula" class="form busqueda__form mt-3">
               <div class="form__row">
-                <mat-form-field class="w-full">
-                  <mat-label>Impresora</mat-label>
-                  <mat-select class="w-full" formControlName="impresora">
-                    <mat-option class="w-full" *ngFor="let impresora of printers" [value]="impresora.name">{{
-                      impresora.name
-                      }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Impresora</mat-label>
+                    <mat-select class="w-full" formControlName="impresora">
+                      <mat-option class="w-full" *ngFor="let impresora of printers" [value]="impresora.name">{{
+                        impresora.name
+                        }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Fecha expediente</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="fecha">
+                    <mat-hint>DD/MM/YYYY</mat-hint>
+                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                  </mat-form-field>
+                </div>
               </div>
 
               <mat-tab-group (selectedIndexChange)="activeTab = $event">
                 <mat-tab label="Automática">
                   <div class="form__row mt-2">
-                    <div class="form__item">
-                      <mat-form-field class="w-full">
-                        <mat-label>Fecha</mat-label>
-                        <input matInput [matDatepicker]="picker" formControlName="fecha">
-                        <mat-hint>DD/MM/YYYY</mat-hint>
-                        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                        <mat-datepicker #picker></mat-datepicker>
-                      </mat-form-field>
-                    </div>
                     <div class="form__item">
                       <mat-form-field class="w-full">
                         <mat-label>Módulo</mat-label>
