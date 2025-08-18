@@ -691,7 +691,6 @@ export class DatosGeneralesComponent implements OnInit {
     this.myForm.get('carrera')?.disable();
   }
 
-
   onSafe() {
     this.myForm.markAsUntouched();
   }
