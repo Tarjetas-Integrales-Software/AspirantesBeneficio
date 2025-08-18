@@ -130,23 +130,23 @@ export class DatosGeneralesComponent implements OnInit {
 
   myForm: FormGroup = this.fb.group({
     id_modalidad: ['', [Validators.required, Validators.minLength(5)]],
-    curp: ['BADN980406HJCSVS', [
+    curp: ['', [
       Validators.required,
       Validators.minLength(18),
       Validators.pattern(/^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/)
     ], this.editar ? null : this.curpAsyncValidator.bind(this)],
-    nombre: ['NESTOR', [Validators.required, Validators.minLength(1)]],
-    apellido_paterno: ['BASAVE', [Validators.required, Validators.minLength(1)]],
-    apellido_materno: ['DAVALOS', [Validators.required, Validators.minLength(1)]],
-    telefono: ['3323724897', [Validators.required, Validators.minLength(10)]],
+    nombre: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_paterno: ['', [Validators.required, Validators.minLength(1)]],
+    apellido_materno: ['', [Validators.required, Validators.minLength(1)]],
+    telefono: ['', [Validators.required, Validators.minLength(10)]],
     fecha_nacimiento: ['', [Validators.required, Validators.minLength(10)]],
-    email: ['PRUEBA@GMAIL.COM',],
+    email: ['',],
     municipio: ['', [Validators.required, Validators.minLength(2)]],
     cp: ['', [Validators.required, Validators.minLength(5)]],
     colonia: ['', [Validators.required, Validators.minLength(2)]],
     tipo_zona: ['',],
     tipo_asentamiento: ['',],
-    domicilio: ['prueba sync a bd local', [Validators.required, Validators.minLength(5), Validators.maxLength(1000)]],
+    domicilio: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(1000)]],
     grado: ['',],
     tipo_carrera: ['',],
     carrera: ['',],
