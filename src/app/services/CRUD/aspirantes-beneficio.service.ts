@@ -185,8 +185,6 @@ export class AspirantesBeneficioService {
   // Crear un nuevo aspirante
   async crearAspirante(aspirante: Aspirante): Promise<any> {
     await this.ensureTableSchema();
-    const curpRegistrada = await this.curpsRegistradasService.existeCurp(aspirante.curp);
-    if (curpRegistrada) return;
 
     let nombre_completo = (this.buildNombreCompleto(aspirante) || '').trim();
     if (!nombre_completo) {
@@ -267,15 +265,6 @@ export class AspirantesBeneficioService {
     }
   }
 
-  // Versión en Observable para obtener el último id (paridad con otros servicios)
-  getLastIdObservable(): Observable<number> {
-    return new Observable<number>(observer => {
-      const sql = `SELECT id FROM ct_aspirantes_beneficio ORDER BY id DESC LIMIT 1`;
-      this.databaseService.query(sql)
-        .then(result => { observer.next(result.length ? result[0].id : 0); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
-  }
 
   async editarAspirante(aspirante: Aspirante): Promise<any> {
     try {
@@ -298,15 +287,5 @@ export class AspirantesBeneficioService {
     const params = [curp];
     const resultados = await this.databaseService.query(sql, params);
     return resultados.length > 0 ? resultados[0] : null;
-  }
-
-  // Rollback de aspirante: elimina el registro local por id (uso transaccional)
-  rollbackAspirante(id: number): Observable<void> {
-    return new Observable<void>(observer => {
-      const sql = 'DELETE FROM ct_aspirantes_beneficio WHERE id = ?';
-      this.databaseService.execute(sql, [id])
-        .then(() => { observer.next(); observer.complete(); })
-        .catch(err => { console.error(`Error en rollback de aspirante ${id}:`, err); observer.error(err); });
-    });
   }
 }
