@@ -12,8 +12,8 @@ export class FotosService {
 
   constructor(private databaseService: DatabaseService) { }
 
-  // Crear una nueva foto (Observable)
-  crearFotoLocal(foto: {
+  // Crear una nueva foto
+  async crearFoto(foto: {
     id_status: number;
     fecha: string;
     tipo: string;
@@ -23,66 +23,103 @@ export class FotosService {
     extension: string;
     created_id: number;
     created_at: string;
-  }): Observable<any> {
-    return new Observable(observer => {
-      const sql = `
-        INSERT OR REPLACE INTO ct_fotos (
-          id_status, fecha, tipo, archivo, path, archivoOriginal, extension, created_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-      `;
-      const params = [
-        foto.id_status, foto.fecha, foto.tipo, foto.archivo, foto.path,
-        foto.archivoOriginal, foto.extension, foto.created_id, foto.created_at,
-      ];
-      this.databaseService.execute(sql, params)
-        .then(res => { observer.next(res); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+  }): Promise<any> {
+    const sql = `
+      INSERT OR REPLACE INTO ct_fotos (
+        id_status, fecha, tipo, archivo, path, archivoOriginal, extension, created_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `;
+    const params = [
+      foto.id_status,
+      foto.fecha,
+      foto.tipo,
+      foto.archivo,
+      foto.path,
+      foto.archivoOriginal,
+      foto.extension,
+      foto.created_id,
+      foto.created_at,
+    ];
+
+    return await this.databaseService.execute(sql, params);
   }
 
   createFoto(foto: Object): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/fotos/register', { ...foto });
   }
 
-  // Reemplazar métodos async por observables
-  consultarFotos(): Observable<any[]> {
-    return new Observable(observer => {
-      const sql = 'SELECT * FROM ct_fotos ORDER BY created_at DESC;';
-      this.databaseService.query(sql)
-        .then(rows => { observer.next(rows); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+
+  async consultarFotoPorId(id: number): Promise<any> {
+    const sql = 'SELECT * FROM ct_fotos WHERE id = ?;';
+    const params = [id];
+    const resultados = await this.databaseService.query(sql, params);
+    return resultados.length > 0 ? resultados[0] : null;
+
   }
 
-  consultarFotoPorId(id: number): Observable<any> {
-    return new Observable(observer => {
-      const sql = 'SELECT * FROM ct_fotos WHERE id = ?;';
-      this.databaseService.query(sql, [id])
-        .then(rows => { observer.next(rows.length > 0 ? rows[0] : null); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
-  }
+  // Actualizar una foto
+  async actualizarFoto(
+    id: number,
+    foto: {
+      id_status?: number;
+      fecha?: string;
+      tipo?: string;
+      archivo?: string;
+      path?: string;
+      archivoOriginal?: string;
+      extension?: string;
+      updated_id?: number;
+      updated_at?: string;
+    }
+  ): Promise<any> {
+    const campos = [];
+    const params = [];
 
-  actualizarFoto(id: number, foto: { id_status?: number; fecha?: string; tipo?: string; archivo?: string; path?: string; archivoOriginal?: string; extension?: string; updated_id?: number; updated_at?: string; }): Observable<any> {
-    return new Observable(observer => {
-      const campos: string[] = []; const params: any[] = [];
-      const push = (campo: string, valor: any) => { campos.push(campo + ' = ?'); params.push(valor); };
-      if (foto.id_status !== undefined) push('id_status', foto.id_status);
-      if (foto.fecha !== undefined) push('fecha', foto.fecha);
-      if (foto.tipo !== undefined) push('tipo', foto.tipo);
-      if (foto.archivo !== undefined) push('archivo', foto.archivo);
-      if (foto.path !== undefined) push('path', foto.path);
-      if (foto.archivoOriginal !== undefined) push('archivoOriginal', foto.archivoOriginal);
-      if (foto.extension !== undefined) push('extension', foto.extension);
-      if (foto.updated_id !== undefined) push('updated_id', foto.updated_id);
-      if (foto.updated_at !== undefined) push('updated_at', foto.updated_at);
-      if (!campos.length) { observer.error('No se proporcionaron campos para actualizar.'); return; }
-      const sql = `UPDATE ct_fotos SET ${campos.join(', ')} WHERE id = ?;`;
-      params.push(id);
-      this.databaseService.execute(sql, params)
-        .then(res => { observer.next(res); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+    if (foto.id_status !== undefined) {
+      campos.push('id_status = ?');
+      params.push(foto.id_status);
+    }
+    if (foto.fecha !== undefined) {
+      campos.push('fecha = ?');
+      params.push(foto.fecha);
+    }
+    if (foto.tipo !== undefined) {
+      campos.push('tipo = ?');
+      params.push(foto.tipo);
+    }
+    if (foto.archivo !== undefined) {
+      campos.push('archivo = ?');
+      params.push(foto.archivo);
+    }
+    if (foto.path !== undefined) {
+      campos.push('path = ?');
+      params.push(foto.path);
+    }
+    if (foto.archivoOriginal !== undefined) {
+      campos.push('archivoOriginal = ?');
+      params.push(foto.archivoOriginal);
+    }
+    if (foto.extension !== undefined) {
+      campos.push('extension = ?');
+      params.push(foto.extension);
+    }
+    if (foto.updated_id !== undefined) {
+      campos.push('updated_id = ?');
+      params.push(foto.updated_id);
+    }
+    if (foto.updated_at !== undefined) {
+      campos.push('updated_at = ?');
+      params.push(foto.updated_at);
+    }
+
+    if (campos.length === 0) {
+      throw new Error('No se proporcionaron campos para actualizar.');
+    }
+
+    const sql = `UPDATE ct_fotos SET ${campos.join(', ')} WHERE id = ?;`;
+    params.push(id);
+
+    return await this.databaseService.execute(sql, params);
   }
 
   deleteFoto(id: number): Observable<any> {
@@ -96,55 +133,58 @@ export class FotosService {
     return await this.databaseService.execute(sql, params);
   }
 
-  getLastIdObservable(): Observable<number> { // única versión
-    return new Observable(observer => {
+  async getLastId(): Promise<number | null> {
+    try {
+      // Consulta SQL para obtener el último id
       const sql = `SELECT id FROM ct_fotos ORDER BY id DESC LIMIT 1`;
-      this.databaseService.query(sql)
-        .then(result => { observer.next(result.length ? result[0].id : 0); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+
+      // Usar query en lugar de execute
+      const result = await this.databaseService.query(sql);
+
+      // Extraer el id si existe, si no, devolver null
+      return result.length > 0 ? result[0].id : null;
+    } catch (error) {
+      console.error('Error al obtener el último id:', error);
+      throw error; // Relanzar el error para manejarlo en el llamador
+    }
   }
 
   getAspiranteFotoId(id: string): Observable<any> {
     return this.http.post(environment.apiUrl + '/lic/aspben/obtener-ruta-foto', { id_foto_aspben: id });
   }
 
-  registerPhoto(aspirante: any, foto: any): Observable<any> {
-    return new Observable(observer => {
-      const { archivo, fecha, tipo } = foto;
-      const { id, curp } = aspirante;
-      this.getImageFromMainProcess(curp, 'imagenesBeneficiarios').subscribe({
-        next: (imageData) => {
-          const formData = new FormData();
-          formData.append('fecha', fecha);
-          formData.append('tipo', tipo);
-          formData.append('curp', curp);
-            formData.append('id_aspirante_beneficio', id.toString());
-          const blob = new Blob([imageData], { type: 'image/webp' });
-          formData.append('file', blob, archivo);
-          this.http.post(environment.apiUrl + '/lic/aspben/registrar-foto', formData, { headers: new HttpHeaders({ 'Accept': 'application/json' }) })
-            .subscribe({ next: r => { observer.next(r); observer.complete(); }, error: e => observer.error(e) });
-        },
-        error: e => observer.error(e)
-      });
-    });
+  async registerPhoto(aspirante: any, foto: any) {
+    // Leer la imagen desde el main process
+    const { archivo, fecha, tipo } = foto;
+    const { id, curp } = aspirante;
+
+    const imageData = await this.getImageFromMainProcess(curp, 'imagenesBeneficiarios');
+
+    // Crear el FormData
+    const formData = new FormData();
+    formData.append('fecha', fecha);
+    formData.append('tipo', tipo);
+    formData.append('curp', curp);
+    formData.append('id_aspirante_beneficio', id.toString());
+
+    // Convertir el buffer a un archivo Blob
+    const blob = new Blob([imageData], { type: 'image/webp' });
+    formData.append('file', blob, archivo);
+
+    // Enviar la petición POST
+    return this.http.post(environment.apiUrl + '/lic/aspben/registrar-foto', formData, {
+      headers: new HttpHeaders({
+        'Accept': 'application/json'
+      })
+    }).toPromise();
   }
 
-  private getImageFromMainProcess(imageName: string, path: string): Observable<ArrayBuffer> {
-    return new Observable(observer => {
-      if (!window.electronAPI) { observer.error('Electron API no disponible'); return; }
-      window.electronAPI.getImage(imageName, path)
-        .then((data: ArrayBuffer) => { observer.next(data); observer.complete(); })
-        .catch(err => observer.error(err));
-    });
+  private getImageFromMainProcess(imageName: string, path: string): Promise<ArrayBuffer> {
+    if (!window.electronAPI) {
+      return Promise.reject('Electron API no disponible');
+    }
+
+    return window.electronAPI.getImage(imageName, path);
   }
 
-  rollbackFoto(id: number): Observable<void> {
-    return new Observable<void>(observer => {
-      const sql = 'DELETE FROM ct_fotos WHERE id = ?';
-      this.databaseService.execute(sql, [id])
-        .then(() => { observer.next(); observer.complete(); })
-        .catch(err => { console.error(`Error rollback foto ${id}:`, err); observer.error(err); });
-    });
-  }
 }
