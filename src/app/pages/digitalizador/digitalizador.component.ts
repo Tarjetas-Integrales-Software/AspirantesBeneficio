@@ -1133,7 +1133,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         },
         error: err => console.error('Error:', err)
       });
-    } else this.crearCaratula([curp]);
+    } else this.crearCaratula([curp], fecha.toISOString().substring(0, 10));
   }
 
   async crearCaratula(caratulas: string[], fechaExpediente: string): Promise<void> {
@@ -1142,8 +1142,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.imprimiendo = true;
 
     if (!window.electronAPI) {
-      throw new Error('Funcionalidad de impresión solo disponible en Electron');
       this.imprimiendo = false;
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
     }
 
     if (caratulas.length === 0) {
@@ -1178,57 +1178,42 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     const doc = new jsPDF();
 
+    // Constantes de layout
+    const qrSize = 30;
+    const bigQrSize = 70;
     const pageHeight = doc.internal.pageSize.getHeight();
-    const marginBottom = 30;
-    const marginEnd = 15;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginY = 30;
+    const marginX = 15;
+    const centerX = (pageWidth - bigQrSize) / 2;
+    const endPositionY = pageHeight - qrSize - marginY;
 
     doc.setFontSize(28);
-
-    // Constantes de layout
-    const qrWidth = 70;
-    const barcodeWidth = qrWidth;
-    const barcodeHeight = 20;
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const centerX = (pageWidth - qrWidth) / 2;
 
     for (const curpCita of caratulas) {
       doc.text(curpCita, 50, 40);
 
-      // Agregar QR centrado
       if (Boolean(qr)) {
         try {
-          const qrUrl = await QRCode.toDataURL(curpCita);
-          doc.addImage(qrUrl, 'PNG', centerX, 70, qrWidth, qrWidth, curpCita, 'FAST', 0);
+          const qrCurp = await QRCode.toDataURL(curpCita);
+          doc.addImage(qrCurp, 'PNG', centerX, 70, bigQrSize, bigQrSize, curpCita, 'FAST', 0);
+          doc.addImage(qrCurp, 'PNG', marginX, endPositionY, qrSize, qrSize, curpCita, 'FAST', 0);
+        } catch (err) {
+          console.error('Error generando QR:', err);
+        }
+
+        try {
+          const qrFechaExpediente = await QRCode.toDataURL(fechaExpediente);
+          doc.addImage(qrFechaExpediente, 'PNG', pageWidth - qrSize - marginX, endPositionY, qrSize, qrSize, fechaExpediente, 'FAST', 0);
+          doc.setFontSize(10);
+          doc.text(fechaExpediente, pageWidth - qrSize - marginX + 5, endPositionY);
         } catch (err) {
           console.error('Error generando QR:', err);
         }
       }
 
-      // Agregar código de barras centrado debajo del QR
       if (Boolean(barras)) {
-        try {
-          const canvas = document.createElement('canvas');
-          JsBarcode(canvas, curpCita + '_' + fechaExpediente, {
-            format: 'CODE128',
-            displayValue: false,
-            width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
-            height: barcodeHeight,
-            margin: 0
-          });
 
-          const barcodeUrl = canvas.toDataURL('image/png');
-
-          const x = pageWidth - barcodeWidth - marginEnd; // esquina derecha
-          const y = pageHeight - barcodeHeight - marginBottom; // parte inferior
-
-          doc.addImage(barcodeUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
-
-          canvas.width = 0;
-          canvas.height = 0;
-        } catch (err) {
-          console.error('Error generando código de barras:', err);
-        }
       }
 
       doc.addPage();
