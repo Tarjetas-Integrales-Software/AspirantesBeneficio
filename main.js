@@ -51,9 +51,9 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.webContents.openDevTools();
-  });
+  // mainWindow.on('ready-to-show', () => {
+  //   mainWindow.webContents.openDevTools();
+  // });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -145,6 +145,11 @@ function addColumnIfNotExists() {
     const columnExists_regex_curp = rowsConfiguracionDigitalizador.some(row => row.name === 'regex_curp');
     if (!columnExists_regex_curp) {
       db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_curp TEXT NULL;").run();
+    }
+
+    const columnExists_regex_fecha = rowsConfiguracionDigitalizador.some(row => row.name === 'regex_fecha');
+    if (!columnExists_regex_fecha) {
+      db.prepare("ALTER TABLE sy_config_digitalizador ADD COLUMN regex_fecha TEXT NULL;").run();
     }
 
     // Verificar columna 'qr'
@@ -795,7 +800,7 @@ ipcMain.on('print-id-card-manual', async (event, data, layout) => {
       doc.text(`${data.fechaExpedicion}`, 33, 31, { maxWidth: 70, lineBreak: false });
       doc.text(`${data.telefono}`, 58, 31, { maxWidth: 70, lineBreak: false });
     } else if (layout == 2) {
-       doc.addImage(
+      doc.addImage(
         `data:image/${imageFormat};base64,${imageBase64}`,
         imageFormat,
         4,
@@ -913,7 +918,9 @@ ipcMain.on("get-pdf", (event, name) => {
 ipcMain.on("get-archivo-digitalizado", (event, args) => {
   const { fullPath, requestId } = args;
 
-  fs.readFile(fullPath, (err, data) => {
+  const normalizedPath = path.normalize(fullPath);
+
+  fs.readFile(normalizedPath, (err, data) => {
     if (err) {
       console.error("Error al leer el archivoo PDF:", err);
       event.sender.send(`pdf-read-error-${requestId}`, err.message);
@@ -1031,18 +1038,42 @@ ipcMain.handle('move-file-cross-device', async (event, src, dest) => {
   }
 });
 
-function moveFileCrossDevice(src, dest) {
+
+
+async function moveFileCrossDevice(src, dest) {
+  const destDir = path.dirname(dest);
+
+  // ✅ Usar fs.promises.mkdir para await
+  await fs.promises.mkdir(destDir, { recursive: true });
+
+  try {
+    // Mover rápido si es el mismo disco
+    await fs.promises.rename(src, dest);
+  } catch (err) {
+    if (err.code === 'EXDEV') {
+      // Diferente disco → copiar y borrar original
+      await copyAndRemove(src, dest);
+    } else {
+      throw err;
+    }
+  }
+}
+
+async function copyAndRemove(src, dest) {
   return new Promise((resolve, reject) => {
     const readStream = fs.createReadStream(src);
     const writeStream = fs.createWriteStream(dest);
 
     readStream.on('error', reject);
     writeStream.on('error', reject);
-    writeStream.on('close', () => {
-      fs.unlink(src, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+
+    writeStream.on('close', async () => {
+      try {
+        await fs.promises.unlink(src);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
     });
 
     readStream.pipe(writeStream);

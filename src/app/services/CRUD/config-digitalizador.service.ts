@@ -35,6 +35,7 @@ export class ConfigDigitalizadorService {
     peso_minimo: number;
     tipo: string;
     regexCurp: string;
+    regexFecha: string;
     qr: number;
     barras: number;
   }): Promise<any> {
@@ -48,9 +49,10 @@ export class ConfigDigitalizadorService {
       peso_minimo,
       tipo,
       regex_curp,
+      regex_fecha,
       qr,
       barras
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
     const params = [
       1,
@@ -61,6 +63,7 @@ export class ConfigDigitalizadorService {
       config.peso_minimo,
       config.tipo,
       config.regexCurp,
+      config.regexFecha,
       config.qr,
       config.barras,
     ];

@@ -4,7 +4,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, forkJoin, from, Observable, of, switchMap, tap, throwError } from 'rxjs';
 import { DatabaseService } from '../database.service';
 import { PDFDocument } from 'pdf-lib';
-import { error } from 'console';
+import * as pathLib from 'path';
 
 const electronAPI = (window as any).electronAPI;
 
@@ -107,21 +107,38 @@ export class DigitalizarArchivosService {
     return coincidencia?.[1]?.toUpperCase() || '';
   }
 
-  procesarArchivosBaseLocal(carpetaOrigen: string, pesoMinimo: number, extension: string, tipo: string, regexCurp: RegExp) {
+  extraerFecha(texto: string, regexFecha: RegExp | string): string {
+    let regex: RegExp;
+
+    if (typeof regexFecha === 'string') {
+      const createdRegex = this.createRegexFromString(regexFecha);
+      if (!createdRegex) return '';
+      regex = createdRegex;
+    } else {
+      regex = regexFecha;
+    }
+
+    const coincidencia = texto.match(regex);
+    return coincidencia?.[0] || ''; // Usamos [0], no [1]
+  }
+
+
+  procesarArchivosBaseLocal(carpetaOrigen: string, pesoMinimo: number, extension: string, tipo: string, regexCurp: RegExp, regexFecha: RegExp) {
     return from(this.verificarYCargarArchivos(carpetaOrigen, pesoMinimo, extension)).pipe(
       switchMap(archivos => {
         const procesos = archivos.map(archivo => {
-          const ahora = new Date();
-          const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
           const curpParseada = this.extraerCURP(path.basename(archivo), regexCurp);
+          const fechaParseada = this.extraerFecha(path.basename(archivo), regexFecha);
           const carpetaDestino = path.join(this.appPath, 'archivosDigitalizados');
+
+          console.log(fechaParseada, curpParseada, carpetaDestino);
 
           if (!fs.existsSync(carpetaDestino)) {
             fs.mkdirSync(carpetaDestino, { recursive: true });
           }
 
           this.guardarArchivoBaseLocal({
-            fecha: fechaFormateada,
+            fecha: fechaParseada,
             tipo: tipo,
             curp: curpParseada,
             carpetaOrigen: carpetaOrigen,
@@ -129,7 +146,7 @@ export class DigitalizarArchivosService {
             extension: extension
           });
 
-          fs.renameSync(archivo, path.join(carpetaDestino, curpParseada + '.' + extension));
+          fs.renameSync(archivo, path.join(carpetaDestino, `${curpParseada}_${fechaParseada}.${extension}`));
         }
         );
         return procesos
@@ -205,24 +222,21 @@ export class DigitalizarArchivosService {
 
   private procesarArchivo(archivo: string, carpetaOrigen: string, carpetaDestino: string, tipo: string): void {
     try {
-      const [curp, extension] = path.basename(archivo).split('.')
+      const [nombre, extension] = path.basename(archivo).split('.')
+      const [curp, fecha] = nombre.split('_');
 
-      const ahora = new Date();
-      const fechaFormateada = ahora.toISOString().replace('T', ' ').substring(0, 19);
+      if(fecha == undefined || fecha == "") return;
 
       const beneficiario = {
         id: 1,
         curp: curp.toUpperCase()
       }
 
-      let documento = {
+      const documento = {
         archivo: archivo,
-        fecha: fechaFormateada,
+        fecha: fecha,
         tipo: tipo
       }
-
-      console.log('Lo que se sube: ', beneficiario, documento, carpetaOrigen, extension);
-      
 
       this.subirArchivo(beneficiario, documento, carpetaOrigen, extension).then((observableObject) => {
         observableObject.subscribe({
@@ -233,7 +247,8 @@ export class DigitalizarArchivosService {
 
               this.actualizarGrupoPorCurp(parsedFileName, grupo);
 
-              const destino = path.join(carpetaDestino, path.basename(archivo));
+              const destino = path.join(carpetaDestino, fecha, `${path.basename(curp + '_' + fecha)}.${extension}`);
+
               electronAPI.moveFileCrossDevice(archivo, destino);
 
               this.edit_archivo_esperado(parsedFileName, 1).subscribe({
@@ -268,7 +283,7 @@ export class DigitalizarArchivosService {
     const { id, curp } = beneficiario;
 
     try {
-      const fileData = await this.getFileFromMainProcess(curp, carpetaOrigen, extension);
+      const fileData = await this.getFileFromMainProcess(`${curp}_${fecha}`, carpetaOrigen, extension);
 
       // Leer el archivo PDF desde el proceso principal
       if (!(fileData && (fileData.constructor === ArrayBuffer || fileData.constructor === Uint8Array))) {
@@ -316,7 +331,7 @@ export class DigitalizarArchivosService {
     }
 
     try {
-      return await window.electronAPI.getDigitalizedFile(path + '\\' + fileName + '.' + extension);
+      return await window.electronAPI.getDigitalizedFile(`${path}\\${fileName}.${extension}`);
     } catch (error: any) {
       console.error('Error al obtener archivo digitalizado:', error);
       throw new Error(`Error al procesar ${fileName}: ${error.message}`);
