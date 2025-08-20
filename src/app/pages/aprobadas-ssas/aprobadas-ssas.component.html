@@ -46,7 +46,7 @@
             </div>
 
             <div class="flex justify-start items-center gap-5">
-                <div>
+                <div class="hidden">
                     <label for="txtFile" class="btn">
                         <i
                             class="fa fa-cloud-upload bg-orange-300 hover:bg-green-350 text-white font-bold py-2 px-4 rounded">
@@ -57,10 +57,20 @@
                         <input type="file" #fileInput id="txtFile" accept=".xls,.xlsx" style="display:none;" name="file"
                             formControlName="file" (change)="onFileSelected($event)">
                     </div>
+                </div>
+
+                <div>
+                    <button (click)="fileInput.click()"
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center justify-between gap-2"
+                        [disabled]="!generado || loading">
+                        <mat-icon matSuffix>upload</mat-icon>
+                        <span>Importar CURPs aprobadas</span>
+                    </button>
                     <div *ngIf="lblUploadingFile" style="margin: 0;font-size: 18px;color: #5270ae;">
                         <label style="font-weight: 500;">{{lblUploadingFile}}</label>
                     </div>
                 </div>
+
                 <button (click)="formConsulta.reset()"
                     class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded flex items-center justify-between gap-2"
                     [disabled]="!generado || loading">
