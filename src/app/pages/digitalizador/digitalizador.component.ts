@@ -1193,9 +1193,8 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const centerX = (pageWidth - bigQrSize) / 2;
     const endPositionY = pageHeight - qrSize - marginY;
 
-    doc.setFontSize(28);
-
     for (const curpCita of caratulas) {
+      doc.setFontSize(28);
       doc.text(curpCita, 50, 40);
 
       if (Boolean(qr)) {
