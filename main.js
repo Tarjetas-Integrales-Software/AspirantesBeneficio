@@ -176,6 +176,24 @@ function addColumnIfNotExists() {
       db.prepare("ALTER TABLE archivos_digitalizar ADD COLUMN grupo TEXT NULL;").run();
     }
 
+    // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
+    const columnExists_nombre = rowsAspirantes.some(row => row.name === 'nombre');
+    if (!columnExists_nombre) {
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN nombre TEXT NULL;").run();
+    }
+
+     // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
+    const columnExists_apellidopaterno = rowsAspirantes.some(row => row.name === 'apellido_paterno');
+    if (!columnExists_apellidopaterno) {
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN apellido_paterno TEXT NULL;").run();
+    }
+
+     // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
+    const columnExists_apellidomaterno = rowsAspirantes.some(row => row.name === 'apellido_materno');
+    if (!columnExists_apellidomaterno) {
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN apellido_materno TEXT NULL;").run();
+    }
+
   } catch (error) {
     console.error('Error altering table:', error);
   }
@@ -200,9 +218,6 @@ function initializeDatabase() {
         id_modalidad INTEGER NOT NULL,
         curp TEXT NOT NULL,
         nombre_completo TEXT NOT NULL,
-        nombre TEXT NOT NULL,
-        apellido_paterno TEXT NOT NULL,
-        apellido_materno TEXT NOT NULL,
         telefono TEXT NOT NULL,
         email TEXT NULL,
         fecha_nacimiento TEXT NULL,
