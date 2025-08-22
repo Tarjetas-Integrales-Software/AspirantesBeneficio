@@ -194,6 +194,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       intervaloSincronizacion: 10,
       pesoMinimo: 300,
       regexCurp: /([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0\d|1[0-2])(?:[0-2]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d)/,
+      regexFecha: /\d{4}-\d{2}-\d{2}/,
       qr: false,
       barras: false,
     });
@@ -276,7 +277,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     } else this.sinConfiguracion = false;
 
-    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp, qr, barras } = await config
+    const { extension, peso_minimo, ruta_digitalizados, ruta_enviados, tiempo_sync, tipo, regex_curp, regex_fecha, qr, barras } = await config
 
     this.formConfiguracion = this.fb.nonNullable.group({
       extension: extension,
@@ -286,6 +287,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       pesoMinimo: peso_minimo,
       tipo: tipo,
       regexCurp: regex_curp,
+      regexFecha: regex_fecha || /\d{4}-\d{2}-\d{2}/,
       qr: Boolean(qr),
       barras: Boolean(barras)
     });
@@ -696,6 +698,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       const pesoMinimo = this.formConfiguracion.get('pesoMinimo')?.value;
       const tipo = this.formConfiguracion.get('tipo')?.value;
       const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
+      const regexFecha = this.formConfiguracion.get('regexFecha')?.value;
       const qr = this.formConfiguracion.get('qr')?.value;
       const barras = this.formConfiguracion.get('barras')?.value;
 
@@ -708,6 +711,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         peso_minimo: pesoMinimo,
         tipo: tipo,
         regexCurp: regexCurp,
+        regexFecha: regexFecha,
         qr: qr ? 1 : 0,
         barras: barras ? 1 : 0,
       }).then(() => {
@@ -981,8 +985,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     const extension = this.formConfiguracion.get('extension')?.value;
     const tipo = this.formConfiguracion.get('tipo')?.value;
     const regexCurp = this.formConfiguracion.get('regexCurp')?.value;
+    const regexFecha = this.formConfiguracion.get('regexFecha')?.value;
 
-    this.digitalizarArchivosService.procesarArchivosBaseLocal(rutaOrigen, pesoMinimo, extension, tipo, regexCurp)
+    this.digitalizarArchivosService.procesarArchivosBaseLocal(rutaOrigen, pesoMinimo, extension, tipo, regexCurp, regexFecha)
       .subscribe({
         next: (resultados) => {
         },
@@ -1133,17 +1138,17 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         },
         error: err => console.error('Error:', err)
       });
-    } else this.crearCaratula([curp]);
+    } else this.crearCaratula([curp], fecha.toISOString().substring(0, 10));
   }
 
-  async crearCaratula(caratulas: string[]): Promise<void> {
+  async crearCaratula(caratulas: string[], fechaExpediente: string): Promise<void> {
     if (this.imprimiendo) return;
 
     this.imprimiendo = true;
 
     if (!window.electronAPI) {
-      throw new Error('Funcionalidad de impresión solo disponible en Electron');
       this.imprimiendo = false;
+      throw new Error('Funcionalidad de impresión solo disponible en Electron');
     }
 
     if (caratulas.length === 0) {
@@ -1178,57 +1183,41 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     const doc = new jsPDF();
 
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const marginBottom = 30;
-    const marginEnd = 15;
-
-    doc.setFontSize(28);
-
     // Constantes de layout
-    const qrWidth = 70;
-    const barcodeWidth = qrWidth;
-    const barcodeHeight = 20;
-
+    const qrSize = 30;
+    const bigQrSize = 70;
+    const pageHeight = doc.internal.pageSize.getHeight();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const centerX = (pageWidth - qrWidth) / 2;
+    const marginY = 30;
+    const marginX = 15;
+    const centerX = (pageWidth - bigQrSize) / 2;
+    const endPositionY = pageHeight - qrSize - marginY;
 
-    for (const cita of caratulas) {
-      doc.text(cita, 50, 40);
+    for (const curpCita of caratulas) {
+      doc.setFontSize(28);
+      doc.text(curpCita, 50, 40);
 
-      // Agregar QR centrado
       if (Boolean(qr)) {
         try {
-          const qrUrl = await QRCode.toDataURL(cita);
-          doc.addImage(qrUrl, 'PNG', centerX, 70, qrWidth, qrWidth, cita, 'FAST', 0);
+          const qrCurp = await QRCode.toDataURL(curpCita);
+          doc.addImage(qrCurp, 'PNG', centerX, 70, bigQrSize, bigQrSize, curpCita, 'FAST', 0);
+          doc.addImage(qrCurp, 'PNG', marginX, endPositionY, qrSize, qrSize, curpCita, 'FAST', 0);
+        } catch (err) {
+          console.error('Error generando QR:', err);
+        }
+
+        try {
+          const qrFechaExpediente = await QRCode.toDataURL(fechaExpediente);
+          doc.addImage(qrFechaExpediente, 'PNG', pageWidth - qrSize - marginX, endPositionY, qrSize, qrSize, fechaExpediente, 'FAST', 0);
+          doc.setFontSize(10);
+          doc.text(fechaExpediente, pageWidth - qrSize - marginX + 5, endPositionY);
         } catch (err) {
           console.error('Error generando QR:', err);
         }
       }
 
-      // Agregar código de barras centrado debajo del QR
       if (Boolean(barras)) {
-        try {
-          const canvas = document.createElement('canvas');
-          JsBarcode(canvas, cita, {
-            format: 'CODE128',
-            displayValue: false,
-            width: barcodeWidth / 90 * 2, // ajusta para que encaje en 90 px
-            height: barcodeHeight,
-            margin: 0
-          });
 
-          const barcodeUrl = canvas.toDataURL('image/png');
-
-          const x = pageWidth - barcodeWidth - marginEnd; // esquina derecha
-          const y = pageHeight - barcodeHeight - marginBottom; // parte inferior
-
-          doc.addImage(barcodeUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
-
-          canvas.width = 0;
-          canvas.height = 0;
-        } catch (err) {
-          console.error('Error generando código de barras:', err);
-        }
       }
 
       doc.addPage();
@@ -1290,35 +1279,48 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
         if (archivos.length === 0) return;
 
-        const nombresArchivos: string[] = archivos.map(archivo => {
-          const [curp, _] = path.basename(archivo).split('.');
+        const archivosMapeados: { curp: string, fecha: string }[] = archivos.map(archivo => {
+          const [nombre, _] = path.basename(archivo).split('.');
+          const [curp, fecha] = nombre.split('_');
 
-          return curp;
+          return {
+            curp, fecha
+          };
         })
 
-        const fecha = this.formFiltrosDigitalizador.get('fecha')?.value;
-        const tiempo = fecha.toTimeString().replaceAll(":", '').substring(0, 6);
-        const fechaParseada = this.formatDateToYYYYMMDD(fecha);
+        const tiempo = new Date().toTimeString().replaceAll(":", '').substring(0, 6);
         const tipoDocumento = 1;
         const grupo = 'NO-REGISTRADOS';
 
-        const body = nombresArchivos.map((nombre: string) => {
+        const body = archivosMapeados.map((archivo: { curp: string, fecha: string }) => {
           return {
             extension: extension,
-            fecha_expediente: fechaParseada,
+            nombre_archivo: archivo.curp,
+            fecha_expediente: archivo.fecha,
             id_tipo_documento_digitalizacion: tipoDocumento,
-            nombre_archivo: nombre,
-            nombre_archivo_upload: `${fechaParseada.replaceAll('-', '')}_${tiempo}_${grupo}`,
+            nombre_archivo_upload: `${archivo.fecha.replaceAll('-', '')}_${tiempo}_${grupo}`,
           }
+        }).filter((archivo: { nombre_archivo?: string, fecha_expediente?: string, nombre_archivo_upload?: string }) => {
+          const { nombre_archivo, fecha_expediente, nombre_archivo_upload } = archivo;
+
+          if (nombre_archivo == undefined) return false;
+          if (fecha_expediente == undefined) return false;
+          if (nombre_archivo_upload == undefined) return false;
+          if (nombre_archivo == "") return false;
+          if (fecha_expediente == "") return false;
+          if (nombre_archivo_upload == "") return false;
+
+          return true;
         });
+
+        if(body.length === 0) return;
 
         this.archivosNoCargadosService.insertarNoCargados({ registros: body }).subscribe({
           next: (res) => {
             console.log(res);
-
           },
           error: (error) => {
-
+            console.error('Error al insertar archivos no cargados:', error);
           },
         })
       });

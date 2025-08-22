@@ -34,7 +34,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.once(`pdf-read-success-${requestId}`, (_event, data) => resolve(data));
       ipcRenderer.once(`pdf-read-error-${requestId}`, (_event, err) => reject(err));
 
-
       ipcRenderer.once(`pdf-read-success-${requestId}`, resolve);
       ipcRenderer.once(`pdf-read-error-${requestId}`, reject);
 

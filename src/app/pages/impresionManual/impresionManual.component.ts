@@ -3,8 +3,8 @@ import { CommonModule } from "@angular/common"
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms"
 import { HttpClient } from '@angular/common/http';
 import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import Swal from 'sweetalert2';
@@ -197,7 +197,12 @@ export class ImpresionManualComponent implements OnInit {
     this.layoutsImpresionService.get().subscribe({
       next: (response) => {
         if (response.response) {
-          this.layousImpresion = response.data;
+          this.layousImpresion = response.data.filter((layout: any) => layout.activo == 1);
+
+          const primerRegistro = this.layousImpresion[0];
+
+          this.disenoSeleccionado = primerRegistro ? primerRegistro.default : 0;
+          this.cdr.detectChanges();
         }
       },
       error: (error) => { },
