@@ -12,6 +12,7 @@ import { DigitalizadorComponent } from "./digitalizador/digitalizador.component"
 import { CortesComponent } from "./cortes/cortes.component";
 import { ConfiguracionesComponent } from "./configuraciones/configuraciones.component";
 import { AprobadasSsasComponent } from "./aprobadas-ssas/aprobadas-ssas.component";
+import { ConsultaSsasComponent } from "./consulta-ssas/consulta-ssas.component";
 
 export const pagesRoutes: Routes = [
     {
@@ -32,6 +33,11 @@ export const pagesRoutes: Routes = [
                 path: 'consulta',
                 title: 'Consulta',
                 component: ConsultaComponent
+            },
+            {
+                path: 'consulta-ssas',
+                title: 'Consulta SSAS',
+                component: ConsultaSsasComponent
             },
             {
                 path: 'editar/:id',

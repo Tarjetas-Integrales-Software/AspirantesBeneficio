@@ -86,6 +86,14 @@
         ></app-opcion-menu>
 
         <app-opcion-menu
+          *ngIf="permisoMenu_ConsultaSSAS && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_consulta_ssas')"
+          texto="Consulta SSAS"
+          ruta="/inicio/consulta-ssas"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />'
+        ></app-opcion-menu>
+
+        <app-opcion-menu
           *ngIf="permisoMenu_Registro && permisoOpcionMenu(opcionesMenu, 'menu_habilitar_registro')"
           texto="Registro"
           ruta="/inicio/registro"

@@ -50,6 +50,7 @@ export class ModuloOperacionesComponent implements OnInit {
   rolesConPermisoMenu_Impresion: number[] = [111];
   rolesConPermisoMenu_ImpresionManual: number[] = [112];
   rolesConPermisoMenu_Digitalizador: number[] = [113];
+  rolesConPermisoMenu_ConsultaSSAS: number[] = [122];
 
   constructor(
     private modulosService: ModulosService,
@@ -127,6 +128,8 @@ export class ModuloOperacionesComponent implements OnInit {
           this.router.navigate(['/inicio/registro']);
         } else if (menuOptions['menu_habilitar_consulta'] == '1' && this.permisoMenu_Consulta) {
           this.router.navigate(['/inicio/consulta']);
+        } else if (menuOptions['menu_habilitar_consulta_ssas'] == '1' && this.permisoMenu_ConsultaSSAS) {
+          this.router.navigate(['/inicio/consulta-ssas']);
         } else if (menuOptions['menu_habilitar_asistencia'] == '1' && this.permisoMenu_Asistencia) {
           this.router.navigate(['/inicio/asistencia']);
         } else if (menuOptions['menu_habilitar_reportes'] == '1' && this.permisoMenu_Reportes) {
@@ -186,6 +189,7 @@ export class ModuloOperacionesComponent implements OnInit {
 
   get permisoMenu_Registro(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Registro.includes(Number(perfil.fkRole))); }
   get permisoMenu_Consulta(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Consulta.includes(Number(perfil.fkRole))); }
+  get permisoMenu_ConsultaSSAS(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_ConsultaSSAS.includes(Number(perfil.fkRole))); }
   get permisoMenu_Reportes(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Reportes.includes(Number(perfil.fkRole))); }
   get permisoMenu_Asistencia(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Asistencia.includes(Number(perfil.fkRole))); }
   get permisoMenu_Impresion(): boolean { return this.rolesUsuario.some((perfil) => perfil.fkRole && this.rolesConPermisoMenu_Impresion.includes(Number(perfil.fkRole))); }
