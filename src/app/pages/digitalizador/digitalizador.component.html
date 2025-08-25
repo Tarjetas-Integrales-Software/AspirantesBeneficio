@@ -245,20 +245,22 @@
                 </div>
               </div>
 
+              <div class="form__row">
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Módulo</mat-label>
+                    <mat-select class="w-full" formControlName="id_modulo">
+                      <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
+                        modulo.nombre
+                        }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+
               <mat-tab-group (selectedIndexChange)="activeTab = $event">
                 <mat-tab label="Automática">
-                  <div class="form__row mt-2">
-                    <div class="form__item">
-                      <mat-form-field class="w-full">
-                        <mat-label>Módulo</mat-label>
-                        <mat-select class="w-full" formControlName="id_modulo">
-                          <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
-                            modulo.nombre
-                            }}</mat-option>
-                        </mat-select>
-                      </mat-form-field>
-                    </div>
-                  </div>
+                  <span class="mx-auto mt-3">No hay campos adicionales</span>
                 </mat-tab>
                 <mat-tab label="Manual">
                   <div class="form__row mt-2">
@@ -332,7 +334,7 @@
       </div>
       <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
         <button
-          (click)="crearCaratula(getSelectedValues(seleccionCaratulas.selectedOptions.selected), formCaratula.get('fecha')?.value.toISOString().substring(0, 10))"
+          (click)="crearCaratula(getSelectedValues(seleccionCaratulas.selectedOptions.selected), formCaratula.get('fecha')?.value.toISOString().substring(0, 10), getNombreModuloById(formCaratula.get('id_modulo')?.value))"
           type="button"
           class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-500 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
           Imprimir
@@ -529,7 +531,7 @@
 
                 <div class="form__item">
                   <mat-form-field class="w-full">
-                    <mat-label>Fecha de Expediente</mat-label>
+                    <mat-label>Fecha de expediente</mat-label>
                     <input matInput [matDatepicker]="picker" formControlName="fecha_expediente">
                     <mat-hint>DD/MM/YYYY</mat-hint>
                     <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>

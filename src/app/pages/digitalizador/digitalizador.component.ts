@@ -1103,17 +1103,18 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.activeTab === 0) {
-      if (idModulo === '') {
-        Swal.fire({
-          title: 'Advertencia',
-          icon: 'warning',
-          text: 'Seleccione un módulo',
-          timer: 2000
-        });
-        return;
-      }
+    if (idModulo === '') {
+      Swal.fire({
+        title: 'Advertencia',
+        icon: 'warning',
+        text: 'Seleccione un módulo',
+        timer: 2000
+      });
+      return;
+    }
 
+    // Impresión automática
+    if (this.activeTab === 0) {
       const body = {
         id_modulo: idModulo,
         fecha: fecha.toISOString().substring(0, 10)
@@ -1138,10 +1139,20 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
         },
         error: err => console.error('Error:', err)
       });
-    } else this.crearCaratula([curp], fecha.toISOString().substring(0, 10));
+    } else {
+      const foundModulo = this.getNombreModuloById(idModulo);
+
+      this.crearCaratula([curp], fecha.toISOString().substring(0, 10), foundModulo);
+    }
   }
 
-  async crearCaratula(caratulas: string[], fechaExpediente: string): Promise<void> {
+  getNombreModuloById(id: number): string {
+    const foundModulo = this.modulos.find(modulo => modulo.id == id);
+
+    return foundModulo?.nombre || ''
+  }
+
+  async crearCaratula(caratulas: string[], fechaExpediente: string, modulo: string): Promise<void> {
     if (this.imprimiendo) return;
 
     this.imprimiendo = true;
@@ -1195,7 +1206,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
     for (const curpCita of caratulas) {
       doc.setFontSize(28);
-      doc.text(curpCita, 50, 40);
+      doc.text(curpCita, pageWidth / 2, 40, { align: 'center' });
+      doc.setFontSize(16);
+      doc.text(modulo, pageWidth / 2, 55, { align: 'center' });
 
       if (Boolean(qr)) {
         try {
@@ -1231,7 +1244,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     Swal.fire({
       title: 'Aviso',
       text: respuestaPrint,
-      timer: 3500,
       icon: 'success'
     }).then(() =>
       this.imprimiendo = false
@@ -1313,7 +1325,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
           return true;
         });
 
-        if(body.length === 0) return;
+        if (body.length === 0) return;
 
         this.archivosNoCargadosService.insertarNoCargados({ registros: body }).subscribe({
           next: (res) => {
