@@ -1,0 +1,149 @@
+<main class="container main py-5 mx-auto">
+  <h1 class="text-3xl font-bold mb-5">Consulta SSAS</h1>
+
+  <section class="bg-white border-0 shadow-lg rounded px-4 pt-4 flex justify-between mb-5">
+    <form [formGroup]="consultaForm" (ngSubmit)="onConsultar()" class="flex justify-between w-full">
+      <mat-form-field class="w-100">
+        <mat-label>Curp</mat-label>
+        <input
+          matInput
+          formControlName="curp"
+          placeholder="Curp..."
+          maxlength="18"
+          (input)="onCurpInput($event)">
+        <mat-error *ngIf="consultaForm.get('curp')?.invalid && consultaForm.get('curp')?.touched">
+          {{ getCurpError() }}
+        </mat-error>
+      </mat-form-field>
+
+      <button
+        type="submit"
+        [disabled]="consultaForm.invalid || isLoading()"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex justify-between items-center gap-2 h-[55px]">
+        <span *ngIf="!isLoading()">Consultar</span>
+        <mat-spinner *ngIf="isLoading()" diameter="20" class="text-white"></mat-spinner>
+        <svg *ngIf="!isLoading()" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right-to-arc">
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+          <path d="M3 12h12" />
+          <path d="M11 8l4 4l-4 4" />
+          <path d="M12 21a9 9 0 0 0 0 -18" />
+        </svg>
+      </button>
+    </form>
+  </section>
+
+  <!-- Mensaje de error -->
+  <div *ngIf="hasError()" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center">
+      <mat-icon class="text-red-600 mr-2">error</mat-icon>
+      <p class="text-red-700 font-medium">{{ errorMessage() }}</p>
+    </div>
+  </div>
+
+  <!-- Loading state centrado -->
+  <div *ngIf="isLoading()" class="flex justify-center items-center py-8">
+    <mat-spinner diameter="40"></mat-spinner>
+    <span class="ml-4 text-gray-600">Consultando información...</span>
+  </div>
+
+  <!-- Contenido principal solo si hay datos y no está cargando -->
+  <div *ngIf="beneficiarioData() && !isLoading()" class="flex flex-row gap-x-5">
+    <section class="basis-3/4 bg-white border-0 shadow-lg rounded p-4">
+
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Información del Usuario</h2>
+
+      <div class="flex flex-wrap gap-6 *:flex-1 *:min-w-[280px] *:bg-white *:border *:border-gray-200 *:rounded-lg *:shadow-md *:hover:shadow-lg *:transition-shadow *:duration-200 *:p-4">
+
+        <!-- Sección Identidad -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-red-600 mb-3">Identidad</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">Nombre:</span> {{ getIdentityData()?.name || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Apellido Paterno:</span> {{ getIdentityData()?.paternal_surname || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Apellido Materno:</span> {{ getIdentityData()?.maternal_surname || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Fecha de Nacimiento:</span> {{ (getIdentityData()?.birthdate | date:'yyyy-MM-dd') || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Género:</span> {{ getIdentityData()?.gender || 'N/A' }}</div>
+          </div>
+        </div>
+
+        <!-- Sección Contacto -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-green-600 mb-3">Contacto</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">Teléfono:</span> {{ getContactData()?.phone || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Celular:</span> {{ getContactData()?.cellphone || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Email:</span> {{ getContactData()?.email || 'N/A' }}</div>
+          </div>
+        </div>
+
+        <!-- Sección Dirección -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-purple-600 mb-3">Dirección</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">Calle:</span> {{ getAddressData()?.street || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Número Exterior:</span> {{ getAddressData()?.ext || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Número Interior:</span> {{ getAddressData()?.int || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Código Postal:</span> {{ getAddressData()?.postal_code || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Colonia:</span> {{ getAddressData()?.neighborhood?.name || 'N/A' }} <span *ngIf="getAddressData()?.neighborhood?.id">(ID: {{ getAddressData()?.neighborhood?.id }})</span></div>
+            <div><span class="font-bold text-gray-700">Ciudad:</span> {{ getAddressData()?.city?.name || 'N/A' }} <span *ngIf="getAddressData()?.city?.id">(ID: {{ getAddressData()?.city?.id }})</span></div>
+            <div><span class="font-bold text-gray-700">Estado:</span> {{ getAddressData()?.state?.name || 'N/A' }} <span *ngIf="getAddressData()?.state?.id">(ID: {{ getAddressData()?.state?.id }})</span></div>
+          </div>
+        </div>
+
+        <!-- Sección SSAS -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-orange-600 mb-3">SSAS</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">FPU:</span> {{ getSSASData()?.fpu || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Modalidad ID:</span> {{ getSSASData()?.modalidad_id || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Vigencia:</span> {{ getSSASData()?.vigencia || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Passages:</span> {{ getSSASData()?.passages || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Status Beneficiario ID:</span> {{ getSSASData()?.status_beneficiario_id || 'N/A' }}</div>
+          </div>
+        </div>
+
+        <!-- Sección Estudiantes -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-teal-600 mb-3">Estudiantes</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">Beca:</span> {{ getStudentsData()?.scholarship || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Escuela:</span> {{ getStudentsData()?.school || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Grado:</span> {{ getStudentsData()?.grade || 'N/A' }}</div>
+          </div>
+        </div>
+
+        <!-- Sección TISA -->
+        <div class="">
+          <h3 class="text-2xl font-semibold text-blue-600 mb-3">TISA</h3>
+          <div class="space-y-2 text-sm">
+            <div><span class="font-bold text-gray-700">Fecha de Entrega:</span> {{ getTISAData()?.fecha_entrega || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">Status TISA:</span> {{ getTISAData()?.status_tisa || 'N/A' }}</div>
+            <div><span class="font-bold text-gray-700">UID Code:</span> {{ getTISAData()?.uidcode || 'N/A' }}</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-6 pt-4 border-t">
+        <div class="text-sm text-gray-500">
+          <span class="font-medium">ID de Registro:</span> {{ getBeneficiarioId() || 'N/A' }}
+        </div>
+      </div>
+
+    </section>
+
+    <section class="basis-1/4 bg-white border-0 shadow-lg rounded p-4 h-fit sticky top-[20px]">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Estatus:</h2>
+      <img class="mx-auto" src="./assets/img/success.png" alt="">
+    </section>
+  </div>
+
+  <!-- Mensaje cuando no hay datos -->
+  <div *ngIf="!beneficiarioData() && !isLoading() && !hasError()" class="text-center py-12">
+    <div class="text-gray-400 text-6xl mb-4">🔍</div>
+    <p class="text-gray-600 text-lg">Ingrese una CURP para consultar la información del beneficiario</p>
+  </div>
+
+</main>
