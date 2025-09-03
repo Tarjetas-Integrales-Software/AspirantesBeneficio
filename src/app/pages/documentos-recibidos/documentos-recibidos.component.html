@@ -1,0 +1,60 @@
+<main class="container documentos">
+  <form class="form" [formGroup]="formCaratula">
+    <div class="form__row">
+      <div class="form__item">
+        <mat-form-field class="w-full">
+          <mat-label>Fecha expediente</mat-label>
+          <input matInput [matDatepicker]="picker" formControlName="fecha">
+          <mat-hint>DD/MM/YYYY</mat-hint>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="form__item">
+        <mat-form-field class="w-full">
+          <mat-label>Módulo</mat-label>
+          <mat-select class="w-full" formControlName="id_modulo">
+            <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
+              modulo.nombre
+              }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+  </form>
+
+  <mat-card class="documentos__card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Atención sin cita</mat-card-title>
+      <mat-card-subtitle>Registradas en atención sin cita</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-list class="card__list" role="list">
+        @for (curp of atenciones; track $index) {
+        <mat-list-item role="listitem">{{ curp }}</mat-list-item>
+        }
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+  <mat-card class="documentos__card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Escaneadas</mat-card-title>
+      <mat-card-subtitle>Escaneadas por lector</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>Simple card</mat-card-content>
+  </mat-card>
+  <mat-card class="documentos__card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Faltantes</mat-card-title>
+      <mat-card-subtitle>Registradas en atención sin cita, no escaneada</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>Simple card</mat-card-content>
+  </mat-card>
+  <mat-card class="documentos__card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Sobrantes</mat-card-title>
+      <mat-card-subtitle>No fue registrada en atención sin cita con los valores de consulta</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>Simple card</mat-card-content>
+  </mat-card>
+</main>

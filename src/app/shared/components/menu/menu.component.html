@@ -112,6 +112,16 @@
         ></app-opcion-menu>
 
         <app-opcion-menu
+          *ngIf="true"
+          texto="Archivos recibidos"
+          ruta="/inicio/archivos-recibidos"
+          [accion]="cerrarMenu.bind(this)"
+          icono='<path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                 <path d="M10 6h4l1 3h3l.75 3l-2.25 1.5l.5 3l-2.5 1.5l-2 -1l-2 1l-2.5 -1.5l.5 -3l-2.25 -1.5l.75 -3h3z"/>
+                 <path d="M12 9a3 3 0 1 0 0 6a3 3 0 0 0 0 -6"/>'
+        ></app-opcion-menu>
+
+        <app-opcion-menu
           *ngIf="permisoOpcionMenu(opcionesMenu, 'menu_habilitar_configurar')"
           texto="Operaciones"
           ruta="/inicio/modulo-operaciones"
