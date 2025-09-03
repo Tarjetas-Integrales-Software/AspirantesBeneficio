@@ -134,7 +134,7 @@ export class ReportesComponent implements OnInit, AfterViewInit {
   }
 
   getReportes(): void {
-    this.reportesService.getReportes().subscribe({
+    this.reportesService.getReportesByIdUser().subscribe({
       next: ((response) => {
         if (response.response) {
           this.reportes = response.data;
