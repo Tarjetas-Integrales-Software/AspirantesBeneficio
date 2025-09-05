@@ -104,14 +104,16 @@ export class ConfigDigitalizadorService {
       const sql = `
         INSERT OR REPLACE INTO digitalizador_grupos (
           id,
+          id_tipo_beneficio,
           id_tipo_documento_digitalizacion,
           nombre_archivo_upload,
           fecha_expediente,
           created_at
-        ) VALUES (?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?)
       `;
       const params = [
         item.id,
+        item.id_tipo_beneficio,
         item.id_tipo_documento_digitalizacion,
         item.nombre_archivo_upload,
         item.fecha_expediente,
@@ -121,27 +123,6 @@ export class ConfigDigitalizadorService {
       await this.databaseService.execute(sql, params);
     }
   }
-
-  // async syncGrupos(datos: any[]): Promise<void> {
-  //   for (const item of datos) {
-  //     const sql = `
-  //       INSERT OR REPLACE INTO digitalizador_grupos (
-  //         id,
-  //         id_tipo_documento_digitalizacion,
-  //         nombre_archivo_upload,
-  //         created_at
-  //       ) VALUES (?, ?, ?, ?)
-  //     `;
-  //     const params = [
-  //       item.id,
-  //       item.id_tipo_documento_digitalizacion,
-  //       item.nombre_archivo_upload,
-  //       item.created_at,
-  //     ];
-
-  //     await this.databaseService.execute(sql, params);
-  //   }
-  // }
 
   async consultarTipos(): Promise<{ id: number; modalidad: string }[]> {
     const sql = `
@@ -344,21 +325,24 @@ export class ConfigDigitalizadorService {
 
   async consultarGrupos(body: {
     id_tipo_documento_digitalizacion: string,
+    id_tipo_beneficio: string,
     fecha: string,  // Formato: 'YYYY-MM-DD'
   }): Promise<{ id: number; nombre_archivo_upload: string }[]> {
     const sql = `
     SELECT
-      MIN(id) as id,  -- O MAX(id) si prefieres el más reciente
+      MIN(id) as id,
       nombre_archivo_upload
     FROM digitalizador_grupos
     WHERE id_tipo_documento_digitalizacion = ?
-      AND fecha_expediente = ?  -- Filtro directo (formato YYYY-MM-DD)
+      AND id_tipo_beneficio = ?
+      AND fecha_expediente = ?
     GROUP BY nombre_archivo_upload  -- Agrupa por nombre (elimina duplicados)
     ORDER BY id;
   `;
 
     const params = [
       body.id_tipo_documento_digitalizacion.toString(),
+      body.id_tipo_beneficio.toString(),
       body.fecha,
     ];
 

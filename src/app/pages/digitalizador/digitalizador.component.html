@@ -70,6 +70,19 @@
         <div class="form__row form__row--responsive">
           <div class="form__item">
             <mat-form-field class="w-full">
+              <mat-label>Tipo de beneficio</mat-label>
+              <mat-select formControlName="tipoBeneficio">
+                <mat-option value="">- Selecciona una opción -</mat-option>
+                <mat-option [value]="1">50%</mat-option>
+                <mat-option [value]="2">100%</mat-option>
+              </mat-select>
+              <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
+                Selecciona un tipo de beneficio para habilitar
+              </mat-hint>
+            </mat-form-field>
+          </div>
+          <div class="form__item">
+            <mat-form-field class="w-full">
               <mat-label>Fecha expediente</mat-label>
               <input matInput [matDatepicker]="picker" formControlName="fecha">
               <mat-hint>DD/MM/YYYY</mat-hint>
@@ -87,7 +100,7 @@
                 }
               </mat-select>
               <mat-hint *ngIf="formFiltrosDigitalizador.get('grupo')?.disabled">
-                Selecciona un tipo y fechas válidas para habilitar
+                Selecciona un tipo válido para habilitar
               </mat-hint>
             </mat-form-field>
           </div>
@@ -95,7 +108,7 @@
         <div class="form__row">
           <div class="form__item">
             <mat-form-field class="w-full">
-              <mat-label>Archivo xlsx cargado</mat-label>
+              <mat-label>Grupo</mat-label>
               <mat-select formControlName="grupo" [disabled]="formFiltrosDigitalizador.get('tipo')?.disabled ?? false">
                 <mat-option value="">- Selecciona una opción -</mat-option>
                 @for (grupo of grupos; track grupo) {
@@ -225,7 +238,7 @@
               <div class="form__row">
                 <div class="form__item">
                   <mat-form-field class="w-full">
-                    <mat-label>Impresora</mat-label>
+                    <mat-label>Impresora*</mat-label>
                     <mat-select class="w-full" formControlName="impresora">
                       <mat-option class="w-full" *ngFor="let impresora of printers" [value]="impresora.name">{{
                         impresora.name
@@ -236,7 +249,7 @@
 
                 <div class="form__item">
                   <mat-form-field class="w-full">
-                    <mat-label>Fecha expediente</mat-label>
+                    <mat-label>Fecha expediente*</mat-label>
                     <input matInput [matDatepicker]="picker" formControlName="fecha">
                     <mat-hint>DD/MM/YYYY</mat-hint>
                     <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
@@ -248,7 +261,39 @@
               <div class="form__row">
                 <div class="form__item">
                   <mat-form-field class="w-full">
-                    <mat-label>Módulo</mat-label>
+                    <mat-label>Tipo de beneficio*</mat-label>
+                    <mat-select class="w-full" formControlName="id_tipo_beneficio">
+                      <mat-option [value]="1">50%</mat-option>
+                      <mat-option [value]="2">100%</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Modalidad</mat-label>
+                    <mat-select class="w-full" formControlName="id_modalidad">
+                      <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
+                        modulo.nombre
+                        }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Tipo tramite</mat-label>
+                    <mat-select class="w-full" formControlName="id_tramite">
+                      <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
+                        modulo.nombre
+                        }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="form__row">
+                <div class="form__item">
+                  <mat-form-field class="w-full">
+                    <mat-label>Módulo*</mat-label>
                     <mat-select class="w-full" formControlName="id_modulo">
                       <mat-option class="w-full" *ngFor="let modulo of modulos" [value]="modulo.id">{{
                         modulo.nombre
@@ -266,7 +311,7 @@
                   <div class="form__row mt-2">
                     <div class="form__item">
                       <mat-form-field class="w-full">
-                        <mat-label>Nombre del archivo</mat-label>
+                        <mat-label>Nombre del archivo*</mat-label>
                         <input matInput formControlName="curp" placeholder="Nombre del archivo"
                           (keyup)="toUpperCaseCurp($event)">
                         <mat-error *ngIf="formCaratula.get('curp')?.hasError('pattern')">

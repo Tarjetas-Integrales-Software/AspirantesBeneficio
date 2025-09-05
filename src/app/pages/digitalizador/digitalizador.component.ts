@@ -177,6 +177,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     });
 
     this.formFiltrosDigitalizador = this.fb.nonNullable.group({
+      tipoBeneficio: '',
       tipo: '',
       grupo: { value: '', disabled: true },
       fecha: new Date(),
@@ -292,11 +293,23 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       barras: Boolean(barras)
     });
 
+    this.formFiltrosDigitalizador.get('tipoBeneficio')?.valueChanges.subscribe(tipoBeneficio => {
+      if (tipoBeneficio) {
+        const fecha = this.formFiltrosDigitalizador.get('fecha')?.value;
+        const tipoBeneficio = this.formFiltrosDigitalizador.get('tipo')?.value;
+
+        this.getGrupos({ id_tipo_documento_digitalizacion: tipo, fecha: fecha?.toISOString().substring(0, 10), id_tipo_beneficio: tipoBeneficio });
+        this.formFiltrosDigitalizador.get('grupo')?.reset();
+        this.formFiltrosDigitalizador.get('nombres')?.reset();
+      }
+    });
+
     this.formFiltrosDigitalizador.get('tipo')?.valueChanges.subscribe(tipoId => {
       if (tipoId) {
         const fecha = this.formFiltrosDigitalizador.get('fecha')?.value;
+        const tipoBeneficio = this.formFiltrosDigitalizador.get('tipoBeneficio')?.value;
 
-        this.getGrupos({ id_tipo_documento_digitalizacion: tipoId, fecha: fecha?.toISOString().substring(0, 10) });
+        this.getGrupos({ id_tipo_documento_digitalizacion: tipoId, fecha: fecha?.toISOString().substring(0, 10), id_tipo_beneficio: tipoBeneficio });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
       }
@@ -305,8 +318,9 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
     this.formFiltrosDigitalizador.get('fecha')?.valueChanges.subscribe(fecha => {
       if (fecha) {
         const tipo = this.formFiltrosDigitalizador.get('tipo')?.value;
+        const tipoBeneficio = this.formFiltrosDigitalizador.get('tipoBeneficio')?.value;
 
-        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo });
+        this.getGrupos({ fecha: fecha.toISOString().substring(0, 10), id_tipo_documento_digitalizacion: tipo, id_tipo_beneficio: tipoBeneficio });
         this.getAtencionSinCitaDetalle({ fecha: fecha.toISOString().substring(0, 10) });
         this.formFiltrosDigitalizador.get('grupo')?.reset();
         this.formFiltrosDigitalizador.get('nombres')?.reset();
@@ -351,11 +365,12 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
 
   get shouldDisableGrupo$(): Observable<boolean> {
     return combineLatest([
+      this.formFiltrosDigitalizador.get('tipoBeneficio')!.valueChanges,
       this.formFiltrosDigitalizador.get('tipo')!.valueChanges,
       this.formFiltrosDigitalizador.get('fecha')!.valueChanges,
     ]).pipe(
-      map(([tipo, fecha]) => {
-        return tipo === '' || !fecha;
+      map(([tipoBeneficio, tipo, fecha]) => {
+        return tipoBeneficio === '' || tipo === '' || !fecha;
       }),
       distinctUntilChanged()
     );
@@ -555,15 +570,6 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
       this.configDigitalizadorService.getTipos().subscribe({
         next: (response) => {
           this.configDigitalizadorService.syncTipos(response.data);
-        },
-        error: (error) => {
-          console.log(error);
-        }
-      })
-
-      this.digitalizarArchivosService.getGruposAll().subscribe({
-        next: (response) => {
-          this.configDigitalizadorService.syncGrupos(response.data);
         },
         error: (error) => {
           console.log(error);
@@ -807,7 +813,7 @@ export class DigitalizadorComponent implements OnInit, OnDestroy {
   contenedores: any[] = [];
   extensiones: any[] = [];
 
-  getGrupos(body: { id_tipo_documento_digitalizacion: string, fecha: string }): void {
+  getGrupos(body: { fecha: string, id_tipo_documento_digitalizacion: string, id_tipo_beneficio: string }): void {
     this.configDigitalizadorService
       .consultarGrupos(body)
       .then((grupos) => {

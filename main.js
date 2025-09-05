@@ -51,9 +51,9 @@ function createWindow() {
   mainWindow.removeMenu();
 
   // Abre consola (para debug)
-  // mainWindow.on('ready-to-show', () => {
-  //   mainWindow.webContents.openDevTools();
-  // });
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.webContents.openDevTools();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -112,16 +112,15 @@ function addColumnIfNotExists() {
   try {
     // Verificar y agregar columna 'modulo' en ct_aspirantes_beneficio
     const rowsAspirantes = db.prepare("PRAGMA table_info(ct_aspirantes_beneficio);").all();
-    const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
-    if (!columnExists_modulo) {
-      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
-    }
-
-    // Verificar y agregar columnas en sy_config_digitalizador
     const rowsConfiguracionDigitalizador = db.prepare("PRAGMA table_info(sy_config_digitalizador);").all();
     const rowsGruposDigitalizador = db.prepare("PRAGMA table_info(digitalizador_grupos);").all();
     const rowsArchivosDigitalizar = db.prepare("PRAGMA table_info(archivos_digitalizar);").all();
 
+    // Verificar columna 'modulo'
+    const columnExists_modulo = rowsAspirantes.some(row => row.name === 'modulo');
+    if (!columnExists_modulo) {
+      db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN modulo TEXT NULL;").run();
+    }
 
     // Verificar columna 'extension'
     const columnExists_extension = rowsConfiguracionDigitalizador.some(row => row.name === 'extension');
@@ -169,6 +168,11 @@ function addColumnIfNotExists() {
     if (!columnExists_fecha_expediente) {
       db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN fecha_expediente TEXT NULL;").run();
     }
+    // Verificar columna 'fecha_expediente'
+    const columnExists_id_tipo_beneficio = rowsGruposDigitalizador.some(row => row.name === 'id_tipo_beneficio');
+    if (!columnExists_id_tipo_beneficio) {
+      db.prepare("ALTER TABLE digitalizador_grupos ADD COLUMN id_tipo_beneficio INTEGER NULL;").run();
+    }
 
     // Verificar columna 'grupo'
     const columnExists_grupo = rowsArchivosDigitalizar.some(row => row.name === 'grupo');
@@ -182,13 +186,13 @@ function addColumnIfNotExists() {
       db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN nombre TEXT NULL;").run();
     }
 
-     // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
+    // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
     const columnExists_apellidopaterno = rowsAspirantes.some(row => row.name === 'apellido_paterno');
     if (!columnExists_apellidopaterno) {
       db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN apellido_paterno TEXT NULL;").run();
     }
 
-     // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
+    // Verificar y agregar columna 'nombre' en ct_aspirantes_beneficio
     const columnExists_apellidomaterno = rowsAspirantes.some(row => row.name === 'apellido_materno');
     if (!columnExists_apellidomaterno) {
       db.prepare("ALTER TABLE ct_aspirantes_beneficio ADD COLUMN apellido_materno TEXT NULL;").run();
